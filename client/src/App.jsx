@@ -1,16 +1,36 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import FileUpload from './components/FileUpload.jsx'
 import PreviewTable from './components/PreviewTable.jsx'
 import './App.css'
 
+const STORAGE_KEY = 'manifest_session'
+
+function loadSession() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    return saved ? JSON.parse(saved) : null
+  } catch { return null }
+}
+
+function saveSession(rows, fileName) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ rows, fileName }))
+  } catch {}
+}
+
 export default function App() {
-  const [rows, setRows] = useState(null)
-  const [fileName, setFileName] = useState('')
+  const session = loadSession()
+  const [rows, setRows] = useState(session?.rows ?? null)
+  const [fileName, setFileName] = useState(session?.fileName ?? '')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const sortByType = (data) =>
     [...data].sort((a, b) => (a.type ?? '').localeCompare(b.type ?? ''))
+
+  useEffect(() => {
+    if (rows) saveSession(rows, fileName)
+  }, [rows, fileName])
 
   const handleParsed = (data, name) => {
     setRows(sortByType(data))
@@ -21,6 +41,7 @@ export default function App() {
   const handleError = (msg) => {
     setError(msg)
     setRows(null)
+    localStorage.removeItem(STORAGE_KEY)
   }
 
   const buildCsvContent = () => {
@@ -99,7 +120,7 @@ export default function App() {
                     className="filename-input"
                     type="text"
                     value={fileName}
-                    onChange={e => setFileName(e.target.value)}
+                    onChange={e => { setFileName(e.target.value); saveSession(rows, e.target.value) }}
                     placeholder="filename"
                     spellCheck={false}
                   />
