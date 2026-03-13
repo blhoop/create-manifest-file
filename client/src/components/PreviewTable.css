@@ -33,6 +33,30 @@
 
 .btn-add-row:hover { background: #bee3f8; }
 
+.btn-show-example {
+  background: #f0fff4;
+  color: #276749;
+  border: 1px solid #9ae6b4;
+  border-radius: 6px;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-show-example:hover { background: #c6f6d5; }
+
+.example-row td {
+  background: #fffff0;
+  color: #744210;
+  border-bottom: 1px solid #faf089;
+}
+
+.example-tbody tr:last-child td {
+  border-bottom: 2px dashed #f6e05e;
+}
+
 .table-header-actions {
   display: flex;
   gap: 0.5rem;

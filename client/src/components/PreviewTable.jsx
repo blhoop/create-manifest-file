@@ -8,9 +8,37 @@ const COLUMNS = [
 ]
 const REQUIRED = new Set(['spoke_name', 'environment', 'location', 'service_type'])
 
+const EXAMPLE_ROWS = [
+  {
+    spoke_name: 'orders-api',
+    environment: 'prod',
+    location: 'eastus',
+    service_type: 'App Service',
+    app_repo: 'https://github.com/org/orders-api',
+    special_comments: 'Connected to: orders-db, service-bus',
+    existing_app_repo: '',
+    subscription_id: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+    spn_client_id: 'yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy',
+    vnet_cidr: '10.1.0.0/24',
+  },
+  {
+    spoke_name: 'orders-db',
+    environment: 'prod',
+    location: 'eastus',
+    service_type: 'SQL Database',
+    app_repo: '',
+    special_comments: '',
+    existing_app_repo: '',
+    subscription_id: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+    spn_client_id: '',
+    vnet_cidr: '10.1.0.0/24',
+  },
+]
+
 export default function PreviewTable({ rows, onRowsChange, onDetach }) {
   const [editingCell, setEditingCell] = useState(null) // { row: i, col: string }
   const [editValue, setEditValue] = useState('')
+  const [showExample, setShowExample] = useState(false)
 
   if (!rows?.length) return null
 
@@ -67,6 +95,9 @@ export default function PreviewTable({ rows, onRowsChange, onDetach }) {
       <div className="table-header">
         <h2 className="table-heading">Preview <span className="required-legend">(*) Required Fields</span></h2>
         <div className="table-header-actions">
+          <button className="btn-show-example" onClick={() => setShowExample(v => !v)}>
+            {showExample ? 'Hide Example' : 'Show Example'}
+          </button>
           <button className="btn-add-row" onClick={addRow}>+ Add Row</button>
           <button className="btn-detach" onClick={onDetach}>Detach File</button>
         </div>
@@ -84,6 +115,20 @@ export default function PreviewTable({ rows, onRowsChange, onDetach }) {
               <th className="col-actions" />
             </tr>
           </thead>
+          {showExample && (
+            <tbody className="example-tbody">
+              {EXAMPLE_ROWS.map((row, i) => (
+                <tr key={`ex-${i}`} className="example-row">
+                  {COLUMNS.map(col => (
+                    <td key={col} className="editable-cell">
+                      <span className="cell-text">{row[col] ?? ''}</span>
+                    </td>
+                  ))}
+                  <td className="col-actions" />
+                </tr>
+              ))}
+            </tbody>
+          )}
           <tbody>
             {rows.map((row, i) => (
               <tr key={i}>
