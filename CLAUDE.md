@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Authorized Operations
+
+All standard git operations are pre-authorized — add, commit, push, pull, merge, branch, rebase — no need to ask for confirmation.
+
 ## Commands
 
 ```bash
@@ -32,7 +36,7 @@ Full-stack web app: React/Vite frontend + Node.js/Express backend.
 - `index.js` — Express entry point
 - `routes/upload.js` — `POST /api/parse`: receives file via multer, dispatches to correct parser by extension, returns `{ rows }`, deletes temp file
 - `parsers/` — one module per format:
-  - `spreadsheet.js` — SheetJS, fuzzy-maps column headers to canonical names (`name`, `type`, `special comments`)
+  - `spreadsheet.js` — ExcelJS, fuzzy-maps column headers to canonical names (`name`, `type`, `special comments`)
   - `drawio.js` — fast-xml-parser, extracts shape labels + edge source/target to build dependency strings
   - `visio.js` — unzips VSDX, parses `visio/pages/page*.xml`, extracts shape text + Connect elements
   - `svg.js` — XML parser, collects all text nodes
