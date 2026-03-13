@@ -9,6 +9,7 @@ const parseVisio = require('../parsers/visio')
 const parseSvg = require('../parsers/svg')
 const parseImage = require('../parsers/image')
 const parsePdf = require('../parsers/pdf')
+const { normalizeRows } = require('../parsers/normalizeName')
 
 const router = express.Router()
 const upload = multer({ dest: path.join(__dirname, '../uploads/') })
@@ -39,7 +40,8 @@ router.post('/parse', upload.single('file'), async (req, res) => {
   }
 
   try {
-    const rows = await parser(file.path, file.originalname)
+    const raw = await parser(file.path, file.originalname)
+    const rows = normalizeRows(raw)
     res.json({ rows })
   } catch (err) {
     console.error(err)

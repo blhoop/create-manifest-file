@@ -14,9 +14,21 @@
 }
 
 .table-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 0.95rem;
   font-weight: 600;
   color: #4a5568;
+}
+
+.row-count {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #718096;
+  background: #edf2f7;
+  border-radius: 10px;
+  padding: 0.1rem 0.5rem;
 }
 
 .btn-add-row {
@@ -78,6 +90,8 @@
 
 .table-scroll {
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 60vh;
 }
 
 .manifest-table {
@@ -95,6 +109,9 @@
   padding: 0.5rem 0.6rem;
   border-bottom: 1px solid #e2e8f0;
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .required-star {
@@ -110,17 +127,35 @@
   margin-left: 0.6rem;
 }
 
-.manifest-table th:nth-child(1)  { width: 13%; } /* spoke_name */
-.manifest-table th:nth-child(2)  { width: 7%; }  /* environment */
-.manifest-table th:nth-child(3)  { width: 7%; }  /* location */
-.manifest-table th:nth-child(4)  { width: 10%; } /* service_type */
-.manifest-table th:nth-child(5)  { width: 10%; } /* app_repo */
-.manifest-table th:nth-child(6)  { width: 14%; } /* special_comments */
-.manifest-table th:nth-child(7)  { width: 10%; } /* existing_app_repo */
-.manifest-table th:nth-child(8)  { width: 11%; } /* subscription_id */
-.manifest-table th:nth-child(9)  { width: 10%; } /* spn_client_id */
-.manifest-table th:nth-child(10) { width: 8%; }  /* vnet_cidr */
+.manifest-table th.col-rownum    { width: 36px; }
+.manifest-table th:nth-child(2)  { width: 20%; } /* spoke_name */
+.manifest-table th:nth-child(3)  { width: 7%; }  /* environment */
+.manifest-table th:nth-child(4)  { width: 7%; }  /* location */
+.manifest-table th:nth-child(5)  { width: 10%; } /* service_type */
+.manifest-table th:nth-child(6)  { width: 8%; }  /* app_repo */
+.manifest-table th:nth-child(7)  { width: 13%; } /* special_comments */
+.manifest-table th:nth-child(8)  { width: 9%; }  /* existing_app_repo */
+.manifest-table th:nth-child(9)  { width: 9%; }  /* subscription_id */
+.manifest-table th:nth-child(10) { width: 9%; }  /* spn_client_id */
+.manifest-table th:nth-child(11) { width: 8%; }  /* vnet_cidr */
 .manifest-table th.col-actions   { width: 36px; }
+
+.col-rownum {
+  width: 36px;
+  text-align: center;
+  padding: 0 !important;
+  vertical-align: middle;
+  color: #a0aec0;
+}
+
+.row-num {
+  display: block;
+  padding: 0.45rem 0.25rem;
+  font-size: 0.72rem;
+  color: #a0aec0;
+  text-align: center;
+  user-select: none;
+}
 
 .manifest-table td {
   border-bottom: 1px solid #f0f4f8;

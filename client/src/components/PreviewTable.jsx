@@ -13,7 +13,7 @@ const EXAMPLE_ROWS = [
     spoke_name: 'orders-web',
     environment: 'dev',
     location: 'australiaeast',
-    service_type: 'app_service',
+    service_type: 'App Service',
     app_repo: 'https://github.com/org/orders-api',
     special_comments: 'Connected to: orders-db, service-bus',
     existing_app_repo: '',
@@ -93,7 +93,11 @@ export default function PreviewTable({ rows, onRowsChange, onDetach }) {
   return (
     <div className="table-wrapper">
       <div className="table-header">
-        <h2 className="table-heading">Preview <span className="required-legend">(*) Required Fields</span></h2>
+        <h2 className="table-heading">
+          Preview
+          <span className="required-legend">(*) Required Fields</span>
+          <span className="row-count">{rows.length} {rows.length === 1 ? 'row' : 'rows'}</span>
+        </h2>
         <div className="table-header-actions">
           <button className="btn-show-example" onClick={() => setShowExample(v => !v)}>
             {showExample ? 'Hide Example' : 'Show Example'}
@@ -106,6 +110,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach }) {
         <table className="manifest-table">
           <thead>
             <tr>
+              <th className="col-rownum" />
               {COLUMNS.map(col => (
                 <th key={col}>
                   {REQUIRED.has(col) && <span className="required-star">*</span>}
@@ -119,6 +124,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach }) {
             <tbody className="example-tbody">
               {EXAMPLE_ROWS.map((row, i) => (
                 <tr key={`ex-${i}`} className="example-row">
+                  <td className="col-rownum"><span className="row-num">{i + 1}</span></td>
                   {COLUMNS.map(col => (
                     <td key={col} className="editable-cell">
                       <span className="cell-text">{row[col] ?? ''}</span>
@@ -132,6 +138,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach }) {
           <tbody>
             {rows.map((row, i) => (
               <tr key={i}>
+                <td className="col-rownum"><span className="row-num">{i + 1}</span></td>
                 {COLUMNS.map(col => {
                   const isEditing = editingCell?.row === i && editingCell?.col === col
                   return (

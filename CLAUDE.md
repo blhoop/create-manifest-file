@@ -58,6 +58,10 @@ Full-stack web app: React/Vite frontend + Node.js/Express backend.
 | `spn_client_id` | | Service Principal client ID |
 | `vnet_cidr` | | Virtual network CIDR block (e.g. 10.0.0.0/16) |
 
+## Naming Conventions
+
+See [`naming.md`](./naming.md) for canonical values for `spoke_name`, `environment`, `location`, and `service_type`. Parsers and AI prompts must stay consistent with that file.
+
 ## Environment
 
 Copy `.env.example` → `.env` and set `ANTHROPIC_API_KEY`. Required for PNG, JPG, and PDF parsing (Claude Vision). XML-based formats and spreadsheets work without it.
