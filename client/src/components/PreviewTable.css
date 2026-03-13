@@ -59,7 +59,7 @@
 .manifest-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.78rem;
   table-layout: fixed;
 }
 
@@ -68,16 +68,28 @@
   color: #4a5568;
   font-weight: 600;
   text-align: left;
-  padding: 0.6rem 1rem;
+  padding: 0.5rem 0.6rem;
   border-bottom: 1px solid #e2e8f0;
   white-space: nowrap;
-  text-transform: capitalize;
 }
 
-.manifest-table th:nth-child(1) { width: 22%; }
-.manifest-table th:nth-child(2) { width: 22%; }
-.manifest-table th:nth-child(3) { width: 50%; }
-.manifest-table th.col-actions  { width: 44px; }
+.required-star {
+  color: #e53e3e;
+  margin-right: 2px;
+  font-size: 0.85rem;
+}
+
+.manifest-table th:nth-child(1)  { width: 13%; } /* spoke_name */
+.manifest-table th:nth-child(2)  { width: 7%; }  /* environment */
+.manifest-table th:nth-child(3)  { width: 7%; }  /* location */
+.manifest-table th:nth-child(4)  { width: 10%; } /* service_type */
+.manifest-table th:nth-child(5)  { width: 10%; } /* app_repo */
+.manifest-table th:nth-child(6)  { width: 14%; } /* special_comments */
+.manifest-table th:nth-child(7)  { width: 10%; } /* existing_app_repo */
+.manifest-table th:nth-child(8)  { width: 11%; } /* subscription_id */
+.manifest-table th:nth-child(9)  { width: 10%; } /* spn_client_id */
+.manifest-table th:nth-child(10) { width: 8%; }  /* vnet_cidr */
+.manifest-table th.col-actions   { width: 36px; }
 
 .manifest-table td {
   border-bottom: 1px solid #f0f4f8;
@@ -98,8 +110,8 @@
 
 .cell-text {
   display: block;
-  padding: 0.6rem 1rem;
-  min-height: 2.2rem;
+  padding: 0.45rem 0.6rem;
+  min-height: 2rem;
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -107,7 +119,7 @@
 .cell-input {
   display: block;
   width: 100%;
-  padding: 0.55rem 1rem;
+  padding: 0.4rem 0.6rem;
   border: none;
   outline: 2px solid #3b82f6;
   outline-offset: -2px;

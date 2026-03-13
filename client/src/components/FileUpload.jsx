@@ -2,13 +2,13 @@ import { useRef, useState } from 'react'
 import './FileUpload.css'
 
 const ACCEPTED = [
-  '.xlsx', '.xls', '.ods', '.csv', '.tsv',
+  '.xlsx', '.csv', '.tsv',
   '.xml', '.vsdx', '.svg',
   '.png', '.jpg', '.jpeg',
   '.pdf'
 ].join(',')
 
-const SPREADSHEET_EXTS = new Set(['.xlsx', '.xls', '.ods', '.csv', '.tsv'])
+const SPREADSHEET_EXTS = new Set(['.xlsx', '.csv', '.tsv'])
 const DIAGRAM_EXTS = new Set(['.xml', '.vsdx', '.svg', '.png', '.jpg', '.jpeg', '.pdf'])
 
 function getExt(name) {
@@ -74,7 +74,7 @@ export default function FileUpload({ onParsed, onError, setLoading, loading }) {
       <div className="upload-icon">📁</div>
       <p className="upload-title">Drop a file here or click to browse</p>
       <p className="upload-subtitle">
-        <strong>Spreadsheets:</strong> .xlsx .xls .ods .csv .tsv
+        <strong>Spreadsheets:</strong> .xlsx .csv .tsv
       </p>
       <p className="upload-subtitle">
         <strong>Diagrams:</strong> .xml (draw.io) .vsdx (Visio) .svg .png .jpg .pdf

@@ -26,7 +26,7 @@ export default function App() {
   const [loading, setLoading] = useState(false)
 
   const sortByType = (data) =>
-    [...data].sort((a, b) => (a.type ?? '').localeCompare(b.type ?? ''))
+    [...data].sort((a, b) => (a.service_type ?? '').localeCompare(b.service_type ?? ''))
 
   useEffect(() => {
     if (rows) saveSession(rows, fileName)
@@ -52,7 +52,11 @@ export default function App() {
   }
 
   const buildCsvContent = () => {
-    const headers = ['name', 'type', 'special comments']
+    const headers = [
+      'spoke_name', 'environment', 'location', 'service_type',
+      'app_repo', 'special_comments', 'existing_app_repo',
+      'subscription_id', 'spn_client_id', 'vnet_cidr',
+    ]
     return [
       headers.join(','),
       ...rows.map(row =>

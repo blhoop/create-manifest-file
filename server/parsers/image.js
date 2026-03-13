@@ -53,15 +53,21 @@ MONITORING & MANAGEMENT:
 - Application Insights: purple magnifying glass with chart — type: "Application Insights"
 
 For each item return a JSON array where each element has exactly these keys:
-- "name": the label shown in the diagram (the resource instance name). If unlabeled, use the resource type as the name.
-- "type": the Azure resource type as listed above. For AWS use "AWS <Service>", for GCP use "GCP <Service>", for generic use "Database", "Queue", "Load Balancer", etc.
-- "special comments": if this resource has connectors/arrows to other resources, list them briefly e.g. "Connected to: Orders DB, Service Bus". Use empty string if none.
+- "spoke_name": the label shown in the diagram (the resource instance name). If unlabeled, use the resource type as the name.
+- "environment": the environment if visible in the diagram (e.g. "dev", "staging", "prod"). Use empty string if not shown.
+- "location": the Azure region if visible (e.g. "eastus", "westeurope"). Use empty string if not shown.
+- "service_type": the Azure resource type as listed above. For AWS use "AWS <Service>", for GCP use "GCP <Service>", for generic use "Database", "Queue", "Load Balancer", etc.
+- "app_repo": empty string (cannot be determined from a diagram).
+- "special_comments": if this resource has connectors/arrows to other resources, list them briefly e.g. "Connected to: Orders DB, Service Bus". Use empty string if none.
+- "existing_app_repo": empty string.
+- "subscription_id": empty string.
+- "spn_client_id": empty string.
+- "vnet_cidr": the CIDR block if visible on the diagram (e.g. "10.0.0.0/16"). Use empty string if not shown.
 
 Return ONLY a valid JSON array, no markdown fences, no explanation.
 [
-  {"name":"order-func","type":"Function App","special comments":"Connected to: orders-db, svc-bus"},
-  {"name":"orders-db","type":"SQL Database","special comments":""},
-  {"name":"app-identity","type":"Managed Identity","special comments":""}
+  {"spoke_name":"order-func","environment":"","location":"","service_type":"Function App","app_repo":"","special_comments":"Connected to: orders-db, svc-bus","existing_app_repo":"","subscription_id":"","spn_client_id":"","vnet_cidr":""},
+  {"spoke_name":"app-identity","environment":"","location":"","service_type":"Managed Identity","app_repo":"","special_comments":"","existing_app_repo":"","subscription_id":"","spn_client_id":"","vnet_cidr":""}
 ]`
 
 module.exports = async function parseImage(filePath, originalName) {

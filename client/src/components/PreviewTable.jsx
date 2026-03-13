@@ -1,7 +1,12 @@
 import { useState } from 'react'
 import './PreviewTable.css'
 
-const COLUMNS = ['name', 'type', 'special comments']
+const COLUMNS = [
+  'spoke_name', 'environment', 'location', 'service_type',
+  'app_repo', 'special_comments', 'existing_app_repo',
+  'subscription_id', 'spn_client_id', 'vnet_cidr',
+]
+const REQUIRED = new Set(['spoke_name', 'environment', 'location', 'service_type'])
 
 export default function PreviewTable({ rows, onRowsChange, onDetach }) {
   const [editingCell, setEditingCell] = useState(null) // { row: i, col: string }
@@ -53,7 +58,8 @@ export default function PreviewTable({ rows, onRowsChange, onDetach }) {
   }
 
   const addRow = () => {
-    onRowsChange([...rows, { name: '', type: '', 'special comments': '' }])
+    const empty = Object.fromEntries(COLUMNS.map(c => [c, '']))
+    onRowsChange([...rows, empty])
   }
 
   return (
@@ -69,7 +75,12 @@ export default function PreviewTable({ rows, onRowsChange, onDetach }) {
         <table className="manifest-table">
           <thead>
             <tr>
-              {COLUMNS.map(col => <th key={col}>{col}</th>)}
+              {COLUMNS.map(col => (
+                <th key={col}>
+                  {REQUIRED.has(col) && <span className="required-star">*</span>}
+                  {col}
+                </th>
+              ))}
               <th className="col-actions" />
             </tr>
           </thead>

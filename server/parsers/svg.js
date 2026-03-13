@@ -26,9 +26,16 @@ module.exports = function parseSvg(filePath) {
   // SVG has no explicit edge data we can reliably parse without knowing the tool
   // that generated it, so we return rows without dependency info
   return labels.map(label => ({
-    name: label,
-    type: 'Resource',
-    'special comments': '',
+    spoke_name: label,
+    environment: '',
+    location: '',
+    service_type: 'Resource',
+    app_repo: '',
+    special_comments: '',
+    existing_app_repo: '',
+    subscription_id: '',
+    spn_client_id: '',
+    vnet_cidr: '',
   }))
 }
 

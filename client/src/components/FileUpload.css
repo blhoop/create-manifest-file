@@ -2,11 +2,13 @@
   background: #fff;
   border: 2px dashed #cbd5e0;
   border-radius: 12px;
-  padding: 3rem 2rem;
+  padding: 2rem 2.5rem;
   text-align: center;
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
   user-select: none;
+  max-width: 500px;
+  align-self: center;
 }
 
 .upload-zone:hover,
