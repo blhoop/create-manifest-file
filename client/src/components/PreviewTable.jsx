@@ -65,7 +65,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach }) {
   return (
     <div className="table-wrapper">
       <div className="table-header">
-        <h2 className="table-heading">Preview</h2>
+        <h2 className="table-heading">Preview <span className="required-legend">(*) Required Fields</span></h2>
         <div className="table-header-actions">
           <button className="btn-add-row" onClick={addRow}>+ Add Row</button>
           <button className="btn-detach" onClick={onDetach}>Detach File</button>
