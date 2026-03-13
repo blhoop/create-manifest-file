@@ -10,7 +10,7 @@ const REQUIRED = new Set(['spoke_name', 'environment', 'location', 'service_type
 
 const EXAMPLE_ROWS = [
   {
-    spoke_name: 'lightning-book',
+    spoke_name: 'orders-web',
     environment: 'dev',
     location: 'australiaeast',
     service_type: 'app_service',
