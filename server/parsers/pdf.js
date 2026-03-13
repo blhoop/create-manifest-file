@@ -3,27 +3,27 @@ const Anthropic = require('@anthropic-ai/sdk')
 
 const client = new Anthropic()
 
-const PROMPT = `You are analyzing a PDF that contains an architecture diagram or structured data.
+const PROMPT = `You are analyzing a PDF that contains an architecture diagram or infrastructure design document.
 
 Extract every application, service, or resource as structured data.
 
 Return a JSON array where each element has exactly these keys:
-- "name": the application or resource name
-- "type": the resource type using the exact format below based on the cloud provider:
-  - Azure resources: use the resource type name only e.g. "Function App", "Kubernetes Service", "SQL Database", "Storage Account", "API Management", "Service Bus", "Key Vault", "Virtual Network", "Application Gateway", "Container Registry"
-  - AWS resources: use "AWS <Service>" e.g. "AWS Lambda", "AWS S3", "AWS RDS", "AWS API Gateway", "AWS ECS"
-  - GCP resources: use "GCP <Service>" e.g. "GCP Cloud Run", "GCP Pub/Sub"
+- "name": the application or resource instance name as labeled in the document. If unlabeled, use the resource type as the name.
+- "type": the resource type based on the cloud provider:
+  - Azure: use the resource type name e.g. "App Service", "Function App", "Kubernetes Service", "SQL Database", "Cosmos DB", "Storage Account", "API Management", "Service Bus", "Event Hub", "Key Vault", "Virtual Network", "Application Gateway", "Container Registry", "Container App", "Managed Identity", "Entra ID", "Log Analytics Workspace", "Application Insights", "Firewall", "Load Balancer", "Private Endpoint", "VPN Gateway", "OpenAI Service", "Cognitive Services", "Cache for Redis"
+  - AWS: use "AWS <Service>" e.g. "AWS Lambda", "AWS S3", "AWS RDS", "AWS API Gateway", "AWS ECS"
+  - GCP: use "GCP <Service>" e.g. "GCP Cloud Run", "GCP Pub/Sub"
   - Generic: "Database", "API Gateway", "Queue", "Storage", "Load Balancer", "Container", "Server", "Microservice"
-- "special comments": if this resource has connections to other resources, describe them briefly (e.g. "Connected to: Orders DB, Payment Service"). If none, use an empty string.
+- "special comments": if this resource has connections or dependencies to other resources, describe them briefly e.g. "Connected to: Orders DB, Service Bus". Use empty string if none.
 
-Return ONLY valid JSON array, no markdown, no explanation.`
+Return ONLY a valid JSON array, no markdown fences, no explanation.`
 
 module.exports = async function parsePdf(filePath) {
   const pdfData = fs.readFileSync(filePath)
   const base64 = pdfData.toString('base64')
 
   const message = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: 'claude-sonnet-4-6',
     max_tokens: 4096,
     messages: [
       {
