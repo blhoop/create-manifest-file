@@ -36,14 +36,27 @@ Full-stack web app: React/Vite frontend + Node.js/Express backend.
 - `index.js` — Express entry point
 - `routes/upload.js` — `POST /api/parse`: receives file via multer, dispatches to correct parser by extension, returns `{ rows }`, deletes temp file
 - `parsers/` — one module per format:
-  - `spreadsheet.js` — ExcelJS, fuzzy-maps column headers to canonical names (`name`, `type`, `special comments`)
+  - `spreadsheet.js` — ExcelJS, fuzzy-maps column headers to canonical names
   - `drawio.js` — fast-xml-parser, extracts shape labels + edge source/target to build dependency strings
   - `visio.js` — unzips VSDX, parses `visio/pages/page*.xml`, extracts shape text + Connect elements
   - `svg.js` — XML parser, collects all text nodes
-  - `image.js` — sends base64 image to Claude Vision API (`claude-sonnet-4-6`) with a structured prompt
-  - `pdf.js` — sends base64 PDF to Claude API as a `document` content block
+  - `image.js` — sends base64 image to Claude Vision API (`claude-sonnet-4-6`) with Azure icon visual reference prompt
+  - `pdf.js` — sends base64 PDF to Claude API (`claude-sonnet-4-6`) as a `document` content block
 
-**CSV output columns:** `name` (application name), `type` (resource type), `special comments` (dependency connections).
+**CSV output columns (10 total, first 4 required):**
+
+| Column | Required | Description |
+|--------|----------|-------------|
+| `spoke_name` | ✅ | Resource or application instance name |
+| `environment` | ✅ | Deployment environment (dev / staging / prod) |
+| `location` | ✅ | Azure region (e.g. eastus, westeurope) |
+| `service_type` | ✅ | Azure resource type (e.g. Function App, SQL Database) |
+| `app_repo` | | Application source repository |
+| `special_comments` | | Dependency connections (e.g. "Connected to: Orders DB") |
+| `existing_app_repo` | | Existing application repository if migrating |
+| `subscription_id` | | Azure subscription ID |
+| `spn_client_id` | | Service Principal client ID |
+| `vnet_cidr` | | Virtual network CIDR block (e.g. 10.0.0.0/16) |
 
 ## Environment
 

@@ -1,17 +1,19 @@
 # Create Manifest File
 
-A web application that converts architecture diagrams and spreadsheets into a structured CSV manifest. Upload a file, preview the extracted data, and download a CSV with three columns: **name** (application name), **type** (resource type), and **special comments** (dependency connections).
+A web application that converts architecture diagrams and spreadsheets into a structured CSV manifest for cloud infrastructure automation. Upload a file, review and edit the extracted data in an interactive preview table, then download the CSV.
+
+This tool is designed for **Project Managers, Architects, Developers, and Cloud Engineers** as part of an end-to-end Azure infrastructure provisioning pipeline — the CSV output drives downstream automation to build out cloud resources.
 
 ## Supported File Formats
 
 | Format | Extension(s) | Method |
 |--------|-------------|--------|
-| Spreadsheets | `.xlsx` `.csv` `.tsv` | ExcelJS — maps columns to manifest fields |
+| Spreadsheets | `.xlsx` `.csv` `.tsv` | ExcelJS — fuzzy-maps column headers to manifest fields |
 | draw.io diagrams | `.xml` | XML parser — extracts shapes + edge connections |
 | Visio diagrams | `.vsdx` | Unzip + XML parser — reads shapes and Connect elements |
 | SVG diagrams | `.svg` | XML parser — collects text labels from shapes |
-| Image diagrams | `.png` `.jpg` `.jpeg` | Claude Vision API — interprets diagram semantics |
-| PDF diagrams | `.pdf` | Claude API (document) — extracts resources and dependencies |
+| Image diagrams | `.png` `.jpg` `.jpeg` | Claude Vision API (`claude-sonnet-4-6`) — identifies Azure icons and diagram semantics |
+| PDF diagrams | `.pdf` | Claude API (`claude-sonnet-4-6`) — extracts resources and dependencies from design docs |
 
 ## Prerequisites
 
@@ -52,21 +54,33 @@ npm run stop-dev
 
 ## CSV Output
 
-Every parsed file produces rows with the following columns:
+Every parsed file produces rows with the following 10 columns. The first 4 are required by the downstream automation pipeline:
 
-| Column | Description |
-|--------|-------------|
-| `name` | Application or resource name |
-| `type` | Resource type using [Microsoft CAF abbreviations](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-abbreviations) (e.g. `appsvc`, `sqldb`, `kv`) |
-| `special comments` | Line connector dependencies (e.g. "Connected to: Orders DB, Auth Service") |
+| Column | Required | Description |
+|--------|----------|-------------|
+| `spoke_name` | ✅ | Resource or application instance name |
+| `environment` | ✅ | Deployment environment (e.g. dev, staging, prod) |
+| `location` | ✅ | Azure region (e.g. eastus, westeurope) |
+| `service_type` | ✅ | Azure resource type (e.g. Function App, SQL Database, Managed Identity) |
+| `app_repo` | | Application source repository |
+| `special_comments` | | Dependency connections (e.g. "Connected to: Orders DB, Service Bus") |
+| `existing_app_repo` | | Existing application repository if migrating |
+| `subscription_id` | | Azure subscription ID |
+| `spn_client_id` | | Service Principal client ID |
+| `vnet_cidr` | | Virtual network CIDR block (e.g. 10.0.0.0/16) |
+
+When parsing diagrams, the AI will populate as many columns as are visible in the source file. Remaining fields can be filled in using the interactive preview table before downloading.
 
 ## Preview & Editing
 
 After parsing, the app displays an interactive preview table before download:
 
-- **Inline row editing** — click any cell to edit `name`, `type`, or `special comments` directly; use Tab to move between cells
-- **Editable filename** — click the filename above the table to rename the output CSV before downloading
-- **Sorted by type** — rows are sorted alphabetically by type on parse and kept sorted after every edit
+- **Required field markers** — the 4 required columns are marked with a red `*` in the header
+- **Inline row editing** — click any cell to edit directly; use Tab to move between cells
+- **Add / delete rows** — add blank rows or remove unwanted ones
+- **Detach File** — clears the current session to upload a new file without refreshing
+- **Editable filename** — rename the output CSV before downloading
+- **Sorted by service_type** — rows are sorted alphabetically on parse and after every edit
 - **Session persistence** — rows and filename are saved to `localStorage` so a page refresh restores your work
 
 ## Project Structure
@@ -83,12 +97,12 @@ create-manifest-file/
 │   ├── index.js
 │   ├── routes/upload.js
 │   └── parsers/
-│       ├── spreadsheet.js
+│       ├── spreadsheet.js   # ExcelJS
 │       ├── drawio.js
 │       ├── visio.js
 │       ├── svg.js
-│       ├── image.js         # Claude Vision API
-│       └── pdf.js           # Claude API
+│       ├── image.js         # Claude Vision API (sonnet)
+│       └── pdf.js           # Claude API (sonnet)
 └── .github/
     ├── workflows/
     │   ├── ci.yml           # CI on push/PR
