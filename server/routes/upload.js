@@ -15,8 +15,6 @@ const upload = multer({ dest: path.join(__dirname, '../uploads/') })
 
 const PARSERS = {
   '.xlsx': parseSpreadsheet,
-  '.xls': parseSpreadsheet,
-  '.ods': parseSpreadsheet,
   '.csv': parseSpreadsheet,
   '.tsv': parseSpreadsheet,
   '.xml': parseDrawio,

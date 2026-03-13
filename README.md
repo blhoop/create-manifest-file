@@ -6,7 +6,7 @@ A web application that converts architecture diagrams and spreadsheets into a st
 
 | Format | Extension(s) | Method |
 |--------|-------------|--------|
-| Spreadsheets | `.xlsx` `.xls` `.ods` `.csv` `.tsv` | SheetJS — maps columns to manifest fields |
+| Spreadsheets | `.xlsx` `.csv` `.tsv` | ExcelJS — maps columns to manifest fields |
 | draw.io diagrams | `.xml` | XML parser — extracts shapes + edge connections |
 | Visio diagrams | `.vsdx` | Unzip + XML parser — reads shapes and Connect elements |
 | SVG diagrams | `.svg` | XML parser — collects text labels from shapes |
@@ -57,8 +57,17 @@ Every parsed file produces rows with the following columns:
 | Column | Description |
 |--------|-------------|
 | `name` | Application or resource name |
-| `type` | Resource type (e.g. AWS Lambda, Database, API Gateway) |
+| `type` | Resource type using [Microsoft CAF abbreviations](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-abbreviations) (e.g. `appsvc`, `sqldb`, `kv`) |
 | `special comments` | Line connector dependencies (e.g. "Connected to: Orders DB, Auth Service") |
+
+## Preview & Editing
+
+After parsing, the app displays an interactive preview table before download:
+
+- **Inline row editing** — click any cell to edit `name`, `type`, or `special comments` directly; use Tab to move between cells
+- **Editable filename** — click the filename above the table to rename the output CSV before downloading
+- **Sorted by type** — rows are sorted alphabetically by type on parse and kept sorted after every edit
+- **Session persistence** — rows and filename are saved to `localStorage` so a page refresh restores your work
 
 ## Project Structure
 
