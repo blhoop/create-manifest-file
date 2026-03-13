@@ -1,6 +1,7 @@
 const unzipper = require('unzipper')
 const { XMLParser } = require('fast-xml-parser')
 const path = require('path')
+const { inferTypeFromVisio } = require('./resourceTypes')
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -87,17 +88,7 @@ function extractVisioText(shape) {
 }
 
 function inferVisioType(shape) {
-  const master = (shape['@_Master'] || '').toLowerCase()
-  const name = (shape['@_Name'] || '').toLowerCase()
-  const combined = master + ' ' + name
-
-  if (combined.includes('database') || combined.includes('db')) return 'Database'
-  if (combined.includes('server')) return 'Server'
-  if (combined.includes('cloud')) return 'Cloud'
-  if (combined.includes('storage')) return 'Storage'
-  if (combined.includes('queue') || combined.includes('message')) return 'Queue'
-  if (combined.includes('api') || combined.includes('gateway')) return 'API Gateway'
-  if (combined.includes('container') || combined.includes('docker')) return 'Container'
-  if (combined.includes('lambda') || combined.includes('function')) return 'Function'
-  return 'Resource'
+  const master = shape['@_Master'] || ''
+  const name = shape['@_Name'] || ''
+  return inferTypeFromVisio(master, name)
 }

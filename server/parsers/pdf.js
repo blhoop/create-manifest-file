@@ -9,7 +9,11 @@ Extract every application, service, or resource as structured data.
 
 Return a JSON array where each element has exactly these keys:
 - "name": the application or resource name
-- "type": the resource type (e.g. "AWS Lambda", "Database", "API Gateway", "Microservice", "Queue", "Storage", "Load Balancer", "Container", "Server", etc.)
+- "type": the resource type using the exact format below based on the cloud provider:
+  - Azure resources: use Microsoft CAF format "Azure <Resource Type> (<abbr>)" e.g. "Azure Function App (func)", "Azure Kubernetes Service (aks)", "Azure SQL Database (sqldb)", "Azure Storage Account (st)", "Azure API Management (apim)", "Azure Service Bus (sbns)", "Azure Key Vault (kv)", "Azure Virtual Network (vnet)", "Azure Application Gateway (agw)", "Azure Container Registry (cr)"
+  - AWS resources: use "AWS <Service>" e.g. "AWS Lambda", "AWS S3", "AWS RDS", "AWS API Gateway", "AWS ECS"
+  - GCP resources: use "GCP <Service>" e.g. "GCP Cloud Run", "GCP Pub/Sub"
+  - Generic: "Database", "API Gateway", "Queue", "Storage", "Load Balancer", "Container", "Server", "Microservice"
 - "special comments": if this resource has connections to other resources, describe them briefly (e.g. "Connected to: Orders DB, Payment Service"). If none, use an empty string.
 
 Return ONLY valid JSON array, no markdown, no explanation.`

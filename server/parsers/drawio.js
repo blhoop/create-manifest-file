@@ -1,5 +1,6 @@
 const fs = require('fs')
 const { XMLParser } = require('fast-xml-parser')
+const { inferTypeFromStyle } = require('./resourceTypes')
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -20,35 +21,6 @@ function getStyle(cell) {
   return cell['@_style'] || ''
 }
 
-function inferType(style, label) {
-  const s = style.toLowerCase()
-  if (s.includes('shape=mxgraph.aws') || s.includes('aws')) return inferAwsType(s)
-  if (s.includes('shape=mxgraph.azure')) return 'Azure Resource'
-  if (s.includes('shape=mxgraph.gcp')) return 'GCP Resource'
-  if (s.includes('database') || s.includes('db')) return 'Database'
-  if (s.includes('server') || s.includes('computer')) return 'Server'
-  if (s.includes('cloud')) return 'Cloud'
-  if (s.includes('storage')) return 'Storage'
-  if (s.includes('queue') || s.includes('message')) return 'Queue'
-  if (s.includes('api') || s.includes('gateway')) return 'API Gateway'
-  if (s.includes('container') || s.includes('docker')) return 'Container'
-  return 'Resource'
-}
-
-function inferAwsType(style) {
-  if (style.includes('lambda')) return 'AWS Lambda'
-  if (style.includes('s3') || style.includes('bucket')) return 'AWS S3'
-  if (style.includes('rds') || style.includes('aurora')) return 'AWS RDS'
-  if (style.includes('ec2')) return 'AWS EC2'
-  if (style.includes('sqs')) return 'AWS SQS'
-  if (style.includes('sns')) return 'AWS SNS'
-  if (style.includes('dynamodb')) return 'AWS DynamoDB'
-  if (style.includes('apigateway') || style.includes('apigw')) return 'AWS API Gateway'
-  if (style.includes('ecs') || style.includes('fargate')) return 'AWS ECS'
-  if (style.includes('cloudfront')) return 'AWS CloudFront'
-  if (style.includes('elb') || style.includes('alb')) return 'AWS Load Balancer'
-  return 'AWS Service'
-}
 
 module.exports = function parseDrawio(filePath) {
   const xml = fs.readFileSync(filePath, 'utf8')
@@ -102,7 +74,7 @@ module.exports = function parseDrawio(filePath) {
     seen.add(label)
 
     const style = getStyle(cell)
-    const type = inferType(style, label)
+    const type = inferTypeFromStyle(style, label)
     const deps = dependencies[label] ? [...dependencies[label]].join(', ') : ''
 
     rows.push({
