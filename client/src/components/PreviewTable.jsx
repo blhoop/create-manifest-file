@@ -10,10 +10,10 @@ const REQUIRED = new Set(['spoke_name', 'environment', 'location', 'service_type
 
 const EXAMPLE_ROWS = [
   {
-    spoke_name: 'orders-api',
-    environment: 'prod',
-    location: 'eastus',
-    service_type: 'App Service',
+    spoke_name: 'lightning-book',
+    environment: 'dev',
+    location: 'australiaeast',
+    service_type: 'app_service',
     app_repo: 'https://github.com/org/orders-api',
     special_comments: 'Connected to: orders-db, service-bus',
     existing_app_repo: '',
