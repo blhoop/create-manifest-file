@@ -5,13 +5,33 @@
   overflow: hidden;
 }
 
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
 .table-heading {
   font-size: 0.95rem;
   font-weight: 600;
   color: #4a5568;
-  padding: 0.75rem 1.25rem;
-  border-bottom: 1px solid #e2e8f0;
 }
+
+.btn-add-row {
+  background: #ebf8ff;
+  color: #2b6cb0;
+  border: 1px solid #bee3f8;
+  border-radius: 6px;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-add-row:hover { background: #bee3f8; }
 
 .table-scroll {
   overflow-x: auto;
@@ -21,6 +41,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
+  table-layout: fixed;
 }
 
 .manifest-table th {
@@ -34,17 +55,73 @@
   text-transform: capitalize;
 }
 
+.manifest-table th:nth-child(1) { width: 22%; }
+.manifest-table th:nth-child(2) { width: 22%; }
+.manifest-table th:nth-child(3) { width: 50%; }
+.manifest-table th.col-actions  { width: 44px; }
+
 .manifest-table td {
-  padding: 0.6rem 1rem;
   border-bottom: 1px solid #f0f4f8;
   color: #2d3748;
   vertical-align: top;
+  padding: 0;
 }
 
-.manifest-table tbody tr:last-child td {
-  border-bottom: none;
+.manifest-table tbody tr:last-child td { border-bottom: none; }
+
+.editable-cell {
+  cursor: text;
+  padding: 0;
+  position: relative;
 }
 
-.manifest-table tbody tr:hover td {
-  background: #f7fafc;
+.editable-cell:not(.editing):hover { background: #f0f7ff; }
+
+.cell-text {
+  display: block;
+  padding: 0.6rem 1rem;
+  min-height: 2.2rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.cell-input {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 1rem;
+  border: none;
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+  border-radius: 0;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #1a202c;
+  background: #eff6ff;
+  resize: vertical;
+  min-height: 2.2rem;
+  box-sizing: border-box;
+}
+
+.col-actions {
+  width: 44px;
+  text-align: center;
+  padding: 0.4rem 0.25rem !important;
+  vertical-align: middle;
+}
+
+.btn-delete-row {
+  background: none;
+  border: none;
+  color: #cbd5e0;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.btn-delete-row:hover {
+  color: #e53e3e;
+  background: #fff5f5;
 }

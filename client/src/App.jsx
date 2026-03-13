@@ -65,7 +65,7 @@ export default function App() {
 
         {rows && !loading && (
           <>
-            <PreviewTable rows={rows} />
+            <PreviewTable rows={rows} onRowsChange={setRows} />
             <div className="download-bar">
               <span>{rows.length} row{rows.length !== 1 ? 's' : ''} found</span>
               <button className="btn-download" onClick={downloadCsv}>
