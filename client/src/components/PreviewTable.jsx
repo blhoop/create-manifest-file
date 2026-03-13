@@ -6,6 +6,14 @@ const COLUMNS = [
   'app_repo', 'special_comments', 'existing_app_repo',
   'subscription_id', 'spn_client_id', 'vnet_cidr',
 ]
+
+const TOOLTIPS = {
+  spoke_name: 'Name of the Azure Resource',
+  environment: 'dev | stg | qa | prod',
+  location: 'Azure Region',
+  service_type: 'Azure Resource Type',
+  app_repo: 'CTM-Infrastructure/Repo Name',
+}
 const REQUIRED = new Set(['spoke_name', 'environment', 'location', 'service_type'])
 
 const EXAMPLE_ROWS = [
@@ -114,7 +122,9 @@ export default function PreviewTable({ rows, onRowsChange, onDetach }) {
               {COLUMNS.map(col => (
                 <th key={col}>
                   {REQUIRED.has(col) && <span className="required-star">*</span>}
-                  {col}
+                  {TOOLTIPS[col] ? (
+                    <span className="th-tooltip" data-tooltip={TOOLTIPS[col]}>{col}</span>
+                  ) : col}
                 </th>
               ))}
               <th className="col-actions" />

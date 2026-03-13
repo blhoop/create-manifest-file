@@ -120,6 +120,35 @@
   font-size: 0.85rem;
 }
 
+.th-tooltip {
+  position: relative;
+  cursor: default;
+  border-bottom: 1px dashed #a0aec0;
+}
+
+.th-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2d3748;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 400;
+  white-space: nowrap;
+  padding: 0.3rem 0.55rem;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 10;
+}
+
+.th-tooltip:hover::after {
+  opacity: 1;
+}
+
 .required-legend {
   font-size: 0.75rem;
   font-weight: 400;
