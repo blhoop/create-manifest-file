@@ -35,17 +35,20 @@ npm run install:all
 
 ## Running Locally
 
-Open two terminals:
-
 ```bash
-# Terminal 1 — Express API (http://localhost:3001)
-npm run dev:server
-
-# Terminal 2 — React UI (http://localhost:5173)
-npm run dev:client
+# Start both server and client in one command
+npm run dev
 ```
 
-Then open [http://localhost:5173](http://localhost:5173) in your browser.
+| Service | URL |
+|---------|-----|
+| React UI | http://localhost:5173 |
+| Express API | http://localhost:3001 |
+
+```bash
+# Stop all services
+npm run stop-dev
+```
 
 ## CSV Output
 

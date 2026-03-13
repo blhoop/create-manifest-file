@@ -5,12 +5,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Install dependencies
+# Install all dependencies (root + server + client)
 npm run install:all
 
-# Run dev servers (run in separate terminals)
-npm run dev:server      # Express on http://localhost:3001
-npm run dev:client      # Vite on http://localhost:5173
+# Start all services
+npm run dev             # starts server (:3001) + client (:5173) concurrently
+
+# Stop all services
+npm run stop-dev        # kills processes on ports 3001 and 5173
 
 # Build client for production
 npm run build:client
