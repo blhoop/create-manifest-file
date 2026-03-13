@@ -3,7 +3,7 @@ import './PreviewTable.css'
 
 const COLUMNS = ['name', 'type', 'special comments']
 
-export default function PreviewTable({ rows, onRowsChange }) {
+export default function PreviewTable({ rows, onRowsChange, onDetach }) {
   const [editingCell, setEditingCell] = useState(null) // { row: i, col: string }
   const [editValue, setEditValue] = useState('')
 
@@ -60,7 +60,10 @@ export default function PreviewTable({ rows, onRowsChange }) {
     <div className="table-wrapper">
       <div className="table-header">
         <h2 className="table-heading">Preview</h2>
-        <button className="btn-add-row" onClick={addRow}>+ Add Row</button>
+        <div className="table-header-actions">
+          <button className="btn-add-row" onClick={addRow}>+ Add Row</button>
+          <button className="btn-detach" onClick={onDetach}>Detach File</button>
+        </div>
       </div>
       <div className="table-scroll">
         <table className="manifest-table">

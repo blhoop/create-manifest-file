@@ -44,6 +44,13 @@ export default function App() {
     localStorage.removeItem(STORAGE_KEY)
   }
 
+  const handleDetach = () => {
+    setRows(null)
+    setFileName('')
+    setError('')
+    localStorage.removeItem(STORAGE_KEY)
+  }
+
   const buildCsvContent = () => {
     const headers = ['name', 'type', 'special comments']
     return [
@@ -111,7 +118,7 @@ export default function App() {
 
         {rows && !loading && (
           <>
-            <PreviewTable rows={rows} onRowsChange={r => setRows(sortByType(r))} />
+            <PreviewTable rows={rows} onRowsChange={r => setRows(sortByType(r))} onDetach={handleDetach} />
             <div className="download-bar">
               <span>{rows.length} row{rows.length !== 1 ? 's' : ''} found</span>
               <div className="download-controls">

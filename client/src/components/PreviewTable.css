@@ -33,6 +33,25 @@
 
 .btn-add-row:hover { background: #bee3f8; }
 
+.table-header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-detach {
+  background: #fff5f5;
+  color: #c53030;
+  border: 1px solid #feb2b2;
+  border-radius: 6px;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-detach:hover { background: #fed7d7; }
+
 .table-scroll {
   overflow-x: auto;
 }
