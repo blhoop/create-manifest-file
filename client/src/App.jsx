@@ -9,8 +9,11 @@ export default function App() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const sortByType = (data) =>
+    [...data].sort((a, b) => (a.type ?? '').localeCompare(b.type ?? ''))
+
   const handleParsed = (data, name) => {
-    setRows(data)
+    setRows(sortByType(data))
     setFileName(name.replace(/\.[^.]+$/, '') + '_manifest')
     setError('')
   }
@@ -87,7 +90,7 @@ export default function App() {
 
         {rows && !loading && (
           <>
-            <PreviewTable rows={rows} onRowsChange={setRows} />
+            <PreviewTable rows={rows} onRowsChange={r => setRows(sortByType(r))} />
             <div className="download-bar">
               <span>{rows.length} row{rows.length !== 1 ? 's' : ''} found</span>
               <div className="download-controls">
