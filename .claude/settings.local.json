@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find \"C:\\\\main\\\\create-manifest-file\" -type f -name \"*\" 2>/dev/null | head -20)",
+      "Bash(gh repo:*)",
+      "Bash(git init:*)",
+      "Bash(git checkout:*)",
+      "Bash(cd C:/main/create-manifest-file && npm create vite@latest client -- --template react --yes 2>&1)",
+      "Bash(cd C:/main/create-manifest-file/client && npm create vite@latest . -- --template react 2>&1)",
+      "Bash(cd C:/main/create-manifest-file/client && echo y | npx create-vite@latest . --template react 2>&1)",
+      "Bash(cd C:/main/create-manifest-file/server && npm install 2>&1)",
+      "Bash(cd C:/main/create-manifest-file/server && npm install multer@2 2>&1)",
+      "Bash(cd C:/main/create-manifest-file/server && npm audit 2>&1)",
+      "Bash(cd C:/main/create-manifest-file/client && npm install 2>&1)"
+    ]
+  }
+}
