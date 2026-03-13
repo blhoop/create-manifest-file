@@ -75,7 +75,8 @@ When parsing diagrams, the AI will populate as many columns as are visible in th
 
 After parsing, the app displays an interactive preview table before download:
 
-- **Required field markers** — the 4 required columns are marked with a red `*` in the header
+- **Required field markers** — the 4 required columns are marked with a red `*` in the header; a `(*) Required Fields` legend appears next to the Preview heading
+- **Show / Hide Example** — toggles two read-only example rows at the top of the table so users can see the expected format without affecting real data
 - **Inline row editing** — click any cell to edit directly; use Tab to move between cells
 - **Add / delete rows** — add blank rows or remove unwanted ones
 - **Detach File** — clears the current session to upload a new file without refreshing
