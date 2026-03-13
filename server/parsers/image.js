@@ -17,7 +17,7 @@ Extract every application, service, or resource visible in the diagram as struct
 For each item return a JSON array where each element has exactly these keys:
 - "name": the application or resource name as labeled in the diagram
 - "type": the resource type using the exact format below based on the cloud provider:
-  - Azure resources: use Microsoft CAF format "<Resource Type> (<abbr>)" e.g. "Function App (func)", "Kubernetes Service (aks)", "SQL Database (sqldb)", "Storage Account (st)", "API Management (apim)", "Service Bus (sbns)", "Key Vault (kv)", "Virtual Network (vnet)", "Application Gateway (agw)", "Container Registry (cr)"
+  - Azure resources: use the resource type name only e.g. "Function App", "Kubernetes Service", "SQL Database", "Storage Account", "API Management", "Service Bus", "Key Vault", "Virtual Network", "Application Gateway", "Container Registry"
   - AWS resources: use "AWS <Service>" e.g. "AWS Lambda", "AWS S3", "AWS RDS", "AWS API Gateway", "AWS ECS"
   - GCP resources: use "GCP <Service>" e.g. "GCP Cloud Run", "GCP Pub/Sub"
   - Generic: "Database", "API Gateway", "Queue", "Storage", "Load Balancer", "Container", "Server", "Microservice"
@@ -25,8 +25,8 @@ For each item return a JSON array where each element has exactly these keys:
 
 Return ONLY valid JSON array, no markdown, no explanation. Example:
 [
-  {"name":"Order Service","type":"Function App (func)","special comments":"Connected to: Orders DB, Service Bus"},
-  {"name":"Orders DB","type":"SQL Database (sqldb)","special comments":""}
+  {"name":"Order Service","type":"Function App","special comments":"Connected to: Orders DB, Service Bus"},
+  {"name":"Orders DB","type":"SQL Database","special comments":""}
 ]`
 
 module.exports = async function parseImage(filePath, originalName) {

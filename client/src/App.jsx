@@ -11,7 +11,7 @@ export default function App() {
 
   const handleParsed = (data, name) => {
     setRows(data)
-    setFileName(name)
+    setFileName(name.replace(/\.[^.]+$/, '') + '_manifest')
     setError('')
   }
 
@@ -20,21 +20,43 @@ export default function App() {
     setRows(null)
   }
 
-  const downloadCsv = () => {
-    if (!rows?.length) return
+  const buildCsvContent = () => {
     const headers = ['name', 'type', 'special comments']
-    const csvContent = [
+    return [
       headers.join(','),
       ...rows.map(row =>
         headers.map(h => `"${(row[h] ?? '').toString().replace(/"/g, '""')}"`).join(',')
       )
     ].join('\n')
+  }
 
+  const downloadCsv = async () => {
+    if (!rows?.length) return
+    const csvContent = buildCsvContent()
+    const safeName = (fileName.trim() || 'manifest') + '.csv'
+
+    // Use File System Access API for native save dialog (Chrome/Edge)
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: safeName,
+          types: [{ description: 'CSV file', accept: { 'text/csv': ['.csv'] } }],
+        })
+        const writable = await handle.createWritable()
+        await writable.write(csvContent)
+        await writable.close()
+        return
+      } catch (err) {
+        if (err.name === 'AbortError') return // user cancelled
+      }
+    }
+
+    // Fallback: standard anchor download
     const blob = new Blob([csvContent], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = fileName.replace(/\.[^.]+$/, '') + '_manifest.csv'
+    a.download = safeName
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -68,9 +90,22 @@ export default function App() {
             <PreviewTable rows={rows} onRowsChange={setRows} />
             <div className="download-bar">
               <span>{rows.length} row{rows.length !== 1 ? 's' : ''} found</span>
-              <button className="btn-download" onClick={downloadCsv}>
-                Download CSV
-              </button>
+              <div className="download-controls">
+                <div className="filename-input-wrapper">
+                  <input
+                    className="filename-input"
+                    type="text"
+                    value={fileName}
+                    onChange={e => setFileName(e.target.value)}
+                    placeholder="filename"
+                    spellCheck={false}
+                  />
+                  <span className="filename-ext">.csv</span>
+                </div>
+                <button className="btn-download" onClick={downloadCsv}>
+                  Download CSV
+                </button>
+              </div>
             </div>
           </>
         )}

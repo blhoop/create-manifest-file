@@ -4,7 +4,7 @@ import './PreviewTable.css'
 const COLUMNS = ['name', 'type', 'special comments']
 
 export default function PreviewTable({ rows, onRowsChange }) {
-  const [editingCell, setEditingCell] = useState(null) // { row: i, col: 'name' }
+  const [editingCell, setEditingCell] = useState(null) // { row: i, col: string }
   const [editValue, setEditValue] = useState('')
 
   if (!rows?.length) return null
@@ -14,22 +14,42 @@ export default function PreviewTable({ rows, onRowsChange }) {
     setEditValue(rows[rowIdx][col] ?? '')
   }
 
-  const commitEdit = () => {
+  const commitEdit = (nextCell) => {
     if (!editingCell) return
     const updated = rows.map((r, i) =>
       i === editingCell.row ? { ...r, [editingCell.col]: editValue } : r
     )
     onRowsChange(updated)
-    setEditingCell(null)
+    if (nextCell) {
+      setEditingCell(nextCell)
+      setEditValue(updated[nextCell.row]?.[nextCell.col] ?? '')
+    } else {
+      setEditingCell(null)
+    }
   }
 
   const onKeyDown = (e) => {
-    if (e.key === 'Enter') commitEdit()
-    if (e.key === 'Escape') setEditingCell(null)
+    if (e.key === 'Escape') { setEditingCell(null); return }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit(null); return }
+    if (e.key === 'Tab') {
+      e.preventDefault()
+      const colIdx = COLUMNS.indexOf(editingCell.col)
+      const nextColIdx = e.shiftKey ? colIdx - 1 : colIdx + 1
+      if (nextColIdx >= 0 && nextColIdx < COLUMNS.length) {
+        commitEdit({ row: editingCell.row, col: COLUMNS[nextColIdx] })
+      } else if (!e.shiftKey && editingCell.row < rows.length - 1) {
+        commitEdit({ row: editingCell.row + 1, col: COLUMNS[0] })
+      } else if (e.shiftKey && editingCell.row > 0) {
+        commitEdit({ row: editingCell.row - 1, col: COLUMNS[COLUMNS.length - 1] })
+      } else {
+        commitEdit(null)
+      }
+    }
   }
 
   const deleteRow = (rowIdx) => {
     onRowsChange(rows.filter((_, i) => i !== rowIdx))
+    if (editingCell?.row === rowIdx) setEditingCell(null)
   }
 
   const addRow = () => {
@@ -67,7 +87,7 @@ export default function PreviewTable({ rows, onRowsChange }) {
                           className="cell-input"
                           value={editValue}
                           onChange={e => setEditValue(e.target.value)}
-                          onBlur={commitEdit}
+                          onBlur={() => commitEdit(null)}
                           onKeyDown={onKeyDown}
                           rows={col === 'special comments' ? 3 : 1}
                         />
@@ -81,6 +101,7 @@ export default function PreviewTable({ rows, onRowsChange }) {
                   <button
                     className="btn-delete-row"
                     title="Delete row"
+                    tabIndex={-1}
                     onClick={() => deleteRow(i)}
                   >×</button>
                 </td>

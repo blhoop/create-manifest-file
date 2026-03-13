@@ -113,12 +113,12 @@ const AWS_TYPES = {
 
 /**
  * Infer Azure resource type from a style/name string.
- * Returns "Type (abbr)" format, e.g. "Azure Function App (func)"
+ * Returns just the label, e.g. "Function App"
  */
 function inferAzureType(s) {
   const lower = s.toLowerCase().replace(/[\s_-]/g, '')
   for (const [key, val] of Object.entries(AZURE_TYPES)) {
-    if (lower.includes(key)) return `${val.label} (${val.abbr})`
+    if (lower.includes(key)) return val.label
   }
   return 'Azure Resource'
 }
