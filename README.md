@@ -1,8 +1,8 @@
 # Create Manifest File
 
-A web application that converts architecture diagrams and spreadsheets into a structured CSV manifest for cloud infrastructure automation. Upload a file, review and edit the extracted data in an interactive preview table, then download the CSV.
+A web application that converts architecture diagrams and spreadsheets into a structured YAML manifest for cloud infrastructure automation. Upload a file, review and edit the extracted data in an interactive preview table, then download the YAML.
 
-This tool is designed for **Project Managers, Architects, Developers, and Cloud Engineers** as part of an end-to-end Azure infrastructure provisioning pipeline — the CSV output drives downstream automation to build out cloud resources.
+This tool is designed for **Project Managers, Architects, Developers, and Cloud Engineers** as part of an end-to-end Azure infrastructure provisioning pipeline — the YAML output drives downstream automation to build out cloud resources, generate Terraform, create TFC workspaces, and auto-generate CI/CD caller workflows.
 
 ## Supported File Formats
 
@@ -52,37 +52,58 @@ npm run dev
 npm run stop-dev
 ```
 
-## CSV Output
+## YAML Output
 
-Every parsed file produces rows with the following 10 columns. The first 4 are required by the downstream automation pipeline:
+Every parsed file produces a `.yml` manifest with two sections. See [`output.md`](./output.md) for the full format specification.
 
-| Column | Required | Description |
-|--------|----------|-------------|
-| `spoke_name` | ✅ | Resource or application instance name |
-| `environment` | ✅ | Deployment environment (e.g. dev, staging, prod) |
-| `location` | ✅ | Azure region (e.g. eastus, westeurope) |
-| `service_type` | ✅ | Azure resource type (e.g. Function App, SQL Database, Managed Identity) |
-| `app_repo` | | Application source repository |
-| `special_comments` | | Dependency connections (e.g. "Connected to: Orders DB, Service Bus") |
-| `existing_app_repo` | | Existing application repository if migrating |
-| `subscription_id` | | Azure subscription ID |
-| `spn_client_id` | | Service Principal client ID |
-| `vnet_cidr` | | Virtual network CIDR block (e.g. 10.0.0.0/16) |
+### Subscription Block (once per file)
 
-When parsing diagrams, the AI will populate as many columns as are visible in the source file. Remaining fields can be filled in using the interactive preview table before downloading.
+| Field | Required | Description |
+|-------|----------|-------------|
+| `subscription_name` | ✅ | Friendly name for the Azure subscription |
+| `environment` | ✅ | Target environment (`dev` `test` `uat` `preprod` `prod` `lab`) |
+| `default_location` | ✅ | Default Azure region for all resources |
+| `product_code` | | Short code for Azure resource names — auto-derived if omitted |
+| `vnet_cidr` | | VNet CIDR block — auto-allocated if omitted |
+| `subscription_id` | | Existing Azure subscription UUID |
+| `spn_client_id` | | Existing SPN client ID for OIDC auth |
+
+### Resources Block (one entry per resource)
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | ✅ | Subsystem/component name (e.g. `web`, `booking-db`) |
+| `type` | ✅ | Resource type — builder or inventory (see `output.md`) |
+| `location` | | Azure region override — omit to use `default_location` |
+| `repo` | | SCM repo (`CTM-Infrastructure/repo-name`) — triggers CI/CD caller workflow generation |
+| `comments` | | Free-text hints that influence the manifest (e.g. `needs pgbouncer`, `serverless`) |
 
 ## Preview & Editing
 
-After parsing, the app displays an interactive preview table before download:
+After parsing, the app displays an interactive preview before download:
 
-- **Required field markers** — the 4 required columns are marked with a red `*` in the header; a `(*) Required Fields` legend appears next to the Preview heading
-- **Show / Hide Example** — toggles two read-only example rows at the top of the table so users can see the expected format without affecting real data
-- **Inline row editing** — click any cell to edit directly; use Tab to move between cells
+- **Subscription panel** — fill in spoke identity fields (subscription name, environment, default location, and optional overrides) before downloading
+- **Required field markers** — `name` and `type` are marked with a red `*`
+- **Show / Hide Example** — toggles two read-only example rows so users can see the expected format
+- **Inline row editing** — click any cell to edit; Tab to move between cells
 - **Add / delete rows** — add blank rows or remove unwanted ones
-- **Detach File** — clears the current session to upload a new file without refreshing
-- **Editable filename** — rename the output CSV before downloading
-- **Sorted by service_type** — rows are sorted alphabetically on parse and after every edit
-- **Session persistence** — rows and filename are saved to `localStorage` so a page refresh restores your work
+- **Bulk column edit** — `▾` on `location` column for Set All and Find & Replace
+- **Type filter** — `⊟` on `type` column filters visible rows by resource type for visual auditing
+- **Parse Names** — strip unwanted text from `name` values across all rows at once (supports comma-separated terms)
+- **Detach File** — clears the current session to upload a new file
+- **Multi-sheet support** — `.xlsx` files with multiple tabs show a sheet picker
+- **Session persistence** — data saved to `localStorage` so a page refresh restores your work
+- **Audit trail** — all edits tracked; reviewed and exported as `-session-audit.txt` alongside the YAML
+
+## Output Format Reference
+
+See [`output.md`](./output.md) for:
+- Full YAML structure with examples
+- Complete resource type list (builder + inventory types)
+- Location defaults and overrides
+- Field-level descriptions and valid values
+
+The machine-readable schema lives in [`server/config/outputSchema.js`](./server/config/outputSchema.js) — this is the single source of truth that drives the YAML builder, parsers, and AI prompts.
 
 ## Project Structure
 
@@ -97,13 +118,19 @@ create-manifest-file/
 ├── server/                  # Node.js + Express backend
 │   ├── index.js
 │   ├── routes/upload.js
+│   ├── config/
+│   │   └── outputSchema.js  # Single source of truth for YAML output structure
 │   └── parsers/
 │       ├── spreadsheet.js   # ExcelJS
 │       ├── drawio.js
 │       ├── visio.js
 │       ├── svg.js
 │       ├── image.js         # Claude Vision API (sonnet)
-│       └── pdf.js           # Claude API (sonnet)
+│       ├── pdf.js           # Claude API (sonnet)
+│       ├── normalizeName.js # Normalizes resource names
+│       └── locationDefaults.js
+├── output.md                # YAML output format documentation
+├── naming.md                # Naming conventions reference
 └── .github/
     ├── workflows/
     │   ├── ci.yml           # CI on push/PR

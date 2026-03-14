@@ -12,14 +12,15 @@ function loadSession() {
   } catch { return null }
 }
 
-function saveSession(rows, fileName, sheets, activeSheetIdx, auditLog) {
+function saveSession(rows, fileName, sheets, activeSheetIdx, auditLog, subscription) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ rows, fileName, sheets, activeSheetIdx, auditLog }))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ rows, fileName, sheets, activeSheetIdx, auditLog, subscription }))
   } catch {}
 }
 
 export default function App() {
   const session = loadSession()
+  const defaultSubscription = { subscription_name: '', environment: '', default_location: '', product_code: '', vnet_cidr: '', subscription_id: '', spn_client_id: '' }
   const [rows, setRows] = useState(session?.rows ?? null)
   const [fileName, setFileName] = useState(session?.fileName ?? '')
   const [sheets, setSheets] = useState(session?.sheets ?? null)
@@ -28,13 +29,14 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [auditLog, setAuditLog] = useState(session?.auditLog ?? [])
   const [showAuditDialog, setShowAuditDialog] = useState(false)
+  const [subscription, setSubscription] = useState(session?.subscription ?? defaultSubscription)
 
   const sortByType = (data) =>
-    [...data].sort((a, b) => (a.service_type ?? '').localeCompare(b.service_type ?? ''))
+    [...data].sort((a, b) => (a.type ?? '').localeCompare(b.type ?? ''))
 
   useEffect(() => {
-    if (rows) saveSession(rows, fileName, sheets, activeSheetIdx, auditLog)
-  }, [rows, fileName, sheets, activeSheetIdx, auditLog])
+    if (rows) saveSession(rows, fileName, sheets, activeSheetIdx, auditLog, subscription)
+  }, [rows, fileName, sheets, activeSheetIdx, auditLog, subscription])
 
   const addAudit = (entry) => {
     setAuditLog(prev => [...prev, { ...entry, timestamp: new Date().toISOString() }])
@@ -53,6 +55,7 @@ export default function App() {
     }
     setFileName(baseName)
     setError('')
+    setSubscription(defaultSubscription)
   }
 
   const handleSheetSelect = (idx) => {
@@ -75,21 +78,45 @@ export default function App() {
     setActiveSheetIdx(0)
     setError('')
     setAuditLog([])
+    setSubscription(defaultSubscription)
     localStorage.removeItem(STORAGE_KEY)
   }
 
-  const buildCsvContent = () => {
-    const headers = [
-      'spoke_name', 'environment', 'location', 'service_type',
-      'app_repo', 'special_comments', 'existing_app_repo',
-      'subscription_id', 'spn_client_id', 'vnet_cidr',
-    ]
-    return [
-      headers.join(','),
-      ...rows.map(row =>
-        headers.map(h => `"${(row[h] ?? '').toString().replace(/"/g, '""')}"`).join(',')
-      )
-    ].join('\n')
+  const buildYamlContent = () => {
+    const lines = []
+    const sub = subscription
+
+    lines.push('# ---------------------------------------------------------------------------')
+    lines.push('# REQUIRED — Subscription identity')
+    lines.push('# ---------------------------------------------------------------------------')
+    if (sub.subscription_name) lines.push(`subscription_name: ${sub.subscription_name}`)
+    if (sub.environment) lines.push(`environment: ${sub.environment}`)
+    if (sub.default_location) lines.push(`default_location: ${sub.default_location}`)
+
+    const optionalSubFields = ['product_code', 'vnet_cidr', 'subscription_id', 'spn_client_id']
+    const hasOptional = optionalSubFields.some(k => sub[k])
+    if (hasOptional) {
+      lines.push('')
+      lines.push('# ---------------------------------------------------------------------------')
+      lines.push('# OPTIONAL — Overrides and existing infrastructure')
+      lines.push('# ---------------------------------------------------------------------------')
+      optionalSubFields.forEach(k => { if (sub[k]) lines.push(`${k}: ${sub[k]}`) })
+    }
+
+    lines.push('')
+    lines.push('# ---------------------------------------------------------------------------')
+    lines.push('# RESOURCES')
+    lines.push('# ---------------------------------------------------------------------------')
+    lines.push('resources:')
+    rows.forEach(row => {
+      lines.push(`  - name: ${row.name ?? ''}`)
+      lines.push(`    type: ${row.type ?? ''}`)
+      if (row.location) lines.push(`    location: ${row.location}`)
+      if (row.repo) lines.push(`    repo: ${row.repo}`)
+      if (row.comments) lines.push(`    comments: ${row.comments}`)
+    })
+
+    return lines.join('\n')
   }
 
   const formatAuditLog = () => {
@@ -99,7 +126,7 @@ export default function App() {
 
     const lines = [
       '=== Manifest File Creator — Session Audit ===',
-      `File: ${(fileName.trim() || 'manifest')}.csv`,
+      `File: ${(fileName.trim() || 'manifest')}.yml`,
       `Session started: ${started}`,
       '',
     ]
@@ -111,13 +138,13 @@ export default function App() {
           lines.push(`[${time}] CELL EDIT — Row ${e.row + 1}, ${e.col}: "${e.oldVal}" → "${e.newVal}"`)
           break
         case 'ROW_DELETED':
-          lines.push(`[${time}] ROW DELETED — Row ${e.rowNum + 1}: spoke_name="${e.rowData.spoke_name}", service_type="${e.rowData.service_type}", environment="${e.rowData.environment}", location="${e.rowData.location}"`)
+          lines.push(`[${time}] ROW DELETED — Row ${e.rowNum + 1}: name="${e.rowData.name}", type="${e.rowData.type}", location="${e.rowData.location}"`)
           break
         case 'ROW_ADDED':
           lines.push(`[${time}] ROW ADDED — Empty row appended`)
           break
         case 'PARSE_SPOKE_NAMES':
-          lines.push(`[${time}] PARSE SPOKE NAMES — stripped "${e.terms.join('", "')}" from ${e.changes.length} spoke_name ${e.changes.length === 1 ? 'value' : 'values'}`)
+          lines.push(`[${time}] PARSE SPOKE NAMES — stripped "${e.terms.join('", "')}" from ${e.changes.length} name ${e.changes.length === 1 ? 'value' : 'values'}`)
           e.changes.forEach(c => lines.push(`  ${c.before} → ${c.after}`))
           break
         case 'SET_ALL':
@@ -144,11 +171,11 @@ export default function App() {
       const dirHandle = await window.showDirectoryPicker()
       const baseName = fileName.trim() || 'manifest'
 
-      // Write CSV
-      const csvHandle = await dirHandle.getFileHandle(baseName + '.csv', { create: true })
-      const csvWritable = await csvHandle.createWritable()
-      await csvWritable.write(buildCsvContent())
-      await csvWritable.close()
+      // Write YAML
+      const yamlHandle = await dirHandle.getFileHandle(baseName + '.yml', { create: true })
+      const yamlWritable = await yamlHandle.createWritable()
+      await yamlWritable.write(buildYamlContent())
+      await yamlWritable.close()
 
       // Write audit
       const auditHandle = await dirHandle.getFileHandle(baseName + '-session-audit.txt', { create: true })
@@ -161,11 +188,11 @@ export default function App() {
       if (err.name === 'AbortError') return
       // Fallback: download both via anchor
       const baseName = fileName.trim() || 'manifest'
-      const csvBlob = new Blob([buildCsvContent()], { type: 'text/csv' })
-      const csvUrl = URL.createObjectURL(csvBlob)
+      const yamlBlob = new Blob([buildYamlContent()], { type: 'application/yaml' })
+      const yamlUrl = URL.createObjectURL(yamlBlob)
       const a1 = document.createElement('a')
-      a1.href = csvUrl; a1.download = baseName + '.csv'; a1.click()
-      URL.revokeObjectURL(csvUrl)
+      a1.href = yamlUrl; a1.download = baseName + '.yml'; a1.click()
+      URL.revokeObjectURL(yamlUrl)
 
       const auditBlob = new Blob([formatAuditLog()], { type: 'text/plain' })
       const auditUrl = URL.createObjectURL(auditBlob)
@@ -181,7 +208,7 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <h1>Manifest File Creator</h1>
-        <p>Upload a spreadsheet or architecture diagram to generate a CSV manifest</p>
+        <p>Upload a spreadsheet or architecture diagram to generate a YAML manifest</p>
       </header>
 
       <main className="app-main">
@@ -214,6 +241,63 @@ export default function App() {
                 ))}
               </div>
             )}
+            <div className="subscription-panel">
+              <div className="subscription-panel-header">
+                <span className="subscription-panel-title">Subscription</span>
+                <span className="subscription-panel-hint">Required fields define the spoke identity</span>
+              </div>
+              <div className="subscription-fields">
+                <div className="sub-field-group required-group">
+                  <div className="sub-field">
+                    <label>subscription_name <span className="sub-required">*</span></label>
+                    <input
+                      type="text"
+                      value={subscription.subscription_name}
+                      onChange={e => setSubscription(s => ({ ...s, subscription_name: e.target.value }))}
+                      placeholder="e.g. Lightning Book"
+                    />
+                  </div>
+                  <div className="sub-field">
+                    <label>environment <span className="sub-required">*</span></label>
+                    <select
+                      value={subscription.environment}
+                      onChange={e => setSubscription(s => ({ ...s, environment: e.target.value }))}
+                    >
+                      <option value="">— select —</option>
+                      {['dev','test','uat','preprod','prod','lab'].map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div className="sub-field">
+                    <label>default_location <span className="sub-required">*</span></label>
+                    <select
+                      value={subscription.default_location}
+                      onChange={e => setSubscription(s => ({ ...s, default_location: e.target.value }))}
+                    >
+                      <option value="">— select —</option>
+                      {['australiaeast','eastasia','global','eastus','eastus2','westus','westus2','centralus','northeurope','westeurope','uksouth','southeastasia','canadacentral'].map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="sub-field-group optional-group">
+                  <div className="sub-field">
+                    <label>product_code</label>
+                    <input type="text" value={subscription.product_code} onChange={e => setSubscription(s => ({ ...s, product_code: e.target.value }))} placeholder="e.g. lb" />
+                  </div>
+                  <div className="sub-field">
+                    <label>vnet_cidr</label>
+                    <input type="text" value={subscription.vnet_cidr} onChange={e => setSubscription(s => ({ ...s, vnet_cidr: e.target.value }))} placeholder="e.g. 10.3.0.0/22" />
+                  </div>
+                  <div className="sub-field">
+                    <label>subscription_id</label>
+                    <input type="text" value={subscription.subscription_id} onChange={e => setSubscription(s => ({ ...s, subscription_id: e.target.value }))} placeholder="UUID" />
+                  </div>
+                  <div className="sub-field">
+                    <label>spn_client_id</label>
+                    <input type="text" value={subscription.spn_client_id} onChange={e => setSubscription(s => ({ ...s, spn_client_id: e.target.value }))} placeholder="UUID" />
+                  </div>
+                </div>
+              </div>
+            </div>
             <PreviewTable rows={rows} onRowsChange={r => setRows(sortByType(r))} onDetach={handleDetach} onAudit={addAudit} />
             <div className="download-bar">
               <span>{rows.length} row{rows.length !== 1 ? 's' : ''} found</span>
@@ -223,14 +307,14 @@ export default function App() {
                     className="filename-input"
                     type="text"
                     value={fileName}
-                    onChange={e => { setFileName(e.target.value); saveSession(rows, e.target.value, sheets, activeSheetIdx, auditLog) }}
+                    onChange={e => { setFileName(e.target.value); saveSession(rows, e.target.value, sheets, activeSheetIdx, auditLog, subscription) }}
                     placeholder="filename"
                     spellCheck={false}
                   />
-                  <span className="filename-ext">.csv</span>
+                  <span className="filename-ext">.yml</span>
                 </div>
                 <button className="btn-download" onClick={() => setShowAuditDialog(true)}>
-                  Download CSV
+                  Download YAML
                 </button>
               </div>
             </div>

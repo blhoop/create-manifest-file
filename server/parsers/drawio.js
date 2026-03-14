@@ -78,16 +78,11 @@ module.exports = function parseDrawio(filePath) {
     const deps = dependencies[label] ? [...dependencies[label]].join(', ') : ''
 
     rows.push({
-      spoke_name: label,
-      environment: '',
+      name: label,
+      type,
       location: '',
-      service_type: type,
-      app_repo: '',
-      special_comments: deps ? `Connected to: ${deps}` : '',
-      existing_app_repo: '',
-      subscription_id: '',
-      spn_client_id: '',
-      vnet_cidr: '',
+      repo: '',
+      comments: deps ? `Connected to: ${deps}` : '',
     })
   })
 

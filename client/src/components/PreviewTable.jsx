@@ -1,26 +1,25 @@
 import { useState, useRef, useEffect } from 'react'
 import './PreviewTable.css'
 
-const COLUMNS = [
-  'spoke_name', 'environment', 'location', 'service_type',
-  'app_repo', 'special_comments', 'existing_app_repo',
-  'subscription_id', 'spn_client_id', 'vnet_cidr',
-]
+const COLUMNS = ['name', 'type', 'location', 'repo', 'comments']
 
 const TOOLTIPS = {
-  spoke_name: 'Name of the Azure Resource',
-  environment: 'dev | stg | qa | prod',
-  location: 'Azure Region',
-  service_type: 'Azure Resource Type',
-  app_repo: 'CTM-Infrastructure/Repo Name',
+  name: 'Subsystem/component name (e.g. web, booking-db)',
+  type: 'What to deploy. Builder types: app_service, pg, cosmos, sql, mysql, sqlmi, aks, container_app, vm, redis, swa, key_vault, app_insights, container_registry, service_bus, ai_foundry, ai_search. First resource must be a compute type.',
+  location: 'Azure region override. Omit to use default_location.',
+  repo: 'Application source repo (org/repo format). When specified, the pipeline auto-generates CI/CD caller workflows targeting this service from the given repo in a PR.',
+  comments: 'Free-text hints that influence the manifest. e.g. "needs pgbouncer", "serverless", "zone redundant ha"',
 }
 
-const REQUIRED = new Set(['spoke_name', 'environment', 'location', 'service_type'])
+const DISPLAY_LABELS = {
+  repo: 'scm repo',
+}
 
-const MENU_COLS = new Set(['environment', 'location'])
+const REQUIRED = new Set(['name', 'type'])
+
+const MENU_COLS = new Set(['location'])
 
 const OPTIONS_FOR = {
-  environment: ['dev', 'stg', 'qa', 'prod'],
   location: [
     'australiaeast', 'eastasia', 'global',
     'eastus', 'eastus2', 'westus', 'westus2', 'centralus',
@@ -31,28 +30,18 @@ const OPTIONS_FOR = {
 
 const EXAMPLE_ROWS = [
   {
-    spoke_name: 'orders-web',
-    environment: 'dev',
+    name: 'web',
+    type: 'app_service',
     location: 'australiaeast',
-    service_type: 'App Service',
-    app_repo: 'https://github.com/org/orders-api',
-    special_comments: 'Connected to: orders-db, service-bus',
-    existing_app_repo: '',
-    subscription_id: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-    spn_client_id: 'yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy',
-    vnet_cidr: '10.1.0.0/24',
+    repo: 'CTM-Infrastructure/lb-app',
+    comments: 'main web app',
   },
   {
-    spoke_name: 'orders-db',
-    environment: 'prod',
-    location: 'eastus',
-    service_type: 'SQL Database',
-    app_repo: '',
-    special_comments: '',
-    existing_app_repo: '',
-    subscription_id: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-    spn_client_id: '',
-    vnet_cidr: '10.1.0.0/24',
+    name: 'booking-db',
+    type: 'pg',
+    location: '',
+    repo: '',
+    comments: 'needs pgbouncer',
   },
 ]
 
@@ -127,7 +116,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
 
   const parseTextMatchCount = parseTextTerms.length
     ? rows.filter(r => parseTextTerms.some(t =>
-        String(r.spoke_name ?? '').toLowerCase().includes(t.toLowerCase())
+        String(r.name ?? '').toLowerCase().includes(t.toLowerCase())
       )).length
     : 0
 
@@ -139,13 +128,13 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
     }))
     const changes = []
     const updatedRows = rows.map(r => {
-      let name = String(r.spoke_name ?? '')
-      const matches = patterns.some(({ term }) => name.toLowerCase().includes(term))
+      let nameVal = String(r.name ?? '')
+      const matches = patterns.some(({ term }) => nameVal.toLowerCase().includes(term))
       if (!matches) return r
-      const before = name
-      patterns.forEach(({ re }) => { name = name.replace(re, '') })
-      changes.push({ before, after: name })
-      return { ...r, spoke_name: name }
+      const before = nameVal
+      patterns.forEach(({ re }) => { nameVal = nameVal.replace(re, '') })
+      changes.push({ before, after: nameVal })
+      return { ...r, name: nameVal }
     })
     if (onAudit && changes.length) onAudit({ type: 'PARSE_SPOKE_NAMES', terms: parseTextTerms, changes })
     onRowsChange(updatedRows)
@@ -153,8 +142,8 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
     setParseTextVal('')
   }
 
-  // Unique service types for filter popover
-  const allServiceTypes = [...new Set(rows.map(r => r.service_type).filter(Boolean))].sort()
+  // Unique types for filter popover
+  const allServiceTypes = [...new Set(rows.map(r => r.type).filter(Boolean))].sort()
 
   const toggleServiceType = (st) => {
     setServiceTypeFilter(prev => {
@@ -167,7 +156,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
 
   // Display rows: filtered view with original indices preserved
   const displayRows = rows.reduce((acc, row, idx) => {
-    if (serviceTypeFilter.size === 0 || serviceTypeFilter.has(row.service_type)) {
+    if (serviceTypeFilter.size === 0 || serviceTypeFilter.has(row.type)) {
       acc.push({ row, idx })
     }
     return acc
@@ -236,8 +225,8 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
       {showParseText && (
         <div className="parse-text-overlay" onMouseDown={() => { setShowParseText(false); setParseTextVal('') }}>
           <div className="parse-text-dialog" onMouseDown={e => e.stopPropagation()}>
-            <h3 className="parse-text-title">Parse Spoke Names</h3>
-            <p className="parse-text-desc">Enter one or more comma-separated values to strip from <strong>spoke_name</strong>. The rest of each value is kept.</p>
+            <h3 className="parse-text-title">Parse Names</h3>
+            <p className="parse-text-desc">Enter one or more comma-separated values to strip from <strong>name</strong>. The rest of each value is kept.</p>
             <input
               className="parse-text-input"
               autoFocus
@@ -250,7 +239,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
               <p className="parse-text-count">
                 {parseTextMatchCount === 0
                   ? 'No matches found'
-                  : `${parseTextMatchCount} spoke_name ${parseTextMatchCount === 1 ? 'value' : 'values'} will be updated`}
+                  : `${parseTextMatchCount} name ${parseTextMatchCount === 1 ? 'value' : 'values'} will be updated`}
               </p>
             )}
             <div className="parse-text-actions">
@@ -279,7 +268,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
         </h2>
         <div className="table-header-actions">
           <button className="btn-parse-text" onClick={() => { setParseTextVal(''); setShowParseText(true) }}>
-            Parse Spoke Names
+            Parse Names
           </button>
           <button className="btn-show-example" onClick={() => setShowExample(v => !v)}>
             {showExample ? 'Hide Example' : 'Show Example'}
@@ -299,13 +288,13 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
                 const uniqueColVals = isMenuCol
                   ? [...new Set(rows.map(r => r[col]).filter(Boolean))].sort()
                   : []
-                const isServiceType = col === 'service_type'
+                const isServiceType = col === 'type'
                 return (
                   <th key={col}>
                     {REQUIRED.has(col) && <span className="required-star">*</span>}
                     {TOOLTIPS[col] ? (
-                      <span className="th-tooltip" data-tooltip={TOOLTIPS[col]}>{col}</span>
-                    ) : col}
+                      <span className="th-tooltip" data-tooltip={TOOLTIPS[col]}>{DISPLAY_LABELS[col] ?? col}</span>
+                    ) : (DISPLAY_LABELS[col] ?? col)}
                     {isMenuCol && (
                       <span className="col-menu-wrap" ref={menuOpen ? menuRef : null}>
                         <button
@@ -372,7 +361,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
                         {showServiceFilter && (
                           <div className="col-filter-popover">
                             <div className="col-filter-header">
-                              <span>Filter by service type</span>
+                              <span>Filter by type</span>
                               {filterActive && (
                                 <button className="col-filter-clear" onClick={() => setServiceTypeFilter(new Set())}>
                                   Clear
@@ -436,7 +425,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
                           onChange={e => setEditValue(e.target.value)}
                           onBlur={() => commitEdit(null)}
                           onKeyDown={onKeyDown}
-                          rows={col === 'special_comments' ? 3 : 1}
+                          rows={col === 'comments' ? 3 : 1}
                         />
                       ) : (
                         <span className="cell-text">{row[col] ?? ''}</span>

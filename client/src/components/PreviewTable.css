@@ -174,16 +174,11 @@
 }
 
 .manifest-table th.col-rownum    { width: 36px; }
-.manifest-table th:nth-child(2)  { width: 18%; } /* spoke_name */
-.manifest-table th:nth-child(3)  { width: 9%; }  /* environment */
-.manifest-table th:nth-child(4)  { width: 7%; }  /* location */
-.manifest-table th:nth-child(5)  { width: 10%; } /* service_type */
-.manifest-table th:nth-child(6)  { width: 8%; }  /* app_repo */
-.manifest-table th:nth-child(7)  { width: 13%; } /* special_comments */
-.manifest-table th:nth-child(8)  { width: 9%; }  /* existing_app_repo */
-.manifest-table th:nth-child(9)  { width: 9%; }  /* subscription_id */
-.manifest-table th:nth-child(10) { width: 9%; }  /* spn_client_id */
-.manifest-table th:nth-child(11) { width: 8%; }  /* vnet_cidr */
+.manifest-table th:nth-child(2)  { width: 20%; } /* name */
+.manifest-table th:nth-child(3)  { width: 12%; } /* type */
+.manifest-table th:nth-child(4)  { width: 10%; } /* location */
+.manifest-table th:nth-child(5)  { width: 28%; } /* repo */
+.manifest-table th:nth-child(6)  { width: 30%; } /* comments */
 .manifest-table th.col-actions   { width: 36px; }
 
 

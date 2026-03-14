@@ -1,38 +1,17 @@
-// Location defaults applied after parsing.
-// Only fills in rows where location is empty — never overrides an explicit value.
+const { LOCATION_DEFAULTS, DEFAULT_LOCATION } = require('../config/outputSchema')
 
-// Resources that are region-independent in Azure
-const GLOBAL_SERVICES = new Set([
-  'Front Door',
-  'Front Door (Classic)',
-  'Front Door WAF Policy',
-  'CDN Profile',
-  'Traffic Manager',
-  'Action Group',
-  'Metric Alert',
-  'Entra ID',
-  'Web Application Firewall',
-  'Private DNS Zone',
-])
-
-// Resources not available in australiaeast — fall back to eastasia
-const EASTASIA_SERVICES = new Set([
-  'Static Web App',
-])
-
-const DEFAULT_REGION = 'australiaeast'
-
-function locationForType(serviceType) {
-  if (!serviceType) return DEFAULT_REGION
-  if (GLOBAL_SERVICES.has(serviceType)) return 'global'
-  if (EASTASIA_SERVICES.has(serviceType)) return 'eastasia'
-  return DEFAULT_REGION
+function locationForType(type) {
+  if (!type) return DEFAULT_LOCATION
+  for (const rule of LOCATION_DEFAULTS) {
+    if (rule.types.includes(type)) return rule.location
+  }
+  return DEFAULT_LOCATION
 }
 
 function applyLocationDefaults(rows) {
   return rows.map(row => {
-    if (row.location) return row  // already set — don't override
-    return { ...row, location: locationForType(row.service_type) }
+    if (row.location) return row
+    return { ...row, location: locationForType(row.type) }
   })
 }
 

@@ -2,16 +2,11 @@ const ExcelJS = require('exceljs')
 const path = require('path')
 
 const COLUMN_ALIASES = {
-  spoke_name:        ['spoke_name', 'spoke name', 'name', 'application', 'application name', 'app', 'app name', 'service', 'resource name'],
-  environment:       ['environment', 'env'],
-  location:          ['location', 'region', 'azure region'],
-  service_type:      ['service_type', 'service type', 'type', 'resource type', 'resourcetype', 'kind', 'category'],
-  app_repo:          ['app_repo', 'app repo', 'repository', 'repo'],
-  special_comments:  ['special_comments', 'special comments', 'comments', 'notes', 'dependencies', 'description'],
-  existing_app_repo: ['existing_app_repo', 'existing app repo', 'existing repo'],
-  subscription_id:   ['subscription_id', 'subscription id', 'subscription'],
-  spn_client_id:     ['spn_client_id', 'spn client id', 'spn', 'client id', 'service principal'],
-  vnet_cidr:         ['vnet_cidr', 'vnet cidr', 'cidr', 'vnet'],
+  name:     ['name', 'spoke_name', 'spoke name', 'resource name', 'application', 'application name', 'app', 'app name', 'service'],
+  type:     ['type', 'service_type', 'service type', 'resource type', 'resourcetype', 'kind', 'category'],
+  location: ['location', 'region', 'azure region'],
+  repo:     ['repo', 'app_repo', 'app repo', 'repository'],
+  comments: ['comments', 'special_comments', 'special comments', 'notes', 'dependencies', 'description'],
 }
 
 function normalizeHeader(h) {
@@ -47,11 +42,7 @@ module.exports = async function parseSpreadsheet(filePath, originalName) {
     const rows = []
     worksheet.eachRow((row, rowNum) => {
       if (rowNum === 1) return
-      const out = {
-        spoke_name: '', environment: '', location: '', service_type: '',
-        app_repo: '', special_comments: '', existing_app_repo: '',
-        subscription_id: '', spn_client_id: '', vnet_cidr: '',
-      }
+      const out = { name: '', type: '', location: '', repo: '', comments: '' }
       row.eachCell((cell, colNum) => {
         const canonical = headers[colNum - 1]
         if (canonical in out) out[canonical] = String(cell.value ?? '')

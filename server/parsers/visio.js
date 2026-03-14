@@ -71,16 +71,11 @@ module.exports = async function parseVisio(filePath) {
       const shapeDeps = deps[text] ? [...deps[text]].join(', ') : ''
 
       rows.push({
-        spoke_name: text,
-        environment: '',
+        name: text,
+        type,
         location: '',
-        service_type: type,
-        app_repo: '',
-        special_comments: shapeDeps ? `Connected to: ${shapeDeps}` : '',
-        existing_app_repo: '',
-        subscription_id: '',
-        spn_client_id: '',
-        vnet_cidr: '',
+        repo: '',
+        comments: shapeDeps ? `Connected to: ${shapeDeps}` : '',
       })
     })
   }
