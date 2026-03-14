@@ -96,6 +96,13 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
     setColMenu(null)
   }
 
+  const applyClearAll = () => {
+    const count = rows.filter(r => r[colMenu]).length
+    if (onAudit) onAudit({ type: 'SET_ALL', col: colMenu, value: '', count })
+    onRowsChange(rows.map(r => ({ ...r, [colMenu]: '' })))
+    setColMenu(null)
+  }
+
   const matchCount = menuFind.trim()
     ? rows.filter(r => r[colMenu] === menuFind).length
     : 0
@@ -313,6 +320,10 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
                                 className={menuMode === 'findreplace' ? 'active' : ''}
                                 onClick={() => setMenuMode('findreplace')}
                               >Find & replace</button>
+                              <button
+                                className={menuMode === 'clearall' ? 'active' : ''}
+                                onClick={() => setMenuMode('clearall')}
+                              >Clear all</button>
                             </div>
                             {menuMode === 'setall' ? (
                               <div className="col-popover-body">
@@ -324,7 +335,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
                                   Apply to all rows
                                 </button>
                               </div>
-                            ) : (
+                            ) : menuMode === 'findreplace' ? (
                               <div className="col-popover-body">
                                 <label>Find</label>
                                 <select value={menuFind} onChange={e => setMenuFind(e.target.value)}>
@@ -345,6 +356,15 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
                                   onClick={applyFindReplace}
                                   disabled={!menuFind || matchCount === 0}
                                 >Replace</button>
+                              </div>
+                            ) : (
+                              <div className="col-popover-body">
+                                <p className="col-popover-clear-desc">
+                                  Remove the value from all {rows.length} rows in this column.
+                                </p>
+                                <button className="col-popover-apply col-popover-apply-danger" onClick={applyClearAll}>
+                                  Clear all rows
+                                </button>
                               </div>
                             )}
                           </div>
