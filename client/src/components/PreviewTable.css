@@ -105,9 +105,11 @@
   background: #f7fafc;
   color: #4a5568;
   font-weight: 600;
-  text-align: left;
+  font-size: 0.82rem;
+  text-align: center;
   padding: 0.5rem 0.6rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #c8d2dc;
+  border-right: 1px solid #dde3ea;
   white-space: nowrap;
   position: sticky;
   top: 0;
@@ -157,8 +159,8 @@
 }
 
 .manifest-table th.col-rownum    { width: 36px; }
-.manifest-table th:nth-child(2)  { width: 20%; } /* spoke_name */
-.manifest-table th:nth-child(3)  { width: 7%; }  /* environment */
+.manifest-table th:nth-child(2)  { width: 18%; } /* spoke_name */
+.manifest-table th:nth-child(3)  { width: 9%; }  /* environment */
 .manifest-table th:nth-child(4)  { width: 7%; }  /* location */
 .manifest-table th:nth-child(5)  { width: 10%; } /* service_type */
 .manifest-table th:nth-child(6)  { width: 8%; }  /* app_repo */
@@ -168,6 +170,7 @@
 .manifest-table th:nth-child(10) { width: 9%; }  /* spn_client_id */
 .manifest-table th:nth-child(11) { width: 8%; }  /* vnet_cidr */
 .manifest-table th.col-actions   { width: 36px; }
+
 
 .col-rownum {
   width: 36px;
@@ -187,13 +190,16 @@
 }
 
 .manifest-table td {
-  border-bottom: 1px solid #f0f4f8;
+  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid #dde3ea;
   color: #2d3748;
   vertical-align: top;
   padding: 0;
 }
 
 .manifest-table tbody tr:last-child td { border-bottom: none; }
+.manifest-table th:last-child,
+.manifest-table td:last-child { border-right: none; }
 
 .editable-cell {
   cursor: text;
@@ -209,6 +215,7 @@
   min-height: 2rem;
   white-space: pre-wrap;
   word-break: break-word;
+  text-align: center;
 }
 
 .cell-input {
@@ -250,4 +257,135 @@
 .btn-delete-row:hover {
   color: #e53e3e;
   background: #fff5f5;
+}
+
+/* ── Column bulk-edit menu ── */
+
+.col-menu-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+}
+
+.col-menu-btn {
+  background: none;
+  border: none;
+  color: #718096;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 3px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.col-menu-btn:hover,
+.col-menu-btn.active {
+  color: #3b82f6;
+  background: #ebf8ff;
+}
+
+.col-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  min-width: 220px;
+  font-weight: 400;
+  white-space: normal;
+}
+
+.col-popover-tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.col-popover-tabs button {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 0.45rem 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #718096;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.col-popover-tabs button.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+}
+
+.col-popover-tabs button:hover:not(.active) {
+  color: #4a5568;
+}
+
+.col-popover-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.col-popover-body label {
+  font-size: 0.72rem;
+  color: #718096;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 0.2rem;
+}
+
+.col-popover-body label:first-child {
+  margin-top: 0;
+}
+
+.col-popover-body select {
+  width: 100%;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.82rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 5px;
+  background: #f7fafc;
+  color: #2d3748;
+  cursor: pointer;
+}
+
+.col-popover-body select:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: -1px;
+}
+
+.col-popover-count {
+  font-size: 0.72rem;
+  color: #718096;
+  text-align: right;
+}
+
+.col-popover-apply {
+  margin-top: 0.2rem;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.col-popover-apply:hover:not(:disabled) { background: #2563eb; }
+
+.col-popover-apply:disabled {
+  background: #cbd5e0;
+  cursor: not-allowed;
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import './PreviewTable.css'
 
 const COLUMNS = [
@@ -14,7 +14,20 @@ const TOOLTIPS = {
   service_type: 'Azure Resource Type',
   app_repo: 'CTM-Infrastructure/Repo Name',
 }
+
 const REQUIRED = new Set(['spoke_name', 'environment', 'location', 'service_type'])
+
+const MENU_COLS = new Set(['environment', 'location'])
+
+const OPTIONS_FOR = {
+  environment: ['dev', 'stg', 'qa', 'prod'],
+  location: [
+    'australiaeast', 'eastasia', 'global',
+    'eastus', 'eastus2', 'westus', 'westus2', 'centralus',
+    'northeurope', 'westeurope', 'uksouth',
+    'southeastasia', 'canadacentral',
+  ],
+}
 
 const EXAMPLE_ROWS = [
   {
@@ -44,9 +57,50 @@ const EXAMPLE_ROWS = [
 ]
 
 export default function PreviewTable({ rows, onRowsChange, onDetach }) {
-  const [editingCell, setEditingCell] = useState(null) // { row: i, col: string }
+  const [editingCell, setEditingCell] = useState(null)
   const [editValue, setEditValue] = useState('')
   const [showExample, setShowExample] = useState(false)
+
+  const [colMenu, setColMenu] = useState(null)       // col name or null
+  const [menuMode, setMenuMode] = useState('setall') // 'setall' | 'findreplace'
+  const [menuSetVal, setMenuSetVal] = useState('')
+  const [menuFind, setMenuFind] = useState('')
+  const [menuReplace, setMenuReplace] = useState('')
+  const menuRef = useRef(null)
+
+  useEffect(() => {
+    if (!colMenu) return
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setColMenu(null)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [colMenu])
+
+  const openMenu = (col) => {
+    setColMenu(col)
+    setMenuMode('setall')
+    setMenuSetVal(OPTIONS_FOR[col][0])
+    setMenuFind('')
+    setMenuReplace(OPTIONS_FOR[col][0])
+  }
+
+  const applySetAll = () => {
+    onRowsChange(rows.map(r => ({ ...r, [colMenu]: menuSetVal })))
+    setColMenu(null)
+  }
+
+  const matchCount = menuFind.trim()
+    ? rows.filter(r => r[colMenu] === menuFind).length
+    : 0
+
+  const applyFindReplace = () => {
+    if (!menuFind.trim()) return
+    onRowsChange(rows.map(r =>
+      r[colMenu] === menuFind ? { ...r, [colMenu]: menuReplace } : r
+    ))
+    setColMenu(null)
+  }
 
   if (!rows?.length) return null
 
@@ -119,14 +173,77 @@ export default function PreviewTable({ rows, onRowsChange, onDetach }) {
           <thead>
             <tr>
               <th className="col-rownum" />
-              {COLUMNS.map(col => (
-                <th key={col}>
-                  {REQUIRED.has(col) && <span className="required-star">*</span>}
-                  {TOOLTIPS[col] ? (
-                    <span className="th-tooltip" data-tooltip={TOOLTIPS[col]}>{col}</span>
-                  ) : col}
-                </th>
-              ))}
+              {COLUMNS.map(col => {
+                const isMenuCol = MENU_COLS.has(col)
+                const menuOpen = colMenu === col
+                const uniqueColVals = isMenuCol
+                  ? [...new Set(rows.map(r => r[col]).filter(Boolean))].sort()
+                  : []
+                return (
+                  <th key={col}>
+                    {REQUIRED.has(col) && <span className="required-star">*</span>}
+                    {TOOLTIPS[col] ? (
+                      <span className="th-tooltip" data-tooltip={TOOLTIPS[col]}>{col}</span>
+                    ) : col}
+                    {isMenuCol && (
+                      <span className="col-menu-wrap" ref={menuOpen ? menuRef : null}>
+                        <button
+                          className={`col-menu-btn ${menuOpen ? 'active' : ''}`}
+                          onClick={() => menuOpen ? setColMenu(null) : openMenu(col)}
+                          title="Bulk edit column"
+                        >▾</button>
+                        {menuOpen && (
+                          <div className="col-popover">
+                            <div className="col-popover-tabs">
+                              <button
+                                className={menuMode === 'setall' ? 'active' : ''}
+                                onClick={() => setMenuMode('setall')}
+                              >Set all</button>
+                              <button
+                                className={menuMode === 'findreplace' ? 'active' : ''}
+                                onClick={() => setMenuMode('findreplace')}
+                              >Find & replace</button>
+                            </div>
+                            {menuMode === 'setall' ? (
+                              <div className="col-popover-body">
+                                <label>Set all {rows.length} rows to</label>
+                                <select value={menuSetVal} onChange={e => setMenuSetVal(e.target.value)}>
+                                  {OPTIONS_FOR[col].map(o => <option key={o} value={o}>{o}</option>)}
+                                </select>
+                                <button className="col-popover-apply" onClick={applySetAll}>
+                                  Apply to all rows
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="col-popover-body">
+                                <label>Find</label>
+                                <select value={menuFind} onChange={e => setMenuFind(e.target.value)}>
+                                  <option value="">— select a value —</option>
+                                  {uniqueColVals.map(v => <option key={v} value={v}>{v || '(empty)'}</option>)}
+                                </select>
+                                <label>Replace with</label>
+                                <select value={menuReplace} onChange={e => setMenuReplace(e.target.value)}>
+                                  {OPTIONS_FOR[col].map(o => <option key={o} value={o}>{o}</option>)}
+                                </select>
+                                {menuFind && (
+                                  <span className="col-popover-count">
+                                    {matchCount} {matchCount === 1 ? 'row' : 'rows'} will change
+                                  </span>
+                                )}
+                                <button
+                                  className="col-popover-apply"
+                                  onClick={applyFindReplace}
+                                  disabled={!menuFind || matchCount === 0}
+                                >Replace</button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </span>
+                    )}
+                  </th>
+                )
+              })}
               <th className="col-actions" />
             </tr>
           </thead>

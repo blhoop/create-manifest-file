@@ -17,7 +17,14 @@
       "Bash(cd C:/main/create-manifest-file && npm run stop-dev 2>&1)",
       "Bash(cd C:/main/create-manifest-file && node -e \"require\\('dotenv'\\).config\\(\\); var k = process.env.ANTHROPIC_API_KEY || ''; console.log\\('Key present:', k.length > 0\\); console.log\\('Starts with sk-ant:', k.indexOf\\('sk-ant'\\) === 0\\); console.log\\('Length:', k.length\\);\" 2>&1)",
       "Bash(cd C:/main/create-manifest-file/server && node -e \"require\\('dotenv'\\).config\\({ path: '../.env' }\\); var k = process.env.ANTHROPIC_API_KEY || ''; console.log\\('Key present:', k.length > 0\\); console.log\\('Starts with sk-ant:', k.indexOf\\('sk-ant'\\) === 0\\); console.log\\('Length:', k.length\\);\" 2>&1)",
-      "Bash(cd C:/main/create-manifest-file/server && node -e \"require\\('dotenv'\\).config\\({ path: '../.env' }\\); const Anthropic = require\\('@anthropic-ai/sdk'\\); const client = new Anthropic\\(\\); client.messages.create\\({ model: 'claude-haiku-4-5-20251001', max_tokens: 10, messages: [{ role: 'user', content: 'hi' }] }\\).then\\(r => console.log\\('SUCCESS:', r.content[0].text\\)\\).catch\\(e => console.log\\('ERROR:', e.status, e.message\\)\\);\" 2>&1)"
+      "Bash(cd C:/main/create-manifest-file/server && node -e \"require\\('dotenv'\\).config\\({ path: '../.env' }\\); const Anthropic = require\\('@anthropic-ai/sdk'\\); const client = new Anthropic\\(\\); client.messages.create\\({ model: 'claude-haiku-4-5-20251001', max_tokens: 10, messages: [{ role: 'user', content: 'hi' }] }\\).then\\(r => console.log\\('SUCCESS:', r.content[0].text\\)\\).catch\\(e => console.log\\('ERROR:', e.status, e.message\\)\\);\" 2>&1)",
+      "Bash(cd C:\\\\main\\\\create-manifest-file\\\\server && npm uninstall xlsx && npm install exceljs@^4.4.0 2>&1)",
+      "Bash(cd /c/main/create-manifest-file/server && npm uninstall xlsx && npm install exceljs@^4.4.0 2>&1)",
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(npm run:*)",
+      "WebFetch(domain:az-icons.com)",
+      "Bash(ls /c/main/create-manifest-file/*.md 2>/dev/null)"
     ]
   }
 }
