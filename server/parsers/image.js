@@ -10,64 +10,31 @@ const MEDIA_TYPES = {
   '.png': 'image/png',
 }
 
-const PROMPT = `You are analyzing an Azure architecture diagram image. Your task is to identify every resource, service, or application shown and return structured data.
+const PROMPT = `You are analyzing an Azure architecture diagram image. Identify every resource, service, or application shown and return structured data.
 
-Azure diagrams use official Microsoft Azure Architecture Icons. Identify them by their distinctive shapes and colors:
+Azure diagrams use official Microsoft Azure Architecture Icons. Common types to look for:
 
-IDENTITY & SECURITY (cyan/teal tones):
-- User Managed Identity / Managed Identity: cyan person-silhouette icon with a small key or badge — type: "Managed Identity"
-- Azure Active Directory / Microsoft Entra ID: cyan/blue overlapping person silhouettes or shield with user — type: "Entra ID"
-- Key Vault: blue/navy square with a key symbol — type: "Key Vault"
-- Azure Firewall: blue shield with flame — type: "Firewall"
+COMPUTE: App Service / Web App → "app_service", Function App → "app_service", AKS / Kubernetes → "aks", Container App → "container_app", Virtual Machine → "vm", Static Web App → "swa"
+DATA: PostgreSQL → "pg", SQL Server/Database → "sql", Cosmos DB → "cosmos", MySQL → "mysql", Redis → "redis"
+INTEGRATION: Service Bus → "service_bus", API Management → "app_service"
+SECURITY: Key Vault → "key_vault"
+MONITORING: Application Insights → "app_insights"
+CONTAINERS: Container Registry → "container_registry"
+AI: Azure OpenAI / AI Foundry → "ai_foundry", AI Search → "ai_search"
 
-COMPUTE (blue tones):
-- App Service / Web App: blue square with HTML/browser icon — type: "App Service"
-- Function App: yellow/gold lightning bolt — type: "Function App"
-- Virtual Machine: blue monitor/server icon — type: "Virtual Machine"
-- Container App: blue hexagon or container shape — type: "Container App"
-- AKS / Kubernetes Service: blue ship-wheel (Helm) — type: "Kubernetes Service"
-- Azure Container Registry: blue registry icon — type: "Container Registry"
+For inventory/existing resources use PascalCase: WebApp, FunctionApp, AppServicePlan, StorageAccount, SQLServer, SQLDatabase, KeyVault, StaticSite
 
-NETWORKING (orange/blue tones):
-- Virtual Network: orange/teal network mesh — type: "Virtual Network"
-- Application Gateway: blue gateway/shield with WAF waves — type: "Application Gateway"
-- API Management: purple/lavender gear with API text — type: "API Management"
-- Load Balancer: blue balance/scale icon — type: "Load Balancer"
-- Private Endpoint: blue circle with chain link — type: "Private Endpoint"
-- VPN Gateway: orange/blue funnel with arrows — type: "VPN Gateway"
-
-DATA (blue/purple tones):
-- SQL Database: blue cylinder with grid — type: "SQL Database"
-- Cosmos DB: blue/purple planet or orbit shape — type: "Cosmos DB"
-- Storage Account: blue/teal layered blocks — type: "Storage Account"
-- Azure Cache for Redis: red hexagon with Redis logo — type: "Cache for Redis"
-- Service Bus: blue speech bubble with arrows — type: "Service Bus"
-- Event Hub: blue funnel/broadcast icon — type: "Event Hub"
-
-AI & ANALYTICS (purple tones):
-- Azure OpenAI: purple hexagon or AI brain — type: "OpenAI Service"
-- Cognitive Services: purple brain/lightning — type: "Cognitive Services"
-
-MONITORING & MANAGEMENT:
-- Log Analytics / Monitor: blue monitor/bar chart — type: "Log Analytics Workspace"
-- Application Insights: purple magnifying glass with chart — type: "Application Insights"
-
-For each item return a JSON array where each element has exactly these keys:
-- "spoke_name": the label shown in the diagram (the resource instance name). If unlabeled, use the resource type as the name.
-- "environment": the environment if visible in the diagram (e.g. "dev", "staging", "prod"). Use empty string if not shown.
-- "location": the Azure region if visible (e.g. "eastus", "westeurope"). Use empty string if not shown.
-- "service_type": the Azure resource type as listed above. For AWS use "AWS <Service>", for GCP use "GCP <Service>", for generic use "Database", "Queue", "Load Balancer", etc.
-- "app_repo": empty string (cannot be determined from a diagram).
-- "special_comments": if this resource has connectors/arrows to other resources, list them briefly e.g. "Connected to: Orders DB, Service Bus". Use empty string if none.
-- "existing_app_repo": empty string.
-- "subscription_id": empty string.
-- "spn_client_id": empty string.
-- "vnet_cidr": the CIDR block if visible on the diagram (e.g. "10.0.0.0/16"). Use empty string if not shown.
+Return a JSON array where each element has exactly these keys:
+- "name": the label shown in the diagram (the resource instance name). If unlabeled, use the type value as the name.
+- "type": the resource type using the values listed above (snake_case for builder types, PascalCase for inventory types).
+- "location": Azure region slug if visible (e.g. "australiaeast"). Use empty string if not shown.
+- "repo": empty string (cannot be determined from a diagram).
+- "comments": if this resource has connectors/arrows to other resources, list them briefly e.g. "Connected to: orders-db, service-bus". Use empty string if none.
 
 Return ONLY a valid JSON array, no markdown fences, no explanation.
 [
-  {"spoke_name":"order-func","environment":"","location":"","service_type":"Function App","app_repo":"","special_comments":"Connected to: orders-db, svc-bus","existing_app_repo":"","subscription_id":"","spn_client_id":"","vnet_cidr":""},
-  {"spoke_name":"app-identity","environment":"","location":"","service_type":"Managed Identity","app_repo":"","special_comments":"","existing_app_repo":"","subscription_id":"","spn_client_id":"","vnet_cidr":""}
+  {"name":"web","type":"app_service","location":"","repo":"","comments":"Connected to: booking-db, cache"},
+  {"name":"booking-db","type":"pg","location":"","repo":"","comments":""}
 ]`
 
 module.exports = async function parseImage(filePath, originalName) {

@@ -27,14 +27,15 @@ npm run build:client
 Full-stack web app: React/Vite frontend + Node.js/Express backend.
 
 **Frontend** (`client/src/`)
-- `App.jsx` — orchestrates file upload, loading state, preview, and CSV download
+- `App.jsx` — orchestrates file upload, subscription panel state, loading, preview, and YAML download
 - `components/FileUpload.jsx` — drag-and-drop + click-to-browse, sends multipart POST to `/api/parse`
-- `components/PreviewTable.jsx` — renders parsed rows before download
+- `components/PreviewTable.jsx` — renders parsed resource rows before download
 - Vite proxy: `/api/*` → `http://localhost:3001`
 
 **Backend** (`server/`)
 - `index.js` — Express entry point
 - `routes/upload.js` — `POST /api/parse`: receives file via multer, dispatches to correct parser by extension, returns `{ rows }`, deletes temp file
+- `config/outputSchema.js` — **single source of truth** for the YAML output structure; imported by parsers, location defaults, and the YAML builder
 - `parsers/` — one module per format:
   - `spreadsheet.js` — ExcelJS, fuzzy-maps column headers to canonical names
   - `drawio.js` — fast-xml-parser, extracts shape labels + edge source/target to build dependency strings
@@ -42,25 +43,51 @@ Full-stack web app: React/Vite frontend + Node.js/Express backend.
   - `svg.js` — XML parser, collects all text nodes
   - `image.js` — sends base64 image to Claude Vision API (`claude-sonnet-4-6`) with Azure icon visual reference prompt
   - `pdf.js` — sends base64 PDF to Claude API (`claude-sonnet-4-6`) as a `document` content block
+  - `normalizeName.js` — normalizes `name` values (strips env suffixes, type prefixes, region segments, etc.)
+  - `locationDefaults.js` — applies location defaults based on resource type using rules from `outputSchema.js`
 
-**CSV output columns (10 total, first 4 required):**
+## Output Format
 
-| Column | Required | Description |
-|--------|----------|-------------|
-| `spoke_name` | ✅ | Resource or application instance name |
-| `environment` | ✅ | Deployment environment (dev / staging / prod) |
-| `location` | ✅ | Azure region (e.g. eastus, westeurope) |
-| `service_type` | ✅ | Azure resource type (e.g. Function App, SQL Database) |
-| `app_repo` | | Application source repository |
-| `special_comments` | | Dependency connections (e.g. "Connected to: Orders DB") |
-| `existing_app_repo` | | Existing application repository if migrating |
-| `subscription_id` | | Azure subscription ID |
-| `spn_client_id` | | Service Principal client ID |
-| `vnet_cidr` | | Virtual network CIDR block (e.g. 10.0.0.0/16) |
+The app generates a `.yml` manifest file with two sections:
+
+**Subscription block** (top-level fields, filled in via the UI subscription panel):
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `subscription_name` | ✅ | Friendly name for the Azure subscription |
+| `environment` | ✅ | `dev` `test` `uat` `preprod` `prod` `lab` |
+| `default_location` | ✅ | Default Azure region for all resources |
+| `product_code` | | Short code for resource names — auto-derived if omitted |
+| `vnet_cidr` | | VNet CIDR block |
+| `subscription_id` | | Existing Azure subscription UUID |
+| `spn_client_id` | | Existing SPN client ID for OIDC auth |
+
+**Resources block** (one entry per row in the preview table):
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | ✅ | Subsystem/component name (e.g. `web`, `booking-db`) |
+| `type` | ✅ | Resource type — builder or inventory type |
+| `location` | | Azure region override — omit to use `default_location` |
+| `repo` | | SCM repo (`org/repo-name`) — triggers CI/CD caller workflow generation |
+| `comments` | | Free-text hints (e.g. `needs pgbouncer`, `serverless`) |
+
+See [`output.md`](./output.md) for the full format spec including all valid resource types and location values.
+
+## Schema-Driven Design
+
+`server/config/outputSchema.js` exports:
+- `SUBSCRIPTION_FIELDS` — field definitions for the subscription block
+- `RESOURCE_FIELDS` — field definitions for the resources block
+- `BUILDER_TYPES` / `INVENTORY_TYPES` / `ALL_RESOURCE_TYPES` — valid type values
+- `LOCATION_DEFAULTS` — type-to-location mapping rules
+- `DEFAULT_LOCATION` — fallback region (`australiaeast`)
+
+**When adding a new field:** update `outputSchema.js` + `output.md`. The rest of the app derives from the schema.
 
 ## Naming Conventions
 
-See [`naming.md`](./naming.md) for canonical values for `spoke_name`, `environment`, `location`, and `service_type`. Parsers and AI prompts must stay consistent with that file.
+See [`naming.md`](./naming.md) for canonical values and normalization rules for resource names.
 
 ## Environment
 

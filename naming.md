@@ -55,11 +55,23 @@ Azure region slug (lowercase, no spaces). Common values:
 | `ukwest` | UK West |
 | `southeastasia` | Southeast Asia |
 | `australiaeast` | Australia East |
+| `eastasia` | East Asia |
 | `canadacentral` | Canada Central |
+| `global` | Global (region-independent) |
 
 **Rules:**
 - Use the slug form (e.g. `eastus`, not `East US`)
-- Use empty string if region is not stated in the source
+- Use empty string if region is not stated in the source — `locationDefaults.js` will fill it in automatically after parsing
+
+**Location defaults (applied in `server/parsers/locationDefaults.js`):**
+
+Only applied when `location` is empty — explicit values are never overridden.
+
+| Rule | location | Service types |
+|------|----------|---------------|
+| Global services | `global` | Front Door, Front Door (Classic), Front Door WAF Policy, CDN Profile, Traffic Manager, Action Group, Metric Alert, Entra ID, Web Application Firewall, Private DNS Zone |
+| Not available in australiaeast | `eastasia` | Static Web App |
+| Everything else | `australiaeast` | *(default)* |
 
 ---
 

@@ -132,9 +132,9 @@ function normalizeName(name) {
 function normalizeRows(rows) {
   const out = []
   for (const row of rows) {
-    const normalized = normalizeName(row.spoke_name)
+    const normalized = normalizeName(row.name)
     if (normalized === null) continue
-    out.push({ ...row, spoke_name: normalized })
+    out.push({ ...row, name: normalized })
   }
   return out
 }
