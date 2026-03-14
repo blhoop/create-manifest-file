@@ -64,12 +64,16 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
   const [showParseText, setShowParseText] = useState(false)
   const [parseTextVal, setParseTextVal] = useState('')
 
-  const [colMenu, setColMenu] = useState(null)       // col name or null
-  const [menuMode, setMenuMode] = useState('setall') // 'setall' | 'findreplace'
+  const [colMenu, setColMenu] = useState(null)
+  const [menuMode, setMenuMode] = useState('setall')
   const [menuSetVal, setMenuSetVal] = useState('')
   const [menuFind, setMenuFind] = useState('')
   const [menuReplace, setMenuReplace] = useState('')
   const menuRef = useRef(null)
+
+  const [serviceTypeFilter, setServiceTypeFilter] = useState(new Set())
+  const [showServiceFilter, setShowServiceFilter] = useState(false)
+  const serviceFilterRef = useRef(null)
 
   useEffect(() => {
     if (!colMenu) return
@@ -79,6 +83,15 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [colMenu])
+
+  useEffect(() => {
+    if (!showServiceFilter) return
+    const handler = (e) => {
+      if (serviceFilterRef.current && !serviceFilterRef.current.contains(e.target)) setShowServiceFilter(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showServiceFilter])
 
   const openMenu = (col) => {
     setColMenu(col)
@@ -124,7 +137,6 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
       re: new RegExp(escaped[i], 'gi'),
       term: t.toLowerCase(),
     }))
-
     const changes = []
     const updatedRows = rows.map(r => {
       let name = String(r.spoke_name ?? '')
@@ -135,12 +147,31 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
       changes.push({ before, after: name })
       return { ...r, spoke_name: name }
     })
-
     if (onAudit && changes.length) onAudit({ type: 'PARSE_SPOKE_NAMES', terms: parseTextTerms, changes })
     onRowsChange(updatedRows)
     setShowParseText(false)
     setParseTextVal('')
   }
+
+  // Unique service types for filter popover
+  const allServiceTypes = [...new Set(rows.map(r => r.service_type).filter(Boolean))].sort()
+
+  const toggleServiceType = (st) => {
+    setServiceTypeFilter(prev => {
+      const next = new Set(prev)
+      if (next.has(st)) next.delete(st)
+      else next.add(st)
+      return next
+    })
+  }
+
+  // Display rows: filtered view with original indices preserved
+  const displayRows = rows.reduce((acc, row, idx) => {
+    if (serviceTypeFilter.size === 0 || serviceTypeFilter.has(row.service_type)) {
+      acc.push({ row, idx })
+    }
+    return acc
+  }, [])
 
   if (!rows?.length) return null
 
@@ -198,6 +229,8 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
     onRowsChange([...rows, empty])
   }
 
+  const filterActive = serviceTypeFilter.size > 0
+
   return (
     <div className="table-wrapper">
       {showParseText && (
@@ -213,7 +246,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
               onChange={e => setParseTextVal(e.target.value)}
               onKeyDown={e => { if (e.key === 'Escape') { setShowParseText(false); setParseTextVal('') } }}
             />
-            {parseTextTerm && (
+            {parseTextTerms.length > 0 && (
               <p className="parse-text-count">
                 {parseTextMatchCount === 0
                   ? 'No matches found'
@@ -238,7 +271,11 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
         <h2 className="table-heading">
           Preview
           <span className="required-legend">(*) Required Fields</span>
-          <span className="row-count">{rows.length} {rows.length === 1 ? 'row' : 'rows'}</span>
+          <span className="row-count">
+            {filterActive
+              ? `${displayRows.length} of ${rows.length} rows`
+              : `${rows.length} ${rows.length === 1 ? 'row' : 'rows'}`}
+          </span>
         </h2>
         <div className="table-header-actions">
           <button className="btn-parse-text" onClick={() => { setParseTextVal(''); setShowParseText(true) }}>
@@ -262,6 +299,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
                 const uniqueColVals = isMenuCol
                   ? [...new Set(rows.map(r => r[col]).filter(Boolean))].sort()
                   : []
+                const isServiceType = col === 'service_type'
                 return (
                   <th key={col}>
                     {REQUIRED.has(col) && <span className="required-star">*</span>}
@@ -324,6 +362,39 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
                         )}
                       </span>
                     )}
+                    {isServiceType && (
+                      <span className="col-filter-wrap" ref={showServiceFilter ? serviceFilterRef : null}>
+                        <button
+                          className={`col-filter-btn ${filterActive ? 'active' : ''}`}
+                          onClick={() => setShowServiceFilter(v => !v)}
+                          title="Filter by service type"
+                        >⊟</button>
+                        {showServiceFilter && (
+                          <div className="col-filter-popover">
+                            <div className="col-filter-header">
+                              <span>Filter by service type</span>
+                              {filterActive && (
+                                <button className="col-filter-clear" onClick={() => setServiceTypeFilter(new Set())}>
+                                  Clear
+                                </button>
+                              )}
+                            </div>
+                            <div className="col-filter-list">
+                              {allServiceTypes.map(st => (
+                                <label key={st} className="col-filter-item">
+                                  <input
+                                    type="checkbox"
+                                    checked={serviceTypeFilter.has(st)}
+                                    onChange={() => toggleServiceType(st)}
+                                  />
+                                  <span>{st}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </span>
+                    )}
                   </th>
                 )
               })}
@@ -346,16 +417,16 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
             </tbody>
           )}
           <tbody>
-            {rows.map((row, i) => (
-              <tr key={i}>
-                <td className="col-rownum"><span className="row-num">{i + 1}</span></td>
+            {displayRows.map(({ row, idx }) => (
+              <tr key={idx}>
+                <td className="col-rownum"><span className="row-num">{idx + 1}</span></td>
                 {COLUMNS.map(col => {
-                  const isEditing = editingCell?.row === i && editingCell?.col === col
+                  const isEditing = editingCell?.row === idx && editingCell?.col === col
                   return (
                     <td
                       key={col}
                       className={`editable-cell ${isEditing ? 'editing' : ''}`}
-                      onClick={() => !isEditing && startEdit(i, col)}
+                      onClick={() => !isEditing && startEdit(idx, col)}
                     >
                       {isEditing ? (
                         <textarea
@@ -365,7 +436,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
                           onChange={e => setEditValue(e.target.value)}
                           onBlur={() => commitEdit(null)}
                           onKeyDown={onKeyDown}
-                          rows={col === 'special comments' ? 3 : 1}
+                          rows={col === 'special_comments' ? 3 : 1}
                         />
                       ) : (
                         <span className="cell-text">{row[col] ?? ''}</span>
@@ -378,7 +449,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
                     className="btn-delete-row"
                     title="Delete row"
                     tabIndex={-1}
-                    onClick={() => deleteRow(i)}
+                    onClick={() => deleteRow(idx)}
                   >×</button>
                 </td>
               </tr>
