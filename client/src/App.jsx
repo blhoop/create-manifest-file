@@ -82,6 +82,17 @@ export default function App() {
     localStorage.removeItem(STORAGE_KEY)
   }
 
+  // Quote a YAML scalar value if it contains characters that would produce invalid YAML
+  const yamlScalar = (val) => {
+    if (!val) return ''
+    const s = String(val)
+    // Needs quoting if: contains colon, hash, YAML structural chars, or leading special chars
+    if (/[:#\{\}\[\]\n]/.test(s) || /^[-?!|>%@`&*]/.test(s.trim())) {
+      return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+    }
+    return s
+  }
+
   const buildYamlContent = () => {
     const lines = []
     const sub = subscription
@@ -89,9 +100,9 @@ export default function App() {
     lines.push('# ---------------------------------------------------------------------------')
     lines.push('# REQUIRED — Subscription identity')
     lines.push('# ---------------------------------------------------------------------------')
-    if (sub.subscription_name) lines.push(`subscription_name: ${sub.subscription_name}`)
-    if (sub.environment) lines.push(`environment: ${sub.environment}`)
-    if (sub.default_location) lines.push(`default_location: ${sub.default_location}`)
+    if (sub.subscription_name) lines.push(`subscription_name: ${yamlScalar(sub.subscription_name)}`)
+    if (sub.environment) lines.push(`environment: ${yamlScalar(sub.environment)}`)
+    if (sub.default_location) lines.push(`default_location: ${yamlScalar(sub.default_location)}`)
 
     const optionalSubFields = ['product_code', 'vnet_cidr', 'subscription_id', 'spn_client_id']
     const hasOptional = optionalSubFields.some(k => sub[k])
@@ -100,7 +111,7 @@ export default function App() {
       lines.push('# ---------------------------------------------------------------------------')
       lines.push('# OPTIONAL — Overrides and existing infrastructure')
       lines.push('# ---------------------------------------------------------------------------')
-      optionalSubFields.forEach(k => { if (sub[k]) lines.push(`${k}: ${sub[k]}`) })
+      optionalSubFields.forEach(k => { if (sub[k]) lines.push(`${k}: ${yamlScalar(sub[k])}`) })
     }
 
     lines.push('')
@@ -109,11 +120,11 @@ export default function App() {
     lines.push('# ---------------------------------------------------------------------------')
     lines.push('resources:')
     rows.forEach(row => {
-      lines.push(`  - name: ${row.name ?? ''}`)
-      lines.push(`    type: ${row.type ?? ''}`)
-      if (row.location) lines.push(`    location: ${row.location}`)
-      if (row.repo) lines.push(`    repo: ${row.repo}`)
-      if (row.comments) lines.push(`    comments: ${row.comments}`)
+      lines.push(`  - name: ${yamlScalar(row.name ?? '')}`)
+      lines.push(`    type: ${yamlScalar(row.type ?? '')}`)
+      if (row.location) lines.push(`    location: ${yamlScalar(row.location)}`)
+      if (row.repo) lines.push(`    repo: ${yamlScalar(row.repo)}`)
+      if (row.comments) lines.push(`    comments: ${yamlScalar(row.comments)}`)
     })
 
     return lines.join('\n')

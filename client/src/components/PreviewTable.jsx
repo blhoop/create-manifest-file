@@ -1,5 +1,21 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import './PreviewTable.css'
+
+// Detect lines where a scalar value contains unquoted YAML-unsafe characters
+function validateYaml(yaml) {
+  const issues = []
+  yaml.split('\n').forEach((line, i) => {
+    if (/^\s*#/.test(line) || !line.trim()) return
+    const match = line.match(/^(\s*[\w_-]+):\s(.+)$/)
+    if (!match) return
+    const val = match[2]
+    const quoted = val.startsWith('"') || val.startsWith("'")
+    if (!quoted && /[:#\{\}\[\]]/.test(val)) {
+      issues.push({ lineNum: i + 1, text: line.trim() })
+    }
+  })
+  return issues
+}
 
 const COLUMNS = ['name', 'type', 'location', 'repo', 'comments']
 
@@ -54,6 +70,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
   const [parseTextVal, setParseTextVal] = useState('')
   const [showYamlPreview, setShowYamlPreview] = useState(false)
   const [yamlCopied, setYamlCopied] = useState(false)
+  const [yamlIssues, setYamlIssues] = useState([])
 
   const [colMenu, setColMenu] = useState(null)
   const [menuMode, setMenuMode] = useState('setall')
@@ -229,6 +246,12 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
 
   const filterActive = serviceTypeFilter.size > 0
 
+  const openYamlPreview = () => {
+    const yaml = getYaml()
+    setYamlIssues(validateYaml(yaml))
+    setShowYamlPreview(true)
+  }
+
   const handleCopyYaml = () => {
     navigator.clipboard.writeText(getYaml()).then(() => {
       setYamlCopied(true)
@@ -242,7 +265,20 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
         <div className="yaml-preview-overlay" onMouseDown={() => setShowYamlPreview(false)}>
           <div className="yaml-preview-dialog" onMouseDown={e => e.stopPropagation()}>
             <div className="yaml-preview-header">
-              <h3 className="yaml-preview-title">YAML Preview</h3>
+              <div className="yaml-preview-title-row">
+                <h3 className="yaml-preview-title">YAML Preview</h3>
+                {yamlIssues.length === 0
+                  ? <span className="yaml-valid-badge">✓ Valid YAML</span>
+                  : <span className="yaml-invalid-badge">⚠ {yamlIssues.length} issue{yamlIssues.length > 1 ? 's' : ''} found</span>
+                }
+              </div>
+              {yamlIssues.length > 0 && (
+                <ul className="yaml-issues-list">
+                  {yamlIssues.map((iss, i) => (
+                    <li key={i}>Line {iss.lineNum}: <code>{iss.text}</code></li>
+                  ))}
+                </ul>
+              )}
             </div>
             <pre className="yaml-preview-content">{getYaml()}</pre>
             <div className="yaml-preview-actions">
@@ -299,7 +335,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
           </span>
         </h2>
         <div className="table-header-actions">
-          <button className="btn-yaml-preview" onClick={() => setShowYamlPreview(true)}>
+          <button className="btn-yaml-preview" onClick={openYamlPreview}>
             Preview YAML
           </button>
           <button className="btn-parse-text" onClick={() => { setParseTextVal(''); setShowParseText(true) }}>
