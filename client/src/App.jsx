@@ -298,7 +298,7 @@ export default function App() {
                 </div>
               </div>
             </div>
-            <PreviewTable rows={rows} onRowsChange={r => setRows(sortByType(r))} onDetach={handleDetach} onAudit={addAudit} />
+            <PreviewTable rows={rows} onRowsChange={r => setRows(sortByType(r))} onDetach={handleDetach} onAudit={addAudit} getYaml={buildYamlContent} />
             <div className="download-bar">
               <span>{rows.length} row{rows.length !== 1 ? 's' : ''} found</span>
               <div className="download-controls">

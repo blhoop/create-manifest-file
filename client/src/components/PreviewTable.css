@@ -45,6 +45,108 @@
 
 .btn-add-row:hover { background: #bee3f8; }
 
+.btn-yaml-preview {
+  background: #ebf4ff;
+  color: #2c5282;
+  border: 1px solid #90cdf4;
+  border-radius: 6px;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-yaml-preview:hover { background: #bee3f8; }
+
+/* ── YAML Preview modal ── */
+
+.yaml-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.yaml-preview-dialog {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  width: 680px;
+  max-width: 92vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.yaml-preview-header {
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.yaml-preview-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0;
+}
+
+.yaml-preview-content {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0;
+  padding: 1rem 1.25rem;
+  font-family: 'Consolas', 'Menlo', 'Monaco', monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: #2d3748;
+  background: #f7fafc;
+  white-space: pre;
+}
+
+.yaml-preview-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.btn-yaml-copy {
+  background: #ebf8ff;
+  color: #2b6cb0;
+  border: 1px solid #bee3f8;
+  border-radius: 6px;
+  padding: 0.4rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  min-width: 140px;
+}
+
+.btn-yaml-copy:hover { background: #bee3f8; }
+
+.btn-yaml-close {
+  background: #f7fafc;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.4rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-yaml-close:hover { background: #edf2f7; }
+
 .btn-parse-text {
   background: #faf5ff;
   color: #6b46c1;

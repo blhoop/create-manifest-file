@@ -45,13 +45,15 @@ const EXAMPLE_ROWS = [
   },
 ]
 
-export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) {
+export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, getYaml }) {
   const [editingCell, setEditingCell] = useState(null)
   const [editValue, setEditValue] = useState('')
   const [showExample, setShowExample] = useState(false)
 
   const [showParseText, setShowParseText] = useState(false)
   const [parseTextVal, setParseTextVal] = useState('')
+  const [showYamlPreview, setShowYamlPreview] = useState(false)
+  const [yamlCopied, setYamlCopied] = useState(false)
 
   const [colMenu, setColMenu] = useState(null)
   const [menuMode, setMenuMode] = useState('setall')
@@ -227,8 +229,31 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
 
   const filterActive = serviceTypeFilter.size > 0
 
+  const handleCopyYaml = () => {
+    navigator.clipboard.writeText(getYaml()).then(() => {
+      setYamlCopied(true)
+      setTimeout(() => setYamlCopied(false), 2000)
+    })
+  }
+
   return (
     <div className="table-wrapper">
+      {showYamlPreview && (
+        <div className="yaml-preview-overlay" onMouseDown={() => setShowYamlPreview(false)}>
+          <div className="yaml-preview-dialog" onMouseDown={e => e.stopPropagation()}>
+            <div className="yaml-preview-header">
+              <h3 className="yaml-preview-title">YAML Preview</h3>
+            </div>
+            <pre className="yaml-preview-content">{getYaml()}</pre>
+            <div className="yaml-preview-actions">
+              <button className="btn-yaml-copy" onClick={handleCopyYaml}>
+                {yamlCopied ? 'Copied!' : 'Copy to Clipboard'}
+              </button>
+              <button className="btn-yaml-close" onClick={() => setShowYamlPreview(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
       {showParseText && (
         <div className="parse-text-overlay" onMouseDown={() => { setShowParseText(false); setParseTextVal('') }}>
           <div className="parse-text-dialog" onMouseDown={e => e.stopPropagation()}>
@@ -274,6 +299,9 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) 
           </span>
         </h2>
         <div className="table-header-actions">
+          <button className="btn-yaml-preview" onClick={() => setShowYamlPreview(true)}>
+            Preview YAML
+          </button>
           <button className="btn-parse-text" onClick={() => { setParseTextVal(''); setShowParseText(true) }}>
             Parse Names
           </button>
