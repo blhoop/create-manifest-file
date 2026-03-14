@@ -18,7 +18,7 @@ const SUBSCRIPTION_FIELDS = [
     key: 'subscription_name',
     label: 'Subscription Name',
     required: true,
-    placeholder: 'e.g. Lightning Book',
+    placeholder: 'e.g. Order Book',
     hint: 'Normalized to kebab-case for repos; initials for resource names',
   },
   {
@@ -44,7 +44,7 @@ const SUBSCRIPTION_FIELDS = [
     key: 'product_code',
     label: 'Product Code',
     required: false,
-    placeholder: 'e.g. lb',
+    placeholder: 'e.g. ob',
     hint: 'Short code for Azure resource names. Auto-derived from subscription_name initials if omitted',
   },
   {
@@ -97,7 +97,7 @@ const RESOURCE_FIELDS = [
     key: 'repo',
     label: 'repo',
     required: false,
-    hint: 'CTM-Infrastructure/repo-name — triggers CI/CD workflow generation',
+    hint: 'org/repo-name — triggers CI/CD workflow generation',
   },
   {
     key: 'comments',

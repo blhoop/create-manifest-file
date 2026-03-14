@@ -75,7 +75,7 @@ Every parsed file produces a `.yml` manifest with two sections. See [`output.md`
 | `name` | ✅ | Subsystem/component name (e.g. `web`, `booking-db`) |
 | `type` | ✅ | Resource type — builder or inventory (see `output.md`) |
 | `location` | | Azure region override — omit to use `default_location` |
-| `repo` | | SCM repo (`CTM-Infrastructure/repo-name`) — triggers CI/CD caller workflow generation |
+| `repo` | | SCM repo (`org/repo-name`) — triggers CI/CD caller workflow generation |
 | `comments` | | Free-text hints that influence the manifest (e.g. `needs pgbouncer`, `serverless`) |
 
 ## Preview & Editing

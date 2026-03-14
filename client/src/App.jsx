@@ -254,7 +254,7 @@ export default function App() {
                       type="text"
                       value={subscription.subscription_name}
                       onChange={e => setSubscription(s => ({ ...s, subscription_name: e.target.value }))}
-                      placeholder="e.g. Lightning Book"
+                      placeholder="e.g. Order Book"
                     />
                   </div>
                   <div className="sub-field">
@@ -281,7 +281,7 @@ export default function App() {
                 <div className="sub-field-group optional-group">
                   <div className="sub-field">
                     <label>product_code</label>
-                    <input type="text" value={subscription.product_code} onChange={e => setSubscription(s => ({ ...s, product_code: e.target.value }))} placeholder="e.g. lb" />
+                    <input type="text" value={subscription.product_code} onChange={e => setSubscription(s => ({ ...s, product_code: e.target.value }))} placeholder="e.g. ob" />
                   </div>
                   <div className="sub-field">
                     <label>vnet_cidr</label>

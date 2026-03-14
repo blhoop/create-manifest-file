@@ -69,7 +69,7 @@ The app generates a `.yml` manifest file with two sections:
 | `name` | ✅ | Subsystem/component name (e.g. `web`, `booking-db`) |
 | `type` | ✅ | Resource type — builder or inventory type |
 | `location` | | Azure region override — omit to use `default_location` |
-| `repo` | | SCM repo (`CTM-Infrastructure/repo-name`) — triggers CI/CD caller workflow generation |
+| `repo` | | SCM repo (`org/repo-name`) — triggers CI/CD caller workflow generation |
 | `comments` | | Free-text hints (e.g. `needs pgbouncer`, `serverless`) |
 
 See [`output.md`](./output.md) for the full format spec including all valid resource types and location values.

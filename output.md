@@ -50,7 +50,7 @@ A YAML array under the `resources:` key. Each entry defines one resource to depl
 | `name` | ✅ | Subsystem/component name (e.g. `web`, `booking-db`). Used in CAF resource naming. |
 | `type` | ✅ | Resource type. See type list below. The first resource must be a compute type. |
 | `location` | | Azure region override for this resource. Omit to use `default_location`. |
-| `repo` | | Application source repo in `CTM-Infrastructure/repo-name` format. When set, pipeline auto-generates CI/CD workflows. |
+| `repo` | | Application source repo in `org/repo-name` format. When set, pipeline auto-generates CI/CD workflows. |
 | `comments` | | Free-text hints that influence the manifest (e.g. `needs pgbouncer`, `serverless`, `zone redundant ha`). |
 
 ---
@@ -129,14 +129,14 @@ Document existing resources without generating new infrastructure.
 # ---------------------------------------------------------------------------
 # REQUIRED — Subscription identity
 # ---------------------------------------------------------------------------
-subscription_name: Lightning Book
+subscription_name: Order Book
 environment: dev
 default_location: australiaeast
 
 # ---------------------------------------------------------------------------
 # OPTIONAL — Overrides and existing infrastructure
 # ---------------------------------------------------------------------------
-product_code: lb
+product_code: ob
 vnet_cidr: 10.3.0.0/22
 subscription_id: 04a33693-83cd-41d8-b1bc-a67a3476a439
 spn_client_id: 523b2cb8-04f0-448f-8630-0736b1a2e5bb
@@ -148,12 +148,12 @@ resources:
   - name: web
     type: app_service
     location: australiaeast
-    repo: CTM-Infrastructure/lb-app
-    comments: main web app serving the Lightning Book UI
+    repo: MyOrg/ob-app
+    comments: main web app serving the Order Book UI
 
   - name: notifications
     type: app_service
-    repo: CTM-Infrastructure/lb-func-app
+    repo: MyOrg/ob-func-app
     comments: function apps for notifications
 
   - name: booking-db
@@ -174,7 +174,7 @@ resources:
   - name: config-site
     type: swa
     location: eastasia
-    repo: CTM-Infrastructure/lb-config-app
+    repo: MyOrg/ob-config-app
 ```
 
 ---

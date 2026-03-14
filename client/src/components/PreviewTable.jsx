@@ -33,7 +33,7 @@ const EXAMPLE_ROWS = [
     name: 'web',
     type: 'app_service',
     location: 'australiaeast',
-    repo: 'CTM-Infrastructure/lb-app',
+    repo: 'MyOrg/ob-app',
     comments: 'main web app',
   },
   {
