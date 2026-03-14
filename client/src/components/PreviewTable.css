@@ -45,6 +45,20 @@
 
 .btn-add-row:hover { background: #bee3f8; }
 
+.btn-parse-text {
+  background: #faf5ff;
+  color: #6b46c1;
+  border: 1px solid #d6bcfa;
+  border-radius: 6px;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-parse-text:hover { background: #e9d8fd; }
+
 .btn-show-example {
   background: #f0fff4;
   color: #276749;
@@ -198,6 +212,7 @@
 }
 
 .manifest-table tbody tr:last-child td { border-bottom: none; }
+.manifest-table td:nth-child(2) .cell-text { text-align: left; }
 .manifest-table th:last-child,
 .manifest-table td:last-child { border-right: none; }
 
@@ -258,6 +273,105 @@
   color: #e53e3e;
   background: #fff5f5;
 }
+
+/* ── Parse Text modal ── */
+
+.parse-text-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.parse-text-dialog {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  padding: 1.5rem 1.75rem;
+  width: 380px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.parse-text-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0;
+}
+
+.parse-text-desc {
+  font-size: 0.82rem;
+  color: #718096;
+  margin: 0;
+}
+
+.parse-text-input {
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.9rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  outline: none;
+  box-sizing: border-box;
+  color: #2d3748;
+}
+
+.parse-text-input:focus {
+  border-color: #6b46c1;
+  box-shadow: 0 0 0 2px #e9d8fd;
+}
+
+.parse-text-count {
+  font-size: 0.82rem;
+  color: #718096;
+  margin: 0;
+}
+
+.parse-text-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.25rem;
+}
+
+.btn-parse-remove {
+  background: #e53e3e;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-parse-remove:hover:not(:disabled) { background: #c53030; }
+
+.btn-parse-remove:disabled {
+  background: #cbd5e0;
+  cursor: not-allowed;
+}
+
+.btn-parse-cancel {
+  background: #f7fafc;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.4rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-parse-cancel:hover { background: #edf2f7; }
 
 /* ── Column bulk-edit menu ── */
 

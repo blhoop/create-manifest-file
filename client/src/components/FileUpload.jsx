@@ -35,7 +35,7 @@ export default function FileUpload({ onParsed, onError, setLoading, loading }) {
       const json = await res.json()
 
       if (!res.ok) throw new Error(json.error || 'Server error')
-      onParsed(json.rows, file.name)
+      onParsed(json.rows, file.name, json.sheets ?? null)
     } catch (err) {
       onError(err.message)
     } finally {

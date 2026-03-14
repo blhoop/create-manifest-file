@@ -42,6 +42,15 @@ router.post('/parse', upload.single('file'), async (req, res) => {
 
   try {
     const raw = await parser(file.path, file.originalname)
+
+    if (raw?.multiSheet) {
+      const sheets = raw.sheets.map(s => ({
+        name: s.name,
+        rows: applyLocationDefaults(normalizeRows(s.rows)),
+      }))
+      return res.json({ rows: sheets[0].rows, sheets })
+    }
+
     const rows = applyLocationDefaults(normalizeRows(raw))
     res.json({ rows })
   } catch (err) {

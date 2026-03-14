@@ -56,10 +56,13 @@ const EXAMPLE_ROWS = [
   },
 ]
 
-export default function PreviewTable({ rows, onRowsChange, onDetach }) {
+export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit }) {
   const [editingCell, setEditingCell] = useState(null)
   const [editValue, setEditValue] = useState('')
   const [showExample, setShowExample] = useState(false)
+
+  const [showParseText, setShowParseText] = useState(false)
+  const [parseTextVal, setParseTextVal] = useState('')
 
   const [colMenu, setColMenu] = useState(null)       // col name or null
   const [menuMode, setMenuMode] = useState('setall') // 'setall' | 'findreplace'
@@ -86,6 +89,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach }) {
   }
 
   const applySetAll = () => {
+    if (onAudit) onAudit({ type: 'SET_ALL', col: colMenu, value: menuSetVal, count: rows.length })
     onRowsChange(rows.map(r => ({ ...r, [colMenu]: menuSetVal })))
     setColMenu(null)
   }
@@ -96,10 +100,46 @@ export default function PreviewTable({ rows, onRowsChange, onDetach }) {
 
   const applyFindReplace = () => {
     if (!menuFind.trim()) return
+    if (onAudit) onAudit({ type: 'FIND_REPLACE', col: colMenu, find: menuFind, replace: menuReplace, count: matchCount })
     onRowsChange(rows.map(r =>
       r[colMenu] === menuFind ? { ...r, [colMenu]: menuReplace } : r
     ))
     setColMenu(null)
+  }
+
+  const parseTextTerms = parseTextVal
+    .split(',')
+    .map(t => t.trim())
+    .filter(Boolean)
+
+  const parseTextMatchCount = parseTextTerms.length
+    ? rows.filter(r => parseTextTerms.some(t =>
+        String(r.spoke_name ?? '').toLowerCase().includes(t.toLowerCase())
+      )).length
+    : 0
+
+  const applyParseTextRemove = () => {
+    const escaped = parseTextTerms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    const patterns = parseTextTerms.map((t, i) => ({
+      re: new RegExp(escaped[i], 'gi'),
+      term: t.toLowerCase(),
+    }))
+
+    const changes = []
+    const updatedRows = rows.map(r => {
+      let name = String(r.spoke_name ?? '')
+      const matches = patterns.some(({ term }) => name.toLowerCase().includes(term))
+      if (!matches) return r
+      const before = name
+      patterns.forEach(({ re }) => { name = name.replace(re, '') })
+      changes.push({ before, after: name })
+      return { ...r, spoke_name: name }
+    })
+
+    if (onAudit && changes.length) onAudit({ type: 'PARSE_SPOKE_NAMES', terms: parseTextTerms, changes })
+    onRowsChange(updatedRows)
+    setShowParseText(false)
+    setParseTextVal('')
   }
 
   if (!rows?.length) return null
@@ -111,6 +151,10 @@ export default function PreviewTable({ rows, onRowsChange, onDetach }) {
 
   const commitEdit = (nextCell) => {
     if (!editingCell) return
+    const oldVal = rows[editingCell.row][editingCell.col] ?? ''
+    if (onAudit && editValue !== oldVal) {
+      onAudit({ type: 'CELL_EDIT', row: editingCell.row, col: editingCell.col, oldVal, newVal: editValue })
+    }
     const updated = rows.map((r, i) =>
       i === editingCell.row ? { ...r, [editingCell.col]: editValue } : r
     )
@@ -143,17 +187,53 @@ export default function PreviewTable({ rows, onRowsChange, onDetach }) {
   }
 
   const deleteRow = (rowIdx) => {
+    if (onAudit) onAudit({ type: 'ROW_DELETED', rowNum: rowIdx, rowData: rows[rowIdx] })
     onRowsChange(rows.filter((_, i) => i !== rowIdx))
     if (editingCell?.row === rowIdx) setEditingCell(null)
   }
 
   const addRow = () => {
+    if (onAudit) onAudit({ type: 'ROW_ADDED' })
     const empty = Object.fromEntries(COLUMNS.map(c => [c, '']))
     onRowsChange([...rows, empty])
   }
 
   return (
     <div className="table-wrapper">
+      {showParseText && (
+        <div className="parse-text-overlay" onMouseDown={() => { setShowParseText(false); setParseTextVal('') }}>
+          <div className="parse-text-dialog" onMouseDown={e => e.stopPropagation()}>
+            <h3 className="parse-text-title">Parse Spoke Names</h3>
+            <p className="parse-text-desc">Enter one or more comma-separated values to strip from <strong>spoke_name</strong>. The rest of each value is kept.</p>
+            <input
+              className="parse-text-input"
+              autoFocus
+              placeholder="e.g. -na, -prod, func-, orders-api"
+              value={parseTextVal}
+              onChange={e => setParseTextVal(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Escape') { setShowParseText(false); setParseTextVal('') } }}
+            />
+            {parseTextTerm && (
+              <p className="parse-text-count">
+                {parseTextMatchCount === 0
+                  ? 'No matches found'
+                  : `${parseTextMatchCount} spoke_name ${parseTextMatchCount === 1 ? 'value' : 'values'} will be updated`}
+              </p>
+            )}
+            <div className="parse-text-actions">
+              <button
+                className="btn-parse-remove"
+                onClick={applyParseTextRemove}
+                disabled={parseTextMatchCount === 0}
+              >Remove</button>
+              <button
+                className="btn-parse-cancel"
+                onClick={() => { setShowParseText(false); setParseTextVal('') }}
+              >Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="table-header">
         <h2 className="table-heading">
           Preview
@@ -161,6 +241,9 @@ export default function PreviewTable({ rows, onRowsChange, onDetach }) {
           <span className="row-count">{rows.length} {rows.length === 1 ? 'row' : 'rows'}</span>
         </h2>
         <div className="table-header-actions">
+          <button className="btn-parse-text" onClick={() => { setParseTextVal(''); setShowParseText(true) }}>
+            Parse Spoke Names
+          </button>
           <button className="btn-show-example" onClick={() => setShowExample(v => !v)}>
             {showExample ? 'Hide Example' : 'Show Example'}
           </button>

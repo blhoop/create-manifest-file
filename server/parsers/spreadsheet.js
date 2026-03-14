@@ -5,7 +5,7 @@ const COLUMN_ALIASES = {
   spoke_name:        ['spoke_name', 'spoke name', 'name', 'application', 'application name', 'app', 'app name', 'service', 'resource name'],
   environment:       ['environment', 'env'],
   location:          ['location', 'region', 'azure region'],
-  service_type:      ['service_type', 'service type', 'type', 'resource type', 'kind', 'category'],
+  service_type:      ['service_type', 'service type', 'type', 'resource type', 'resourcetype', 'kind', 'category'],
   app_repo:          ['app_repo', 'app repo', 'repository', 'repo'],
   special_comments:  ['special_comments', 'special comments', 'comments', 'notes', 'dependencies', 'description'],
   existing_app_repo: ['existing_app_repo', 'existing app repo', 'existing repo'],
@@ -34,31 +34,37 @@ module.exports = async function parseSpreadsheet(filePath, originalName) {
     await workbook.xlsx.readFile(filePath)
   }
 
-  const worksheet = workbook.worksheets[0]
-  if (!worksheet) return []
+  const worksheets = workbook.worksheets
+  if (!worksheets.length) return []
 
-  const headerRow = worksheet.getRow(1)
-  const headers = []
-  headerRow.eachCell((cell, colNum) => {
-    headers[colNum - 1] = normalizeHeader(cell.value ?? '')
-  })
-
-  if (!headers.length) return []
-
-  const rows = []
-  worksheet.eachRow((row, rowNum) => {
-    if (rowNum === 1) return
-    const out = {
-      spoke_name: '', environment: '', location: '', service_type: '',
-      app_repo: '', special_comments: '', existing_app_repo: '',
-      subscription_id: '', spn_client_id: '', vnet_cidr: '',
-    }
-    row.eachCell((cell, colNum) => {
-      const canonical = headers[colNum - 1]
-      if (canonical in out) out[canonical] = String(cell.value ?? '')
+  const parseSheet = (worksheet) => {
+    const headerRow = worksheet.getRow(1)
+    const headers = []
+    headerRow.eachCell((cell, colNum) => {
+      headers[colNum - 1] = normalizeHeader(cell.value ?? '')
     })
-    if (Object.values(out).some(v => v)) rows.push(out)
-  })
+    if (!headers.length) return []
+    const rows = []
+    worksheet.eachRow((row, rowNum) => {
+      if (rowNum === 1) return
+      const out = {
+        spoke_name: '', environment: '', location: '', service_type: '',
+        app_repo: '', special_comments: '', existing_app_repo: '',
+        subscription_id: '', spn_client_id: '', vnet_cidr: '',
+      }
+      row.eachCell((cell, colNum) => {
+        const canonical = headers[colNum - 1]
+        if (canonical in out) out[canonical] = String(cell.value ?? '')
+      })
+      if (Object.values(out).some(v => v)) rows.push(out)
+    })
+    return rows
+  }
 
-  return rows
+  if (worksheets.length === 1) return parseSheet(worksheets[0])
+
+  return {
+    multiSheet: true,
+    sheets: worksheets.map(ws => ({ name: ws.name, rows: parseSheet(ws) })),
+  }
 }
