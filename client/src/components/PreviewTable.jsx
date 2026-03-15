@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import './PreviewTable.css'
 
 // Detect lines where a scalar value contains unquoted YAML-unsafe characters
@@ -64,6 +64,7 @@ const EXAMPLE_ROWS = [
 export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, getYaml }) {
   const [editingCell, setEditingCell] = useState(null)
   const [editValue, setEditValue] = useState('')
+  const [suggestionIdx, setSuggestionIdx] = useState(-1)
   const [showExample, setShowExample] = useState(false)
 
   const [showParseText, setShowParseText] = useState(false)
@@ -100,6 +101,27 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [showServiceFilter])
+
+  const suggestions = useMemo(() => {
+    if (!editingCell || !editValue.trim()) return []
+    const lower = editValue.toLowerCase()
+    const currentRowIdx = editingCell.row
+    return [...new Set(
+      rows
+        .filter((r, i) => i !== currentRowIdx && r[editingCell.col])
+        .map(r => r[editingCell.col])
+    )]
+      .filter(v => v.toLowerCase().includes(lower) && v !== editValue)
+      .sort()
+      .slice(0, 8)
+  }, [editingCell, editValue, rows])
+
+  useEffect(() => { setSuggestionIdx(-1) }, [suggestions])
+
+  const acceptSuggestion = useCallback((val) => {
+    setEditValue(val)
+    setSuggestionIdx(-1)
+  }, [])
 
   const openMenu = (col) => {
     setColMenu(col)
@@ -214,6 +236,23 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
   }
 
   const onKeyDown = (e) => {
+    if (suggestions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setSuggestionIdx(i => Math.min(i + 1, suggestions.length - 1))
+        return
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setSuggestionIdx(i => Math.max(i - 1, -1))
+        return
+      }
+      if (e.key === 'Enter' && !e.shiftKey && suggestionIdx >= 0) {
+        e.preventDefault()
+        acceptSuggestion(suggestions[suggestionIdx])
+        return
+      }
+    }
     if (e.key === 'Escape') { setEditingCell(null); return }
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit(null); return }
     if (e.key === 'Tab') {
@@ -502,15 +541,28 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
                       onClick={() => !isEditing && startEdit(idx, col)}
                     >
                       {isEditing ? (
-                        <textarea
-                          autoFocus
-                          className="cell-input"
-                          value={editValue}
-                          onChange={e => setEditValue(e.target.value)}
-                          onBlur={() => commitEdit(null)}
-                          onKeyDown={onKeyDown}
-                          rows={col === 'comments' ? 3 : 1}
-                        />
+                        <>
+                          <textarea
+                            autoFocus
+                            className="cell-input"
+                            value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            onBlur={() => commitEdit(null)}
+                            onKeyDown={onKeyDown}
+                            rows={col === 'comments' ? 3 : 1}
+                          />
+                          {suggestions.length > 0 && (
+                            <ul className="cell-suggestions">
+                              {suggestions.map((s, i) => (
+                                <li
+                                  key={s}
+                                  className={`cell-suggestion-item ${i === suggestionIdx ? 'active' : ''}`}
+                                  onMouseDown={e => { e.preventDefault(); acceptSuggestion(s) }}
+                                >{s}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </>
                       ) : (
                         <span className="cell-text">{row[col] ?? ''}</span>
                       )}
