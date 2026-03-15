@@ -363,6 +363,25 @@
   transition: background 0.1s, color 0.1s;
 }
 
+/* ── Deselect rows button (row number header) ── */
+
+.btn-deselect-rows {
+  background: none;
+  border: none;
+  color: #718096;
+  font-size: 1.05rem;
+  line-height: 1;
+  padding: 0.1rem 0.2rem;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.btn-deselect-rows:hover {
+  color: #e53e3e;
+  background: #fff5f5;
+}
+
 /* ── Row selection ── */
 
 .manifest-table tbody tr.row-selected td {

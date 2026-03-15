@@ -427,7 +427,15 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
         <table className="manifest-table">
           <thead>
             <tr>
-              <th className="col-rownum" />
+              <th className="col-rownum">
+                {selectedRows.size > 0 && (
+                  <button
+                    className="btn-deselect-rows"
+                    title={`Clear ${selectedRows.size} selected row${selectedRows.size > 1 ? 's' : ''}`}
+                    onMouseDown={e => { e.preventDefault(); setSelectedRows(new Set()); setLastClickedIdx(null) }}
+                  >⊠</button>
+                )}
+              </th>
               {COLUMNS.map(col => {
                 const isMenuCol = MENU_COLS.has(col)
                 const menuOpen = colMenu === col
