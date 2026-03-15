@@ -42,7 +42,7 @@ export default function App() {
     setAuditLog(prev => [...prev, { ...entry, timestamp: new Date().toISOString() }])
   }
 
-  const handleParsed = (data, name, incomingSheets) => {
+  const handleParsed = (data, name, incomingSheets, incomingSubscription) => {
     const baseName = name.replace(/\.[^.]+$/, '')
     if (incomingSheets?.length > 1) {
       setSheets(incomingSheets)
@@ -55,7 +55,10 @@ export default function App() {
     }
     setFileName(baseName)
     setError('')
-    setSubscription(defaultSubscription)
+    setSubscription(incomingSubscription
+      ? { ...defaultSubscription, ...incomingSubscription }
+      : defaultSubscription
+    )
   }
 
   const handleSheetSelect = (idx) => {

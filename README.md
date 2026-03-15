@@ -14,6 +14,7 @@ This tool is designed for **Project Managers, Architects, Developers, and Cloud 
 | SVG diagrams | `.svg` | XML parser — collects text labels from shapes |
 | Image diagrams | `.png` `.jpg` `.jpeg` | Claude Vision API (`claude-sonnet-4-6`) — identifies Azure icons and diagram semantics |
 | PDF diagrams | `.pdf` | Claude API (`claude-sonnet-4-6`) — extracts resources and dependencies from design docs |
+| YAML manifest | `.yaml` `.yml` | js-yaml — round-trips a previously exported manifest back into the editor |
 
 ## Prerequisites
 
