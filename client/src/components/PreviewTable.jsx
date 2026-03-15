@@ -182,7 +182,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
 
   // Display rows: filtered view with original indices preserved
   const displayRows = rows.reduce((acc, row, idx) => {
-    if (serviceTypeFilter.size === 0 || serviceTypeFilter.has(row.type)) {
+    if (serviceTypeFilter.size === 0 || serviceTypeFilter.has(row.type) || !row.type) {
       acc.push({ row, idx })
     }
     return acc
