@@ -222,7 +222,7 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <h1>Manifest File Creator</h1>
-        <p>Upload a spreadsheet or architecture diagram to generate a YAML manifest</p>
+        <p>Upload a spreadsheet, architecture diagram, or existing yaml to generate a YAML manifest</p>
       </header>
 
       <main className="app-main">
