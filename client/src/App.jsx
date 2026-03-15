@@ -43,7 +43,7 @@ export default function App() {
   }
 
   const handleParsed = (data, name, incomingSheets) => {
-    const baseName = name.replace(/\.[^.]+$/, '') + '_manifest'
+    const baseName = name.replace(/\.[^.]+$/, '')
     if (incomingSheets?.length > 1) {
       setSheets(incomingSheets)
       setActiveSheetIdx(0)

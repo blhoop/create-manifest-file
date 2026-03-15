@@ -67,6 +67,9 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
   const [suggestionIdx, setSuggestionIdx] = useState(-1)
   const [showExample, setShowExample] = useState(false)
 
+  const [selectedRows, setSelectedRows] = useState(new Set())
+  const [lastClickedIdx, setLastClickedIdx] = useState(null)
+
   const [showParseText, setShowParseText] = useState(false)
   const [parseTextVal, setParseTextVal] = useState('')
   const [showYamlPreview, setShowYamlPreview] = useState(false)
@@ -281,6 +284,39 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
     if (onAudit) onAudit({ type: 'ROW_ADDED' })
     const empty = Object.fromEntries(COLUMNS.map(c => [c, '']))
     onRowsChange([...rows, empty])
+  }
+
+  const handleRowNumClick = (idx, e) => {
+    e.preventDefault()
+    if (e.shiftKey && lastClickedIdx !== null) {
+      // Range select using current display order
+      const displayIndices = displayRows.map(d => d.idx)
+      const anchorPos = displayIndices.indexOf(lastClickedIdx)
+      const clickPos = displayIndices.indexOf(idx)
+      const [from, to] = anchorPos <= clickPos ? [anchorPos, clickPos] : [clickPos, anchorPos]
+      const range = displayIndices.slice(from, to + 1)
+      setSelectedRows(prev => {
+        const next = new Set(prev)
+        range.forEach(i => next.add(i))
+        return next
+      })
+    } else if (e.ctrlKey || e.metaKey) {
+      setSelectedRows(prev => {
+        const next = new Set(prev)
+        if (next.has(idx)) next.delete(idx)
+        else next.add(idx)
+        return next
+      })
+      setLastClickedIdx(idx)
+    } else {
+      if (selectedRows.size === 1 && selectedRows.has(idx)) {
+        setSelectedRows(new Set())
+        setLastClickedIdx(null)
+      } else {
+        setSelectedRows(new Set([idx]))
+        setLastClickedIdx(idx)
+      }
+    }
   }
 
   const filterActive = serviceTypeFilter.size > 0
@@ -530,8 +566,10 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
           )}
           <tbody>
             {displayRows.map(({ row, idx }) => (
-              <tr key={idx}>
-                <td className="col-rownum"><span className="row-num">{idx + 1}</span></td>
+              <tr key={idx} className={selectedRows.has(idx) ? 'row-selected' : ''}>
+                <td className="col-rownum" onMouseDown={e => handleRowNumClick(idx, e)}>
+                  <span className="row-num">{idx + 1}</span>
+                </td>
                 {COLUMNS.map(col => {
                   const isEditing = editingCell?.row === idx && editingCell?.col === col
                   return (

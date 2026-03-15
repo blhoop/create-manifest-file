@@ -343,6 +343,14 @@
   padding: 0 !important;
   vertical-align: middle;
   color: #a0aec0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.col-rownum:hover .row-num {
+  background: #edf2f7;
+  color: #4a5568;
+  border-radius: 4px;
 }
 
 .row-num {
@@ -352,6 +360,23 @@
   color: #a0aec0;
   text-align: center;
   user-select: none;
+  transition: background 0.1s, color 0.1s;
+}
+
+/* ── Row selection ── */
+
+.manifest-table tbody tr.row-selected td {
+  background: #ebf8ff;
+}
+
+.manifest-table tbody tr.row-selected .col-rownum .row-num {
+  background: #3b82f6;
+  color: #fff;
+  border-radius: 4px;
+}
+
+.manifest-table tbody tr.row-selected td.editable-cell:not(.editing):hover {
+  background: #bee3f8;
 }
 
 .manifest-table td {
