@@ -1,6 +1,6 @@
 # Create Manifest File
 
-A web application that converts architecture diagrams and spreadsheets into a structured YAML manifest for cloud infrastructure automation. Upload a file, review and edit the extracted data in an interactive preview table, then download the YAML.
+A web application that converts architecture diagrams, spreadsheets, and existing yaml files into a structured YAML manifest for cloud infrastructure automation. Upload a file, review and edit the extracted data in an interactive preview table, then download the YAML.
 
 This tool is designed for **Project Managers, Architects, Developers, and Cloud Engineers** as part of an end-to-end Azure infrastructure provisioning pipeline — the YAML output drives downstream automation to build out cloud resources, generate Terraform, create TFC workspaces, and auto-generate CI/CD caller workflows.
 
@@ -85,12 +85,16 @@ After parsing, the app displays an interactive preview before download:
 
 - **Subscription panel** — fill in spoke identity fields (subscription name, environment, default location, and optional overrides) before downloading
 - **Required field markers** — `name` and `type` are marked with a red `*`
+- **Preview YAML** — opens a modal showing the full YAML output with a monospace code view; includes a validator that shows a green ✓ Valid badge or lists any issues, plus Copy to Clipboard
 - **Show / Hide Example** — toggles two read-only example rows so users can see the expected format
 - **Inline row editing** — click any cell to edit; Tab to move between cells
-- **Add / delete rows** — add blank rows or remove unwanted ones
-- **Bulk column edit** — `▾` on `location` column for Set All and Find & Replace
+- **Cell intellisense** — typing in a cell shows a dropdown of matching values from other rows in the same column; ArrowUp/Down to navigate, Enter to accept
+- **Row selection** — click a row number to select it; Shift+click for range; Ctrl+click to toggle; `⊠` button in the header clears all selections
+- **Add / delete rows** — add blank rows or remove unwanted ones; new rows are always visible even when a type filter is active
+- **Bulk column edit** — `▾` on `location` column for Set All, Find & Replace, and Clear All
 - **Type filter** — `⊟` on `type` column filters visible rows by resource type for visual auditing
 - **Parse Names** — strip unwanted text from `name` values across all rows at once (supports comma-separated terms)
+- **Auto-quoting** — values containing YAML-unsafe characters (e.g. `OS: Windows` in comments) are automatically quoted in the output
 - **Detach File** — clears the current session to upload a new file
 - **Multi-sheet support** — `.xlsx` files with multiple tabs show a sheet picker
 - **Session persistence** — data saved to `localStorage` so a page refresh restores your work
@@ -128,6 +132,7 @@ create-manifest-file/
 │       ├── svg.js
 │       ├── image.js         # Claude Vision API (sonnet)
 │       ├── pdf.js           # Claude API (sonnet)
+│       ├── yaml.js          # js-yaml — round-trips existing manifests
 │       ├── normalizeName.js # Normalizes resource names
 │       └── locationDefaults.js
 ├── output.md                # YAML output format documentation

@@ -4,6 +4,34 @@ A running log of work completed each session.
 
 ---
 
+## 2026-03-14
+
+### YAML Round-Trip
+- Added `.yaml` / `.yml` upload support — parses an existing manifest back into the subscription panel and resource table
+- New `server/parsers/yaml.js` using `js-yaml`; installed `js-yaml` as a server dependency
+- Upload route returns `{ rows, subscription }` for YAML files; skips normalize/locationDefaults pipeline since data is already clean
+- `FileUpload.jsx` passes `subscription` back through `onParsed`; `App.jsx` merges it into subscription state
+
+### YAML Quality
+- Added `yamlScalar()` helper in `App.jsx` — auto-quotes any value containing `:`, `#`, `{`, `}`, `[`, `]`, or leading YAML-special characters (fixes `comments: OS: Windows` producing invalid YAML)
+- Applied `yamlScalar()` to every field in `buildYamlContent()`
+- **Preview YAML modal** — new button in table header opens a popup with the full YAML in a monospace code view; includes Copy to Clipboard (2s confirmation) and Close
+- Validator runs on open: shows green **✓ Valid YAML** badge or amber **⚠ N issues found** with offending lines listed
+
+### Table UX
+- **Row selection** — click row number to select (click again to deselect); Shift+click extends range; Ctrl/Cmd+click toggles; selected rows highlight in blue
+- **Deselect-all button** — `⊠` icon appears in the row number column header when rows are selected; tooltip shows count; click clears all
+- **Cell intellisense** — typing in any cell shows a dropdown of matching values from other rows in the same column (up to 8, case-insensitive); ArrowUp/Down to navigate, Enter to accept, click to select
+- **Filter + Add Row** — new blank rows (empty `type`) always pass the type filter so they're visible and editable without clearing the filter
+- **Clear All tab** — added a third tab to the location column bulk-edit menu; clears the location field on all rows and logs it to the audit trail (red button to distinguish from Set All)
+
+### Cleanup
+- Removed all internal placeholder references (CTM-Infrastructure, Lightning Book, lb) — replaced with generic examples (Order Book, ob, MyOrg)
+- Removed `_manifest` suffix from default output filename — file is named after the uploaded source file only
+- Updated banner: *"Upload a spreadsheet, architecture diagram, or existing yaml to generate a YAML manifest"*
+
+---
+
 ## 2026-03-13
 
 ### Security
