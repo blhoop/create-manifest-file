@@ -53,6 +53,60 @@
   gap: 0.75rem;
 }
 
+/* ── Clone from Parent ── */
+
+.rcp-clone-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  background: #f0f7ff;
+  border: 1px solid #bee3f8;
+  border-radius: 7px;
+  padding: 0.55rem 0.75rem;
+}
+
+.rcp-clone-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #2b6cb0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.rcp-clone-label input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: #3b82f6;
+}
+
+.rcp-clone-select {
+  width: 100%;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.82rem;
+  border: 1px solid #90cdf4;
+  border-radius: 5px;
+  background: #fff;
+  color: #2d3748;
+  cursor: pointer;
+  outline: none;
+}
+
+.rcp-clone-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px #ebf8ff;
+}
+
+.rcp-clone-empty {
+  font-size: 0.75rem;
+  color: #718096;
+  margin: 0;
+  font-style: italic;
+}
+
 /* ── Structured fields ── */
 
 .rcp-fields {

@@ -79,6 +79,9 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
 
   const [jsonPopupRow, setJsonPopupRow] = useState(null)
 
+  const [fillDrag, setFillDrag] = useState(null)
+  const fillDragRef = useRef(null)
+
   const [colMenu, setColMenu] = useState(null)
   const [menuMode, setMenuMode] = useState('setall')
   const [menuSetVal, setMenuSetVal] = useState('')
@@ -216,6 +219,18 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
     return acc
   }, [])
 
+  const fillRange = useMemo(() => {
+    if (!fillDrag) return new Set()
+    const { sourceDispIdx, endDispIdx } = fillDrag
+    const s = new Set()
+    const from = Math.min(sourceDispIdx, endDispIdx)
+    const to = Math.max(sourceDispIdx, endDispIdx)
+    for (let i = from; i <= to; i++) {
+      if (i !== sourceDispIdx) s.add(i)
+    }
+    return s
+  }, [fillDrag])
+
   if (!rows?.length) return null
 
   const startEdit = (rowIdx, col) => {
@@ -289,6 +304,50 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
     onRowsChange([...rows, empty])
   }
 
+  const startFillDrag = (e, dispIdx) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const value = displayRows[dispIdx]?.row.comments ?? ''
+    const drag = { sourceDispIdx: dispIdx, endDispIdx: dispIdx, value }
+    fillDragRef.current = drag
+    setFillDrag({ ...drag })
+    document.body.classList.add('fill-dragging')
+
+    const onMouseMove = (mv) => {
+      const el = document.elementFromPoint(mv.clientX, mv.clientY)
+      const tr = el?.closest('tr[data-disp-idx]')
+      if (!tr) return
+      const di = parseInt(tr.dataset.dispIdx, 10)
+      if (isNaN(di) || di === fillDragRef.current.endDispIdx) return
+      fillDragRef.current = { ...fillDragRef.current, endDispIdx: di }
+      setFillDrag({ ...fillDragRef.current })
+    }
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+      document.body.classList.remove('fill-dragging')
+      const { sourceDispIdx, endDispIdx, value } = fillDragRef.current
+      const from = Math.min(sourceDispIdx, endDispIdx)
+      const to = Math.max(sourceDispIdx, endDispIdx)
+      if (from !== to) {
+        const toUpdate = new Set()
+        for (let i = from; i <= to; i++) {
+          if (i !== sourceDispIdx && displayRows[i]) toUpdate.add(displayRows[i].idx)
+        }
+        if (toUpdate.size > 0) {
+          onRowsChange(rows.map((r, i) => toUpdate.has(i) ? { ...r, comments: value } : r))
+          if (onAudit) onAudit({ type: 'FILL_DOWN_COMMENTS', sourceRow: displayRows[sourceDispIdx].idx, count: toUpdate.size })
+        }
+      }
+      fillDragRef.current = null
+      setFillDrag(null)
+    }
+
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+  }
+
   const handleJsonCommentCommit = (rowIdx, newComment) => {
     const oldVal = rows[rowIdx].comments ?? ''
     if (onAudit && newComment !== oldVal) {
@@ -352,6 +411,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
         <ResourceCommentPopup
           row={rows[jsonPopupRow]}
           currentComment={rows[jsonPopupRow]?.comments ?? ''}
+          rows={rows}
           onClose={() => setJsonPopupRow(null)}
           onCommit={(newComment) => handleJsonCommentCommit(jsonPopupRow, newComment)}
         />
@@ -593,8 +653,12 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
             </tbody>
           )}
           <tbody>
-            {displayRows.map(({ row, idx }) => (
-              <tr key={idx} className={selectedRows.has(idx) ? 'row-selected' : ''}>
+            {displayRows.map(({ row, idx }, dispIdx) => (
+              <tr
+                key={idx}
+                data-disp-idx={dispIdx}
+                className={[selectedRows.has(idx) ? 'row-selected' : '', fillRange.has(dispIdx) ? 'fill-target' : ''].filter(Boolean).join(' ')}
+              >
                 <td className="col-rownum" onMouseDown={e => handleRowNumClick(idx, e)}>
                   <span className="row-num">{idx + 1}</span>
                 </td>
@@ -633,11 +697,18 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
                         <>
                           <span className="cell-text">{row[col] ?? ''}</span>
                           {col === 'comments' && (
-                            <button
-                              className="btn-json-comment"
-                              title="Edit comment"
-                              onClick={e => { e.stopPropagation(); setJsonPopupRow(idx) }}
-                            >✎</button>
+                            <>
+                              <button
+                                className="btn-json-comment"
+                                title="Edit comment"
+                                onClick={e => { e.stopPropagation(); setJsonPopupRow(idx) }}
+                              >✎</button>
+                              <div
+                                className="fill-handle"
+                                title="Drag to fill down"
+                                onMouseDown={e => startFillDrag(e, dispIdx)}
+                              />
+                            </>
                           )}
                         </>
                       )}

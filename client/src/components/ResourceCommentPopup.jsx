@@ -3,6 +3,15 @@ import { getCommentFields } from '../config/resourceCommentFields'
 import { extractJsonComment } from '../utils/extractJsonComment'
 import './ResourceCommentPopup.css'
 
+const normalizeType = t => t?.toLowerCase().replace(/[\s_/]+/g, '') ?? ''
+
+// Maps normalized slot types to normalized parent type patterns they can clone from
+const CLONE_PARENT_MAP = {
+  'appserviceslots': ['appservice', 'webapp'],   // app_service_slots, Web App/Slots
+  'webappslots':     ['appservice', 'webapp'],   // Web App/Slots
+  'functionappslots': ['functionapp'],            // function_app_slots, Function App/Slots
+}
+
 /** Parse a `key:value, key:value` comment string back into field values + leftover notes. */
 function parseComment(comment) {
   const values = {}
@@ -28,7 +37,7 @@ function buildComment(fields, values, notes) {
   return parts.join(', ')
 }
 
-export default function ResourceCommentPopup({ row, currentComment, onClose, onCommit }) {
+export default function ResourceCommentPopup({ row, currentComment, rows, onClose, onCommit }) {
   const typeConfig = getCommentFields(row?.type)
   const hasFields = !!typeConfig
 
@@ -45,6 +54,31 @@ export default function ResourceCommentPopup({ row, currentComment, onClose, onC
   // Fallback (no fields defined) state
   const [freeText, setFreeText] = useState(currentComment ?? '')
   const [extractMsg, setExtractMsg] = useState(null)
+
+  // Clone from parent state
+  const parentTypes = CLONE_PARENT_MAP[normalizeType(row?.type)]
+  const [cloneEnabled, setCloneEnabled] = useState(false)
+  const [selectedParent, setSelectedParent] = useState('')
+
+  const parentRows = useMemo(() => {
+    if (!parentTypes || !rows) return []
+    return rows.filter(r => r.name && parentTypes.includes(normalizeType(r.type)))
+  }, [parentTypes, rows])
+
+  const handleCloneToggle = (checked) => {
+    setCloneEnabled(checked)
+    if (!checked) setSelectedParent('')
+  }
+
+  const handleParentSelect = (parentName) => {
+    setSelectedParent(parentName)
+    if (!parentName) return
+    const parentRow = parentRows.find(r => r.name === parentName)
+    if (!parentRow) return
+    const { values, notes: parentNotes } = parseComment(parentRow.comments ?? '')
+    setFieldValues(values)
+    setNotes(parentNotes)
+  }
 
   const preview = hasFields
     ? buildComment(typeConfig.fields, fieldValues, notes)
@@ -87,6 +121,37 @@ export default function ResourceCommentPopup({ row, currentComment, onClose, onC
         </div>
 
         <div className="rcp-body">
+
+          {parentTypes && (
+            <div className="rcp-clone-section">
+              <label className="rcp-clone-label">
+                <input
+                  type="checkbox"
+                  checked={cloneEnabled}
+                  onChange={e => handleCloneToggle(e.target.checked)}
+                />
+                Clone from Parent
+              </label>
+              {cloneEnabled && (
+                <select
+                  className="rcp-clone-select"
+                  value={selectedParent}
+                  onChange={e => handleParentSelect(e.target.value)}
+                >
+                  <option value="">— select parent —</option>
+                  {parentRows.map(r => (
+                    <option key={r.name} value={r.name}>
+                      {r.name} ({r.type})
+                    </option>
+                  ))}
+                </select>
+              )}
+              {cloneEnabled && parentRows.length === 0 && (
+                <p className="rcp-clone-empty">No matching parent resources found in the table.</p>
+              )}
+            </div>
+          )}
+
           {hasFields ? (
             <div className="rcp-fields">
               {typeConfig.fields.map((f, i) => (
