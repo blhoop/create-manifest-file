@@ -6,12 +6,12 @@ const COLUMN_ALIASES = {
   type:     ['type', 'service_type', 'service type', 'resource type', 'resourcetype', 'kind', 'category'],
   location: ['location', 'region', 'azure region'],
   repo:     ['repo', 'app_repo', 'app repo', 'repository'],
-  comments: ['comments', 'special_comments', 'special comments', 'notes', 'dependencies', 'description'],
+  comments: ['comments', 'special_comments', 'special comments', 'specialcomments', 'notes', 'dependencies', 'description'],
 }
 
 function normalizeHeader(h) {
   const lower = String(h).toLowerCase().trim()
-  for (const [canonical, aliases] of Object.entries(COLUMN_ALIASES)) {
+for (const [canonical, aliases] of Object.entries(COLUMN_ALIASES)) {
     if (aliases.includes(lower)) return canonical
   }
   return lower

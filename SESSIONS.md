@@ -4,6 +4,43 @@ A running log of work completed each session.
 
 ---
 
+## 2026-03-17 (continued)
+
+### Static Web App Popup
+- Expanded `swa` and `StaticSite` comment popup fields: SKU (Free/Standard), API Backend (Managed/BringYourOwn), Private Endpoint, Branch
+
+### Clone from Parent (App Service / Function App Slots)
+- `app_service_slots`, `Web App/Slots`, `function_app_slots`, `Function App/Slots` popups now show a **Clone from Parent** checkbox
+- When checked, shows a dropdown of matching parent rows in the table; selecting one copies comment field values into the popup
+- Type matching uses normalization (strips spaces/underscores/slashes) so any casing variant resolves correctly
+
+### Web App / App Service Type Standardization
+- `normalizeName.js` now remaps incoming type values to canonical names on parse: `app_service` → `Web App`, `app_service_slots` → `Web App/Slots` (covers all variants: AppService, App Service, WebApp, etc.)
+- Added `WebApp` and `WebAppSlots` popup field aliases so both naming conventions get structured popups
+- `Web App/Slots` clone parent correctly finds `Web App` rows
+
+### Function App Publishing Field
+- Added `Publishing` (Code / Container) field to `FunctionApp` and `function_app_slots` popups
+
+### Comments Fill Handle
+- Excel-style drag-to-fill handle on the comments column — small blue square appears on hover at bottom-right of cell
+- Drag down (or up) to copy the source comment to a range of rows; highlighted in blue while dragging
+- Global `crosshair` cursor during drag; commits on mouse release
+
+---
+
+## 2026-03-17
+
+### Location Column — Override Only
+- Removed `applyLocationDefaults` from the parse pipeline — location column is now left empty by all parsers
+- Location only populated when explicitly present in the source file; `default_location` from the subscription panel is the single source of truth for region
+
+### Spreadsheet Parser — Column Alias Fixes
+- Added `specialcomments` alias to the `comments` field mapping (old CSV exports used camelCase `SpecialComments` with no space)
+- `SpecialComments` values from legacy CSV files now correctly populate the `comments` column
+
+---
+
 ## 2026-03-14
 
 ### YAML Round-Trip

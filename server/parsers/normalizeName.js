@@ -40,6 +40,20 @@ const TYPE_PREFIXES = [
   'mi-',
 ]
 
+// Canonical type names — any incoming variant is remapped to the standard value
+const TYPE_REMAP = {
+  'appservice':      'Web App',
+  'appserviceslots': 'Web App/Slots',
+  'webapp':          'Web App',
+  'webappslots':     'Web App/Slots',
+}
+
+function normalizeTypeName(type) {
+  if (!type || typeof type !== 'string') return type
+  const key = type.toLowerCase().replace(/[\s_/]+/g, '')
+  return TYPE_REMAP[key] ?? type
+}
+
 // ─── Org-specific prefixes ────────────────────────────────────────────────────
 // Add your organization's naming prefixes here. They are stripped from the
 // front of the name (and as middle/end segments where noted).
@@ -134,9 +148,9 @@ function normalizeRows(rows) {
   for (const row of rows) {
     const normalized = normalizeName(row.name)
     if (normalized === null) continue
-    out.push({ ...row, name: normalized })
+    out.push({ ...row, name: normalized, type: normalizeTypeName(row.type) })
   }
   return out
 }
 
-module.exports = { normalizeName, normalizeRows }
+module.exports = { normalizeName, normalizeRows, normalizeTypeName }

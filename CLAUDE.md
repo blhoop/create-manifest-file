@@ -45,7 +45,7 @@ Full-stack web app: React/Vite frontend + Node.js/Express backend.
   - `pdf.js` — sends base64 PDF to Claude API (`claude-sonnet-4-6`) as a `document` content block
   - `yaml.js` — js-yaml, round-trips an existing `.yaml`/`.yml` manifest back into subscription + resource rows; skips normalize/locationDefaults pipeline
   - `normalizeName.js` — normalizes `name` values (strips env suffixes, type prefixes, region segments, etc.)
-  - `locationDefaults.js` — applies location defaults based on resource type using rules from `outputSchema.js`
+  - `locationDefaults.js` — type-to-location mapping rules (no longer applied in parse pipeline; location column is override-only)
 
 ## Output Format
 
@@ -69,7 +69,7 @@ The app generates a `.yml` manifest file with two sections:
 |-------|----------|-------------|
 | `name` | ✅ | Subsystem/component name (e.g. `web`, `booking-db`) |
 | `type` | ✅ | Resource type — builder or inventory type |
-| `location` | | Azure region override — omit to use `default_location` |
+| `location` | | Azure region override — left empty by parser; omit to use `default_location` |
 | `repo` | | SCM repo (`org/repo-name`) — triggers CI/CD caller workflow generation |
 | `comments` | | Free-text hints (e.g. `needs pgbouncer`, `serverless`) |
 

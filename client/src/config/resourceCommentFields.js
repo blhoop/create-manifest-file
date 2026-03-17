@@ -49,6 +49,25 @@ const AZURE = {
       { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
     ],
   },
+  WebAppSlots: {
+    label: 'Web App / Slots',
+    fields: [
+      { key: 'OS',            label: 'OS',             type: 'select', options: ['Windows', 'Linux'] },
+      { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'PHP'] },
+      { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
+      { key: 'SKU',           label: 'SKU',            type: 'select', options: [
+        'F1', 'D1',
+        'B1', 'B2', 'B3',
+        'S1', 'S2', 'S3',
+        'P1v2', 'P2v2', 'P3v2',
+        'P0v3', 'P1v3', 'P2v3', 'P3v3',
+        'P0v4', 'P1v4', 'P2v4', 'P3v4',
+        'I1v2', 'I2v2', 'I3v2',
+      ]},
+      { key: 'Publishing',    label: 'Publishing',     type: 'select', options: ['Code', 'Container'] },
+      { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
+    ],
+  },
   app_service_slots: {
     label: 'App Service / Slots',
     fields: [
@@ -76,6 +95,7 @@ const AZURE = {
       { key: 'OS',            label: 'OS',             type: 'select', options: ['Windows', 'Linux'] },
       { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'PowerShell'] },
       { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
+      { key: 'Publishing',    label: 'Publishing',     type: 'select', options: ['Code', 'Container'] },
       { key: 'Instances',     label: 'Instance Count', type: 'select', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] },
       { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
     ],
@@ -87,6 +107,7 @@ const AZURE = {
       { key: 'OS',            label: 'OS',             type: 'select', options: ['Windows', 'Linux'] },
       { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'PowerShell'] },
       { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
+      { key: 'Publishing',    label: 'Publishing',     type: 'select', options: ['Code', 'Container'] },
       { key: 'Instances',     label: 'Instance Count', type: 'select', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] },
       { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
     ],
@@ -150,13 +171,19 @@ const AZURE = {
   swa: {
     label: 'Static Web App',
     fields: [
-      { key: 'sku', label: 'SKU', type: 'select', options: ['Free', 'Standard'] },
+      { key: 'sku',             label: 'SKU',              type: 'select', options: ['Free', 'Standard'] },
+      { key: 'api_backend',     label: 'API Backend',      type: 'select', options: ['Managed', 'BringYourOwn'] },
+      { key: 'private_endpoint',label: 'Private Endpoint', type: 'select', options: ['No', 'Yes'] },
+      { key: 'branch',          label: 'Branch',           type: 'text',   placeholder: 'e.g. main' },
     ],
   },
   StaticSite: {
     label: 'Static Web App',
     fields: [
-      { key: 'sku', label: 'SKU', type: 'select', options: ['Free', 'Standard'] },
+      { key: 'sku',             label: 'SKU',              type: 'select', options: ['Free', 'Standard'] },
+      { key: 'api_backend',     label: 'API Backend',      type: 'select', options: ['Managed', 'BringYourOwn'] },
+      { key: 'private_endpoint',label: 'Private Endpoint', type: 'select', options: ['No', 'Yes'] },
+      { key: 'branch',          label: 'Branch',           type: 'text',   placeholder: 'e.g. main' },
     ],
   },
 
