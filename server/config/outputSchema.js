@@ -113,6 +113,7 @@ const RESOURCE_FIELDS = [
 
 const BUILDER_TYPES = [
   'app_service',
+  'app_service_slots',
   'pg',
   'cosmos',
   'sql',
