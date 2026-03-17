@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import './PreviewTable.css'
+import ResourceCommentPopup from './ResourceCommentPopup'
 
 // Detect lines where a scalar value contains unquoted YAML-unsafe characters
 function validateYaml(yaml) {
@@ -75,6 +76,8 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
   const [showYamlPreview, setShowYamlPreview] = useState(false)
   const [yamlCopied, setYamlCopied] = useState(false)
   const [yamlIssues, setYamlIssues] = useState([])
+
+  const [jsonPopupRow, setJsonPopupRow] = useState(null)
 
   const [colMenu, setColMenu] = useState(null)
   const [menuMode, setMenuMode] = useState('setall')
@@ -286,6 +289,15 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
     onRowsChange([...rows, empty])
   }
 
+  const handleJsonCommentCommit = (rowIdx, newComment) => {
+    const oldVal = rows[rowIdx].comments ?? ''
+    if (onAudit && newComment !== oldVal) {
+      onAudit({ type: 'JSON_COMMENT_APPEND', row: rowIdx, oldVal, newVal: newComment })
+    }
+    onRowsChange(rows.map((r, i) => i === rowIdx ? { ...r, comments: newComment } : r))
+    setJsonPopupRow(null)
+  }
+
   const handleRowNumClick = (idx, e) => {
     e.preventDefault()
     if (e.shiftKey && lastClickedIdx !== null) {
@@ -336,6 +348,14 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
 
   return (
     <div className="table-wrapper">
+      {jsonPopupRow !== null && (
+        <ResourceCommentPopup
+          row={rows[jsonPopupRow]}
+          currentComment={rows[jsonPopupRow]?.comments ?? ''}
+          onClose={() => setJsonPopupRow(null)}
+          onCommit={(newComment) => handleJsonCommentCommit(jsonPopupRow, newComment)}
+        />
+      )}
       {showYamlPreview && (
         <div className="yaml-preview-overlay" onMouseDown={() => setShowYamlPreview(false)}>
           <div className="yaml-preview-dialog" onMouseDown={e => e.stopPropagation()}>
@@ -610,7 +630,16 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
                           )}
                         </>
                       ) : (
-                        <span className="cell-text">{row[col] ?? ''}</span>
+                        <>
+                          <span className="cell-text">{row[col] ?? ''}</span>
+                          {col === 'comments' && (
+                            <button
+                              className="btn-json-comment"
+                              title="Edit comment"
+                              onClick={e => { e.stopPropagation(); setJsonPopupRow(idx) }}
+                            >✎</button>
+                          )}
+                        </>
                       )}
                     </td>
                   )
