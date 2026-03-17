@@ -4,6 +4,18 @@ A running log of work completed each session.
 
 ---
 
+## 2026-03-17
+
+### Location Column — Override Only
+- Removed `applyLocationDefaults` from the parse pipeline — location column is now left empty by all parsers
+- Location only populated when explicitly present in the source file; `default_location` from the subscription panel is the single source of truth for region
+
+### Spreadsheet Parser — Column Alias Fixes
+- Added `specialcomments` alias to the `comments` field mapping (old CSV exports used camelCase `SpecialComments` with no space)
+- `SpecialComments` values from legacy CSV files now correctly populate the `comments` column
+
+---
+
 ## 2026-03-14
 
 ### YAML Round-Trip
