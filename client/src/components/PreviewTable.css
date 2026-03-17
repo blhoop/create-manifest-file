@@ -45,6 +45,161 @@
 
 .btn-add-row:hover { background: #bee3f8; }
 
+.btn-yaml-preview {
+  background: #ebf4ff;
+  color: #2c5282;
+  border: 1px solid #90cdf4;
+  border-radius: 6px;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-yaml-preview:hover { background: #bee3f8; }
+
+/* ── YAML Preview modal ── */
+
+.yaml-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.yaml-preview-dialog {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  width: 680px;
+  max-width: 92vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.yaml-preview-header {
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.yaml-preview-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.yaml-preview-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0;
+}
+
+.yaml-valid-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #276749;
+  background: #f0fff4;
+  border: 1px solid #9ae6b4;
+  border-radius: 10px;
+  padding: 0.15rem 0.6rem;
+}
+
+.yaml-invalid-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #c05621;
+  background: #fffaf0;
+  border: 1px solid #fbd38d;
+  border-radius: 10px;
+  padding: 0.15rem 0.6rem;
+}
+
+.yaml-issues-list {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  background: #fffaf0;
+  border: 1px solid #fbd38d;
+  border-radius: 6px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.yaml-issues-list li {
+  font-size: 0.75rem;
+  color: #744210;
+}
+
+.yaml-issues-list code {
+  font-family: 'Consolas', 'Menlo', monospace;
+  background: #feebcb;
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+}
+
+.yaml-preview-content {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0;
+  padding: 1rem 1.25rem;
+  font-family: 'Consolas', 'Menlo', 'Monaco', monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: #2d3748;
+  background: #f7fafc;
+  white-space: pre;
+}
+
+.yaml-preview-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.btn-yaml-copy {
+  background: #ebf8ff;
+  color: #2b6cb0;
+  border: 1px solid #bee3f8;
+  border-radius: 6px;
+  padding: 0.4rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  min-width: 140px;
+}
+
+.btn-yaml-copy:hover { background: #bee3f8; }
+
+.btn-yaml-close {
+  background: #f7fafc;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.4rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-yaml-close:hover { background: #edf2f7; }
+
 .btn-parse-text {
   background: #faf5ff;
   color: #6b46c1;
@@ -188,6 +343,14 @@
   padding: 0 !important;
   vertical-align: middle;
   color: #a0aec0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.col-rownum:hover .row-num {
+  background: #edf2f7;
+  color: #4a5568;
+  border-radius: 4px;
 }
 
 .row-num {
@@ -197,6 +360,42 @@
   color: #a0aec0;
   text-align: center;
   user-select: none;
+  transition: background 0.1s, color 0.1s;
+}
+
+/* ── Deselect rows button (row number header) ── */
+
+.btn-deselect-rows {
+  background: none;
+  border: none;
+  color: #718096;
+  font-size: 1.05rem;
+  line-height: 1;
+  padding: 0.1rem 0.2rem;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.btn-deselect-rows:hover {
+  color: #e53e3e;
+  background: #fff5f5;
+}
+
+/* ── Row selection ── */
+
+.manifest-table tbody tr.row-selected td {
+  background: #ebf8ff;
+}
+
+.manifest-table tbody tr.row-selected .col-rownum .row-num {
+  background: #3b82f6;
+  color: #fff;
+  border-radius: 4px;
+}
+
+.manifest-table tbody tr.row-selected td.editable-cell:not(.editing):hover {
+  background: #bee3f8;
 }
 
 .manifest-table td {
@@ -244,6 +443,42 @@
   resize: vertical;
   min-height: 2.2rem;
   box-sizing: border-box;
+}
+
+/* ── Cell intellisense suggestions ── */
+
+.cell-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: #fff;
+  border: 1px solid #bee3f8;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  list-style: none;
+  margin: 0;
+  padding: 0.2rem 0;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.cell-suggestion-item {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  color: #2d3748;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cell-suggestion-item:hover,
+.cell-suggestion-item.active {
+  background: #ebf8ff;
+  color: #2b6cb0;
 }
 
 .col-actions {
@@ -588,4 +823,46 @@
 .col-popover-apply:disabled {
   background: #cbd5e0;
   cursor: not-allowed;
+}
+
+.col-popover-apply-danger {
+  background: #e53e3e;
+}
+
+.col-popover-apply-danger:hover:not(:disabled) {
+  background: #c53030;
+}
+
+.col-popover-clear-desc {
+  font-size: 0.78rem;
+  color: #718096;
+  margin: 0;
+}
+
+/* ── JSON Comment import button ── */
+
+.btn-json-comment {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #a0aec0;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0.15rem 0.3rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.editable-cell:hover .btn-json-comment {
+  opacity: 1;
+}
+
+.btn-json-comment:hover {
+  color: #3b82f6;
+  background: #ebf8ff;
+  border-color: #bee3f8;
 }

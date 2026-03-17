@@ -9,6 +9,7 @@ const parseVisio = require('../parsers/visio')
 const parseSvg = require('../parsers/svg')
 const parseImage = require('../parsers/image')
 const parsePdf = require('../parsers/pdf')
+const parseYaml = require('../parsers/yaml')
 const { normalizeRows } = require('../parsers/normalizeName')
 const { applyLocationDefaults } = require('../parsers/locationDefaults')
 
@@ -26,6 +27,8 @@ const PARSERS = {
   '.jpg': parseImage,
   '.jpeg': parseImage,
   '.pdf': parsePdf,
+  '.yaml': parseYaml,
+  '.yml': parseYaml,
 }
 
 router.post('/parse', upload.single('file'), async (req, res) => {
@@ -42,6 +45,11 @@ router.post('/parse', upload.single('file'), async (req, res) => {
 
   try {
     const raw = await parser(file.path, file.originalname)
+
+    // YAML round-trip: subscription + rows already structured, skip normalize pipeline
+    if (raw?.subscription) {
+      return res.json({ rows: raw.rows, subscription: raw.subscription })
+    }
 
     if (raw?.multiSheet) {
       const sheets = raw.sheets.map(s => ({

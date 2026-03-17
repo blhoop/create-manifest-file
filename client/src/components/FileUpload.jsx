@@ -5,11 +5,13 @@ const ACCEPTED = [
   '.xlsx', '.csv', '.tsv',
   '.xml', '.vsdx', '.svg',
   '.png', '.jpg', '.jpeg',
-  '.pdf'
+  '.pdf',
+  '.yaml', '.yml',
 ].join(',')
 
 const SPREADSHEET_EXTS = new Set(['.xlsx', '.csv', '.tsv'])
 const DIAGRAM_EXTS = new Set(['.xml', '.vsdx', '.svg', '.png', '.jpg', '.jpeg', '.pdf'])
+const YAML_EXTS = new Set(['.yaml', '.yml'])
 
 function getExt(name) {
   return name.slice(name.lastIndexOf('.')).toLowerCase()
@@ -21,7 +23,7 @@ export default function FileUpload({ onParsed, onError, setLoading, loading }) {
 
   const processFile = async (file) => {
     const ext = getExt(file.name)
-    if (!SPREADSHEET_EXTS.has(ext) && !DIAGRAM_EXTS.has(ext)) {
+    if (!SPREADSHEET_EXTS.has(ext) && !DIAGRAM_EXTS.has(ext) && !YAML_EXTS.has(ext)) {
       onError(`Unsupported file type: ${ext}`)
       return
     }
@@ -35,7 +37,7 @@ export default function FileUpload({ onParsed, onError, setLoading, loading }) {
       const json = await res.json()
 
       if (!res.ok) throw new Error(json.error || 'Server error')
-      onParsed(json.rows, file.name, json.sheets ?? null)
+      onParsed(json.rows, file.name, json.sheets ?? null, json.subscription ?? null)
     } catch (err) {
       onError(err.message)
     } finally {
@@ -78,6 +80,9 @@ export default function FileUpload({ onParsed, onError, setLoading, loading }) {
       </p>
       <p className="upload-subtitle">
         <strong>Diagrams:</strong> .xml (draw.io) .vsdx (Visio) .svg .png .jpg .pdf
+      </p>
+      <p className="upload-subtitle">
+        <strong>Manifest:</strong> .yaml .yml
       </p>
     </div>
   )

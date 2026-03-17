@@ -34,7 +34,7 @@ Full-stack web app: React/Vite frontend + Node.js/Express backend.
 
 **Backend** (`server/`)
 - `index.js` — Express entry point
-- `routes/upload.js` — `POST /api/parse`: receives file via multer, dispatches to correct parser by extension, returns `{ rows }`, deletes temp file
+- `routes/upload.js` — `POST /api/parse`: receives file via multer, dispatches to correct parser by extension, returns `{ rows }` or `{ rows, subscription }` for YAML files, deletes temp file
 - `config/outputSchema.js` — **single source of truth** for the YAML output structure; imported by parsers, location defaults, and the YAML builder
 - `parsers/` — one module per format:
   - `spreadsheet.js` — ExcelJS, fuzzy-maps column headers to canonical names
@@ -43,6 +43,7 @@ Full-stack web app: React/Vite frontend + Node.js/Express backend.
   - `svg.js` — XML parser, collects all text nodes
   - `image.js` — sends base64 image to Claude Vision API (`claude-sonnet-4-6`) with Azure icon visual reference prompt
   - `pdf.js` — sends base64 PDF to Claude API (`claude-sonnet-4-6`) as a `document` content block
+  - `yaml.js` — js-yaml, round-trips an existing `.yaml`/`.yml` manifest back into subscription + resource rows; skips normalize/locationDefaults pipeline
   - `normalizeName.js` — normalizes `name` values (strips env suffixes, type prefixes, region segments, etc.)
   - `locationDefaults.js` — applies location defaults based on resource type using rules from `outputSchema.js`
 

@@ -42,8 +42,8 @@ export default function App() {
     setAuditLog(prev => [...prev, { ...entry, timestamp: new Date().toISOString() }])
   }
 
-  const handleParsed = (data, name, incomingSheets) => {
-    const baseName = name.replace(/\.[^.]+$/, '') + '_manifest'
+  const handleParsed = (data, name, incomingSheets, incomingSubscription) => {
+    const baseName = name.replace(/\.[^.]+$/, '')
     if (incomingSheets?.length > 1) {
       setSheets(incomingSheets)
       setActiveSheetIdx(0)
@@ -55,7 +55,10 @@ export default function App() {
     }
     setFileName(baseName)
     setError('')
-    setSubscription(defaultSubscription)
+    setSubscription(incomingSubscription
+      ? { ...defaultSubscription, ...incomingSubscription }
+      : defaultSubscription
+    )
   }
 
   const handleSheetSelect = (idx) => {
@@ -82,6 +85,17 @@ export default function App() {
     localStorage.removeItem(STORAGE_KEY)
   }
 
+  // Quote a YAML scalar value if it contains characters that would produce invalid YAML
+  const yamlScalar = (val) => {
+    if (!val) return ''
+    const s = String(val)
+    // Needs quoting if: contains colon, hash, YAML structural chars, or leading special chars
+    if (/[:#\{\}\[\]\n]/.test(s) || /^[-?!|>%@`&*]/.test(s.trim())) {
+      return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+    }
+    return s
+  }
+
   const buildYamlContent = () => {
     const lines = []
     const sub = subscription
@@ -89,9 +103,9 @@ export default function App() {
     lines.push('# ---------------------------------------------------------------------------')
     lines.push('# REQUIRED — Subscription identity')
     lines.push('# ---------------------------------------------------------------------------')
-    if (sub.subscription_name) lines.push(`subscription_name: ${sub.subscription_name}`)
-    if (sub.environment) lines.push(`environment: ${sub.environment}`)
-    if (sub.default_location) lines.push(`default_location: ${sub.default_location}`)
+    if (sub.subscription_name) lines.push(`subscription_name: ${yamlScalar(sub.subscription_name)}`)
+    if (sub.environment) lines.push(`environment: ${yamlScalar(sub.environment)}`)
+    if (sub.default_location) lines.push(`default_location: ${yamlScalar(sub.default_location)}`)
 
     const optionalSubFields = ['product_code', 'vnet_cidr', 'subscription_id', 'spn_client_id']
     const hasOptional = optionalSubFields.some(k => sub[k])
@@ -100,7 +114,7 @@ export default function App() {
       lines.push('# ---------------------------------------------------------------------------')
       lines.push('# OPTIONAL — Overrides and existing infrastructure')
       lines.push('# ---------------------------------------------------------------------------')
-      optionalSubFields.forEach(k => { if (sub[k]) lines.push(`${k}: ${sub[k]}`) })
+      optionalSubFields.forEach(k => { if (sub[k]) lines.push(`${k}: ${yamlScalar(sub[k])}`) })
     }
 
     lines.push('')
@@ -109,11 +123,11 @@ export default function App() {
     lines.push('# ---------------------------------------------------------------------------')
     lines.push('resources:')
     rows.forEach(row => {
-      lines.push(`  - name: ${row.name ?? ''}`)
-      lines.push(`    type: ${row.type ?? ''}`)
-      if (row.location) lines.push(`    location: ${row.location}`)
-      if (row.repo) lines.push(`    repo: ${row.repo}`)
-      if (row.comments) lines.push(`    comments: ${row.comments}`)
+      lines.push(`  - name: ${yamlScalar(row.name ?? '')}`)
+      lines.push(`    type: ${yamlScalar(row.type ?? '')}`)
+      if (row.location) lines.push(`    location: ${yamlScalar(row.location)}`)
+      if (row.repo) lines.push(`    repo: ${yamlScalar(row.repo)}`)
+      if (row.comments) lines.push(`    comments: ${yamlScalar(row.comments)}`)
     })
 
     return lines.join('\n')
@@ -208,7 +222,7 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <h1>Manifest File Creator</h1>
-        <p>Upload a spreadsheet or architecture diagram to generate a YAML manifest</p>
+        <p>Upload a spreadsheet, architecture diagram, or existing yaml to generate a YAML manifest</p>
       </header>
 
       <main className="app-main">
@@ -298,7 +312,7 @@ export default function App() {
                 </div>
               </div>
             </div>
-            <PreviewTable rows={rows} onRowsChange={r => setRows(sortByType(r))} onDetach={handleDetach} onAudit={addAudit} />
+            <PreviewTable rows={rows} onRowsChange={r => setRows(sortByType(r))} onDetach={handleDetach} onAudit={addAudit} getYaml={buildYamlContent} />
             <div className="download-bar">
               <span>{rows.length} row{rows.length !== 1 ? 's' : ''} found</span>
               <div className="download-controls">

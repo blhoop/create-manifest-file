@@ -24,7 +24,10 @@
       "Bash(git push:*)",
       "Bash(npm run:*)",
       "WebFetch(domain:az-icons.com)",
-      "Bash(ls /c/main/create-manifest-file/*.md 2>/dev/null)"
+      "Bash(ls /c/main/create-manifest-file/*.md 2>/dev/null)",
+      "Bash(cd C:\\\\main\\\\create-manifest-file\\\\server && node -e \"require\\('js-yaml'\\); console.log\\('ok'\\)\" 2>&1)",
+      "Bash(node -e \"require\\('js-yaml'\\); console.log\\('ok'\\)\" 2>&1)",
+      "Bash(cd /c/main/create-manifest-file/server && npm install js-yaml)"
     ]
   }
 }
