@@ -49,6 +49,15 @@ const AZURE = {
       { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
     ],
   },
+  function_app_slots: {
+    label: 'Function App / Slots',
+    fields: [
+      { key: 'Slot',         label: 'Slot Name',   type: 'select', options: ['staging', 'preview', 'canary', 'blue', 'green'] },
+      { key: 'AutoSwap',     label: 'Auto-swap',   type: 'select', options: ['Enabled', 'Disabled'] },
+      { key: 'Traffic',      label: 'Traffic %',   type: 'text',   placeholder: 'e.g. 10%' },
+      { key: 'StickySettings', label: 'Sticky Settings', type: 'select', options: ['Yes', 'No'] },
+    ],
+  },
   FunctionApp: {
     label: 'Function App',
     fields: [
@@ -81,9 +90,22 @@ const AZURE = {
   container_app: {
     label: 'Container App',
     fields: [
-      { key: 'runtime', label: 'Runtime', type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'Go', 'Other'] },
-      { key: 'cpu',     label: 'CPU',     type: 'select', options: ['0.25', '0.5', '0.75', '1.0', '1.25', '1.5', '1.75', '2.0'] },
-      { key: 'memory',  label: 'Memory',  type: 'select', options: ['0.5Gi', '1Gi', '1.5Gi', '2Gi', '3Gi', '4Gi'] },
+      { key: 'Plan',        label: 'Plan',        type: 'select', options: ['Consumption', 'Dedicated'] },
+      { key: 'DevStack',    label: 'Dev Stack',   type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'Go', 'Other'] },
+      { key: 'CPU',         label: 'CPU',         type: 'select', options: ['0.25', '0.5', '0.75', '1.0', '1.25', '1.5', '1.75', '2.0'] },
+      { key: 'Memory',      label: 'Memory',      type: 'select', options: ['0.5Gi', '1Gi', '1.5Gi', '2Gi', '3Gi', '4Gi'] },
+      { key: 'MinReplicas', label: 'Min Replicas', type: 'select', options: ['0', '1', '2', '3'] },
+      { key: 'Dapr',        label: 'Dapr',        type: 'select', options: ['Enabled', 'Disabled'] },
+    ],
+  },
+  container_apps_environment: {
+    label: 'Container Environment',
+    fields: [
+      { key: 'Environment',   label: 'Environment',   type: 'select', options: ['Consumption', 'Dedicated'] },
+      { key: 'VNet',          label: 'VNet',          type: 'select', options: ['Default', 'Custom'] },
+      { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
+      { key: 'KEDA',          label: 'KEDA Version',  type: 'text',   placeholder: 'e.g. 2.17.2' },
+      { key: 'Dapr',          label: 'Dapr Version',  type: 'text',   placeholder: 'e.g. 1.13.6' },
     ],
   },
   aks: {
@@ -145,9 +167,10 @@ const AZURE = {
   SQLDatabase: {
     label: 'SQL Database',
     fields: [
-      { key: 'tier',    label: 'Tier',    type: 'select', options: ['Basic', 'Standard', 'Premium', 'GeneralPurpose', 'BusinessCritical', 'Hyperscale'] },
-      { key: 'vcores',  label: 'vCores',  type: 'select', options: ['2', '4', '8', '16', '24', '32', '40', '80'] },
-      { key: 'storage', label: 'Storage', type: 'text',   placeholder: 'e.g. 100GB' },
+      { key: 'ComputeTier', label: 'Compute Tier', type: 'select', options: ['Provisioned', 'Serverless'] },
+      { key: 'tier',        label: 'Tier',         type: 'select', options: ['Basic', 'Standard', 'Premium', 'GeneralPurpose', 'BusinessCritical', 'Hyperscale'] },
+      { key: 'vcores',      label: 'vCores',       type: 'select', options: ['2', '4', '8', '12', '16', '24', '32', '40', '80'] },
+      { key: 'storage',     label: 'Storage',      type: 'text',   placeholder: 'e.g. 100GB' },
     ],
   },
   mysql: {
@@ -180,9 +203,14 @@ const AZURE = {
   StorageAccount: {
     label: 'Storage Account',
     fields: [
-      { key: 'sku',         label: 'SKU',         type: 'select', options: ['Standard_LRS', 'Standard_GRS', 'Standard_RAGRS', 'Standard_ZRS', 'Premium_LRS', 'Premium_ZRS'] },
-      { key: 'kind',        label: 'Kind',        type: 'select', options: ['StorageV2', 'BlobStorage', 'FileStorage', 'BlockBlobStorage'] },
-      { key: 'access_tier', label: 'Access Tier', type: 'select', options: ['Hot', 'Cool', 'Cold', 'Archive'] },
+      { key: 'Performance', label: 'Performance', type: 'select', options: ['Standard', 'Premium'] },
+      { key: 'SKU',         label: 'Redundancy',  type: 'select', options: [
+        'Standard_LRS', 'Standard_ZRS', 'Standard_GRS', 'Standard_RAGRS',
+        'Standard_GZRS', 'Standard_RAGZRS',
+        'Premium_LRS', 'Premium_ZRS',
+      ]},
+      { key: 'Kind',        label: 'Kind',        type: 'select', options: ['StorageV2', 'BlockBlobStorage', 'FileStorage', 'BlobStorage'] },
+      { key: 'AccessTier',  label: 'Access Tier', type: 'select', options: ['Hot', 'Cool', 'Cold', 'Archive'] },
     ],
   },
   service_bus: {
@@ -273,7 +301,7 @@ export function getCommentFields(type, provider = 'azure') {
   const ns = RESOURCE_COMMENT_FIELDS[provider]
   if (!ns) return null
   if (ns[type]) return ns[type]
-  const normalize = s => s.toLowerCase().replace(/[\s_]+/g, '')
+  const normalize = s => s.toLowerCase().replace(/[\s_/]+/g, '')
   const needle = normalize(type)
   const match = Object.keys(ns).find(k => normalize(k) === needle)
   return match ? ns[match] : null
