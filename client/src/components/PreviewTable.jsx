@@ -22,7 +22,7 @@ const COLUMNS = ['name', 'type', 'location', 'repo', 'comments']
 
 const TOOLTIPS = {
   name: 'Subsystem/component name (e.g. web, booking-db)',
-  type: 'What to deploy. Builder types: app_service, pg, cosmos, sql, mysql, sqlmi, aks, container_app, vm, redis, swa, key_vault, app_insights, container_registry, service_bus, ai_foundry, ai_search. First resource must be a compute type.',
+  type: 'What to deploy. Builder types: app_service, app_service_slots, pg, cosmos, sql, mysql, sqlmi, aks, container_app, vm, redis, swa, key_vault, app_insights, container_registry, service_bus, ai_foundry, ai_search. First resource must be a compute type.',
   location: 'Azure region override. Omit to use default_location.',
   repo: 'Application source repo (org/repo format). When specified, the pipeline auto-generates CI/CD caller workflows targeting this service from the given repo in a PR.',
   comments: 'Free-text hints that influence the manifest. e.g. "needs pgbouncer", "serverless", "zone redundant ha"',
