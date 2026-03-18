@@ -29,12 +29,15 @@ Return a JSON array where each element has exactly these keys:
 - "type": the resource type using the values listed above (snake_case for builder types, PascalCase for inventory types).
 - "location": Azure region slug if visible (e.g. "australiaeast"). Use empty string if not shown.
 - "repo": empty string (cannot be determined from a diagram).
+- "server_name": empty string (parent references cannot be determined from a diagram).
+- "plan_name": empty string (parent references cannot be determined from a diagram).
+- "function_app_name": empty string (parent references cannot be determined from a diagram).
 - "comments": if this resource has connectors/arrows to other resources, list them briefly e.g. "Connected to: orders-db, service-bus". Use empty string if none.
 
 Return ONLY a valid JSON array, no markdown fences, no explanation.
 [
-  {"name":"web","type":"app_service","location":"","repo":"","comments":"Connected to: booking-db, cache"},
-  {"name":"booking-db","type":"pg","location":"","repo":"","comments":""}
+  {"name":"web","type":"app_service","location":"","repo":"","server_name":"","plan_name":"","function_app_name":"","comments":"Connected to: booking-db, cache"},
+  {"name":"booking-db","type":"pg","location":"","repo":"","server_name":"","plan_name":"","function_app_name":"","comments":""}
 ]`
 
 module.exports = async function parseImage(filePath, originalName) {

@@ -62,6 +62,9 @@ const EXAMPLE_ROWS = [
   },
 ]
 
+// Comments now include parent links in structured format, just display as-is
+const getCommentDisplayText = (row) => row.comments ?? ''
+
 export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, getYaml }) {
   const [editingCell, setEditingCell] = useState(null)
   const [editValue, setEditValue] = useState('')
@@ -348,12 +351,38 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
     document.addEventListener('mouseup', onMouseUp)
   }
 
-  const handleJsonCommentCommit = (rowIdx, newComment) => {
-    const oldVal = rows[rowIdx].comments ?? ''
-    if (onAudit && newComment !== oldVal) {
-      onAudit({ type: 'JSON_COMMENT_APPEND', row: rowIdx, oldVal, newVal: newComment })
+  const handleJsonCommentCommit = (rowIdx, commitData) => {
+    // Handle both old string format and new object format for backwards compatibility
+    const isObject = commitData && typeof commitData === 'object' && !Array.isArray(commitData)
+    const baseComment = isObject ? commitData.comment : commitData
+    const parentLink = isObject ? commitData.parentLink : null
+
+    // Build final comment including parent link if provided
+    const commentParts = []
+    if (parentLink) {
+      // Map field names to display labels
+      const labelMap = {
+        server_name: 'Server',
+        plan_name: 'Plan',
+        function_app_name: 'FunctionApp',
+      }
+      const label = labelMap[parentLink.field] || parentLink.field
+      commentParts.push(`${label}:${parentLink.value}`)
     }
-    onRowsChange(rows.map((r, i) => i === rowIdx ? { ...r, comments: newComment } : r))
+    if (baseComment) {
+      commentParts.push(baseComment)
+    }
+    const newComment = commentParts.join(', ')
+
+    const oldComment = rows[rowIdx].comments ?? ''
+    if (onAudit && newComment !== oldComment) {
+      onAudit({ type: 'JSON_COMMENT_APPEND', row: rowIdx, oldVal: oldComment, newVal: newComment })
+    }
+
+    // Update row with new comment (parent link now part of comments)
+    const updatedRow = { ...rows[rowIdx], comments: newComment, server_name: '', plan_name: '', function_app_name: '' }
+
+    onRowsChange(rows.map((r, i) => i === rowIdx ? updatedRow : r))
     setJsonPopupRow(null)
   }
 
@@ -413,7 +442,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
           currentComment={rows[jsonPopupRow]?.comments ?? ''}
           rows={rows}
           onClose={() => setJsonPopupRow(null)}
-          onCommit={(newComment) => handleJsonCommentCommit(jsonPopupRow, newComment)}
+          onCommit={(commitData) => handleJsonCommentCommit(jsonPopupRow, commitData)}
         />
       )}
       {showYamlPreview && (
@@ -695,12 +724,14 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
                         </>
                       ) : (
                         <>
-                          <span className="cell-text">{row[col] ?? ''}</span>
+                          <span className="cell-text">
+                            {col === 'comments' ? getCommentDisplayText(row) : (row[col] ?? '')}
+                          </span>
                           {col === 'comments' && (
                             <>
                               <button
                                 className="btn-json-comment"
-                                title="Edit comment"
+                                title="Edit comment and parent links"
                                 onClick={e => { e.stopPropagation(); setJsonPopupRow(idx) }}
                               >✎</button>
                               <div

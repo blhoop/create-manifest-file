@@ -15,6 +15,9 @@ Return a JSON array where each element has exactly these keys:
   - Generic: "Database", "API Gateway", "Queue", "Storage", "Load Balancer", "Container", "Server", "Microservice"
 - "location": Azure region slug if stated (e.g. "australiaeast"). Use empty string if not stated.
 - "repo": empty string.
+- "server_name": empty string (parent references cannot be determined from a document).
+- "plan_name": empty string (parent references cannot be determined from a document).
+- "function_app_name": empty string (parent references cannot be determined from a document).
 - "comments": connections or dependencies if described e.g. "Connected to: orders-db, service-bus". Use empty string if none.
 
 Return ONLY a valid JSON array, no markdown fences, no explanation.`

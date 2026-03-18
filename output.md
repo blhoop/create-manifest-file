@@ -51,6 +51,9 @@ A YAML array under the `resources:` key. Each entry defines one resource to depl
 | `type` | ✅ | Resource type. See type list below. The first resource must be a compute type. |
 | `location` | | Azure region override for this resource. Omit to use `default_location`. |
 | `repo` | | Application source repo in `org/repo-name` format. When set, pipeline auto-generates CI/CD workflows. |
+| `server_name` | | Parent SQL Server name — for `SQLDatabase` resources to link to their server. |
+| `plan_name` | | Parent App Service Plan name — for `appserviceslots` or `webappslots` resources. |
+| `function_app_name` | | Parent Function App name — for `functionappslots` resources. |
 | `comments` | | Free-text hints that influence the manifest (e.g. `needs pgbouncer`, `serverless`, `zone redundant ha`). |
 
 ---
@@ -160,8 +163,12 @@ resources:
     type: pg
     comments: needs pgbouncer
 
-  - name: reporting
-    type: sql
+  - name: reporting-server
+    type: SQLServer
+
+  - name: reporting-db
+    type: SQLDatabase
+    server_name: reporting-server
 
   - name: cache
     type: redis
@@ -187,3 +194,8 @@ resources:
 - `product_code` overrides the auto-derived initials when set explicitly
 - The first entry in `resources` must be a compute type: `app_service`, `aks`, `container_app`, or `vm`
 - Optional fields are omitted entirely from the output when empty (not written as empty strings)
+- **Parent resource references** (`server_name`, `plan_name`, `function_app_name`):
+  - Use `server_name` to link a `SQLDatabase` to its parent `SQLServer`
+  - Use `plan_name` to link `appserviceslots` or `webappslots` to their parent `AppServicePlan`
+  - Use `function_app_name` to link `functionappslots` to their parent `FunctionApp`
+  - Terraform consumes these to build the proper resource dependencies

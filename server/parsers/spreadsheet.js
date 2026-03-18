@@ -42,7 +42,7 @@ module.exports = async function parseSpreadsheet(filePath, originalName) {
     const rows = []
     worksheet.eachRow((row, rowNum) => {
       if (rowNum === 1) return
-      const out = { name: '', type: '', location: '', repo: '', comments: '' }
+      const out = { name: '', type: '', location: '', repo: '', server_name: '', plan_name: '', function_app_name: '', comments: '' }
       row.eachCell((cell, colNum) => {
         const canonical = headers[colNum - 1]
         if (canonical in out) out[canonical] = String(cell.value ?? '')
