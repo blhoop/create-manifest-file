@@ -45,9 +45,10 @@ router.post('/parse', upload.single('file'), async (req, res) => {
   try {
     const raw = await parser(file.path, file.originalname)
 
-    // YAML round-trip: subscription + rows already structured, skip normalize pipeline
+    // YAML round-trip: subscription + rows already structured, but still clean comments
     if (raw?.subscription) {
-      return res.json({ rows: raw.rows, subscription: raw.subscription })
+      const rows = normalizeRows(raw.rows)
+      return res.json({ rows, subscription: raw.subscription })
     }
 
     if (raw?.multiSheet) {
