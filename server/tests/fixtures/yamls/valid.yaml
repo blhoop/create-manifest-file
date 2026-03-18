@@ -1,0 +1,19 @@
+
+subscription_name: my-subscription
+environment: prod
+default_location: eastus
+product_code: ABC
+vnet_cidr: 10.0.0.0/16
+subscription_id: 12345678-1234-1234-1234-123456789012
+spn_client_id: client-id-12345
+
+resources:
+  - name: web-api
+    type: Web App
+    location: eastus
+    repo: org/web-api
+    comments: main api
+  - name: sql-db
+    type: SQL Database
+    location: eastus
+    comments: production data

@@ -144,11 +144,17 @@ function normalizeName(name) {
  * @returns {Array<Object>} Rows with normalized spoke_name, nulls removed
  */
 function normalizeRows(rows) {
+  const { cleanComments } = require('./cleanComments')
   const out = []
   for (const row of rows) {
     const normalized = normalizeName(row.name)
     if (normalized === null) continue
-    out.push({ ...row, name: normalized, type: normalizeTypeName(row.type) })
+    out.push({
+      ...row,
+      name: normalized,
+      type: normalizeTypeName(row.type),
+      comments: cleanComments(row.comments)
+    })
   }
   return out
 }

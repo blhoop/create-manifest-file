@@ -1,0 +1,9 @@
+
+subscription_name: missing-fields
+environment: dev
+default_location: eastus
+
+resources:
+  - name: app-1
+    type: Web App
+  - name: app-2

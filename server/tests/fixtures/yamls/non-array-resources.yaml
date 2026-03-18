@@ -1,0 +1,7 @@
+
+subscription_name: test
+environment: dev
+default_location: eastus
+resources:
+  name: single-resource
+  type: Web App

@@ -1,0 +1,14 @@
+
+subscription_name: multi-resource
+environment: test
+default_location: australiaeast
+
+resources:
+  - name: frontend
+    type: Web App
+  - name: backend
+    type: Function App
+  - name: database
+    type: SQL Database
+  - name: storage
+    type: Storage Account

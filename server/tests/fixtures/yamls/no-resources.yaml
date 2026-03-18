@@ -1,0 +1,4 @@
+
+subscription_name: no-resources
+environment: dev
+default_location: eastus

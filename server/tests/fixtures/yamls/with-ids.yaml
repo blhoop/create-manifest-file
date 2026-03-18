@@ -1,0 +1,12 @@
+
+subscription_name: test
+environment: dev
+default_location: eastus
+
+resources:
+  - id: 1
+    name: app-001
+    type: Web App
+  - id: 2
+    name: app-002
+    type: Function App
