@@ -27,7 +27,23 @@
       "Bash(ls /c/main/create-manifest-file/*.md 2>/dev/null)",
       "Bash(cd C:\\\\main\\\\create-manifest-file\\\\server && node -e \"require\\('js-yaml'\\); console.log\\('ok'\\)\" 2>&1)",
       "Bash(node -e \"require\\('js-yaml'\\); console.log\\('ok'\\)\" 2>&1)",
-      "Bash(cd /c/main/create-manifest-file/server && npm install js-yaml)"
+      "Bash(cd /c/main/create-manifest-file/server && npm install js-yaml)",
+      "Bash(git -C /c/main/create-manifest-file add client/src/App.jsx && git -C /c/main/create-manifest-file commit -m \"$\\(cat <<'EOF'\nUpdate banner to mention existing yaml as an upload option\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\" && git -C /c/main/create-manifest-file push)",
+      "Bash(git -C /c/main/create-manifest-file add README.md SESSIONS.md CLAUDE.md && git -C /c/main/create-manifest-file commit -m \"$\\(cat <<'EOF'\nUpdate README, SESSIONS, and CLAUDE for 2026-03-14 session\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\" && git -C /c/main/create-manifest-file push)",
+      "Bash(cd:*)",
+      "Bash(netstat:*)",
+      "Bash(tasklist:*)",
+      "Bash(tree:*)",
+      "Bash(git commit:*)",
+      "Bash(grep -rn \"function_app_slots\\\\|app_service_slots\" /c/main/create-manifest-file/server/ --include=*.js)",
+      "Bash(grep -rn \"app_service_slots\\\\|AppServiceSlots\\\\|app.service.*slot\" /c/main/create-manifest-file --include=*.js --include=*.jsx --include=*.md --include=*.json)",
+      "Bash(gh pr:*)",
+      "Skill(update-config)",
+      "Bash(gh run:*)",
+      "Bash(npm show:*)",
+      "Bash(npm install:*)",
+      "Bash(find C:/main/create-manifest-file -type f -name *.test.js -o -name *.spec.js -o -name *test*.json)",
+      "Bash(npm test:*)"
     ]
   }
 }

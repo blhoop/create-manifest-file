@@ -52,10 +52,8 @@ const AZURE = {
   WebAppSlots: {
     label: 'Web App / Slots',
     fields: [
-      { key: 'OS',            label: 'OS',             type: 'select', options: ['Windows', 'Linux'] },
-      { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'PHP'] },
-      { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
-      { key: 'SKU',           label: 'SKU',            type: 'select', options: [
+      { key: 'Slot',          label: 'Slot Name',      type: 'select', options: ['staging', 'preview', 'canary', 'blue', 'green'] },
+      { key: 'Plan',          label: 'App Service Plan', type: 'select', options: [
         'F1', 'D1',
         'B1', 'B2', 'B3',
         'S1', 'S2', 'S3',
@@ -64,6 +62,9 @@ const AZURE = {
         'P0v4', 'P1v4', 'P2v4', 'P3v4',
         'I1v2', 'I2v2', 'I3v2',
       ]},
+      { key: 'OS',            label: 'OS',             type: 'select', options: ['Windows', 'Linux'] },
+      { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'PHP'] },
+      { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
       { key: 'Publishing',    label: 'Publishing',     type: 'select', options: ['Code', 'Container'] },
       { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
     ],
@@ -71,10 +72,8 @@ const AZURE = {
   app_service_slots: {
     label: 'App Service / Slots',
     fields: [
-      { key: 'OS',            label: 'OS',             type: 'select', options: ['Windows', 'Linux'] },
-      { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'PHP'] },
-      { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
-      { key: 'SKU',           label: 'SKU',            type: 'select', options: [
+      { key: 'Slot',          label: 'Slot Name',      type: 'select', options: ['staging', 'preview', 'canary', 'blue', 'green'] },
+      { key: 'Plan',          label: 'App Service Plan', type: 'select', options: [
         'F1', 'D1',
         'B1', 'B2', 'B3',
         'S1', 'S2', 'S3',
@@ -83,6 +82,9 @@ const AZURE = {
         'P0v4', 'P1v4', 'P2v4', 'P3v4',
         'I1v2', 'I2v2', 'I3v2',
       ]},
+      { key: 'OS',            label: 'OS',             type: 'select', options: ['Windows', 'Linux'] },
+      { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'PHP'] },
+      { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
       { key: 'Publishing',    label: 'Publishing',     type: 'select', options: ['Code', 'Container'] },
       { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
     ],

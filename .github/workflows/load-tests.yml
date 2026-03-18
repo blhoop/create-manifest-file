@@ -1,0 +1,91 @@
+name: Load Tests
+
+on:
+  # Trigger manually via GitHub Actions UI
+  workflow_dispatch:
+  # Schedule nightly load test (2 AM UTC)
+  schedule:
+    - cron: '0 2 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  load-tests:
+    name: Run k6 Load Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install server dependencies
+        run: npm ci --prefix server
+
+      - name: Start backend server
+        run: npm run dev:server &
+        env:
+          NODE_ENV: test
+          ANTHROPIC_API_KEY: test-key-sk-ant-test123456789
+
+      - name: Wait for server startup
+        run: |
+          for i in {1..30}; do
+            curl -s http://localhost:3001/health > /dev/null && echo "Server is up" && exit 0
+            echo "Attempt $i: waiting for server..."
+            sleep 2
+          done
+          echo "Server failed to start"
+          exit 1
+
+      - name: Setup k6
+        run: |
+          sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6-stable.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+
+      - name: Run concurrent upload load test
+        run: k6 run load-tests/concurrent-uploads.js --summary-export=concurrent-summary.json
+        continue-on-error: true
+
+      - name: Run large file parsing load test
+        run: k6 run load-tests/large-file-parsing.js --summary-export=large-summary.json
+        continue-on-error: true
+
+      - name: Run sustained load test
+        run: k6 run load-tests/sustained-load.js --summary-export=sustained-summary.json
+        continue-on-error: true
+
+      - name: Upload load test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: load-test-results
+          path: |
+            concurrent-summary.json
+            large-summary.json
+            sustained-summary.json
+
+      - name: Publish load test results
+        if: always()
+        run: |
+          echo "## Load Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Concurrent Uploads" >> $GITHUB_STEP_SUMMARY
+          cat concurrent-summary.json | jq '.metrics | to_entries[] | "\(.key): \(.value | if type == "object" then .value else . end)"' >> $GITHUB_STEP_SUMMARY || echo "No concurrent results"
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Large File Parsing" >> $GITHUB_STEP_SUMMARY
+          cat large-summary.json | jq '.metrics | to_entries[] | "\(.key): \(.value | if type == "object" then .value else . end)"' >> $GITHUB_STEP_SUMMARY || echo "No large file results"
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Sustained Load" >> $GITHUB_STEP_SUMMARY
+          cat sustained-summary.json | jq '.metrics | to_entries[] | "\(.key): \(.value | if type == "object" then .value else . end)"' >> $GITHUB_STEP_SUMMARY || echo "No sustained load results"

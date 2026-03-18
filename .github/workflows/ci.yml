@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   server:
-    name: Server — install & lint
+    name: Server — install, test & lint
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -31,11 +31,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run unit tests
+        run: npm test -- --coverage
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./server/coverage/lcov.info
+          flags: server
+        continue-on-error: true
+
       - name: Check for vulnerabilities (high+)
         run: npm audit --audit-level=high
 
   client:
-    name: Client — install, build
+    name: Client — install, test & build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -53,6 +63,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Run unit tests
+        run: npm test
 
       - name: Build
         run: npm run build
