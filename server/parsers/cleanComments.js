@@ -26,25 +26,29 @@ function cleanComments(comment) {
     }
   }
 
-  // Remove escaped quotes
+  // Remove escaped quotes: \" → " (handles JSON-escaped format)
   text = text.replace(/\\"/g, '"')
 
   // Remove leading/trailing quotes
-  text = text.replace(/^["]+|["]+$/g, '')
+  text = text.replace(/^["']+|["']+$/g, '')
 
-  // Remove noise fields in JSON format
-  // E.g., "Parent app": "value" or Parent app: value → removed
-  text = text.replace(/"(?:Parent\s+app|Publishing\s+model|Runtime\s+Stack)"[^,]*/gi, '')
+  // Remove quotes around individual items: "item1", "item2" → item1, item2
+  // This handles the format: "OS: Windows", "Publishing model: Code"
+  text = text.replace(/"([^"]+)"/g, '$1')
+    .replace(/'([^']+)'/g, '$1')
+
+  // Remove noise fields (quoted or unquoted)
+  // Match "Parent app": value or Parent app: value or "Parent app" alone
+  text = text.replace(/,?\s*"?(?:Parent\s+app|Publishing\s+model|Runtime\s+Stack)"?[^,]*/gi, '')
     .replace(/(?:^|,)\s*(?:Parent\s+app|Publishing\s+model|Runtime\s+Stack)[^,]*(?:,|$)/gi, ',')
 
-  // Clean up after noise removal: remove stray commas
+  // Clean up after noise removal: remove stray commas and spaces
   text = text.replace(/^[,\s]+|[,\s]+$/g, '')
     .replace(/,\s*,/g, ',')
+    .replace(/\s*,\s*/g, ', ')
+    .replace(/,\s*,/g, ',')
 
-  // Clean up multiple spaces and normalize comma spacing
-  text = text.replace(/\s*,\s*/g, ', ')
-
-  // Final trim
+  // Final cleanup: trim and handle empty result
   return text.trim() || ''
 }
 

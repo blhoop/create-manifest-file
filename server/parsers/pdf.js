@@ -8,7 +8,7 @@ const PROMPT = `You are analyzing a PDF architecture or infrastructure document.
 Return a JSON array where each element has exactly these keys:
 - "name": the resource or component instance name as labeled. If unlabeled, use the type value as the name.
 - "type": the resource type:
-  - Azure types (use exact values): app_service, pg, cosmos, sql, mysql, sqlmi, aks, container_app, vm, redis, static_web_app, key_vault, app_insights, container_registry, servicebus, openai, search, storage_account, data_factory, app_configuration, frontdoor, user_assigned_identity
+  - Azure types (use exact values): app_service, app_service_plan, web_app, function_app, aks, container_app, container_app_environment, vm, static_web_app, pg, cosmos, sql, mysql, sqlmi, redis, storage_account, data_factory, servicebus, openai, search, key_vault, container_registry, user_assigned_identity, app_insights, app_configuration, frontdoor
   - AWS: "AWS Lambda", "AWS S3", "AWS RDS", "AWS API Gateway", "AWS ECS"
   - GCP: "GCP Cloud Run", "GCP Pub/Sub"
   - Generic: "Database", "API Gateway", "Queue", "Storage", "Load Balancer", "Container", "Server", "Microservice"

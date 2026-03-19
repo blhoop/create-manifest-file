@@ -30,6 +30,39 @@ const AZURE = {
       { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
     ],
   },
+  app_service_plan: {
+    label: 'App Service Plan',
+    fields: [
+      { key: 'OS',            label: 'OS',             type: 'select', options: ['Linux', 'Windows'] },
+      { key: 'SKU',           label: 'SKU',            type: 'select', options: [
+        'B1', 'B2', 'B3',
+        'S1', 'S2', 'S3',
+        'P0v3', 'P1v3', 'P2v3', 'P3v3',
+        'EP1', 'EP2', 'EP3',
+        'Y1',
+      ]},
+      { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
+    ],
+  },
+  web_app: {
+    label: 'Web App',
+    fields: [
+      { key: 'OS',            label: 'OS',             type: 'select', options: ['Linux', 'Windows'] },
+      { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'PHP'] },
+      { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
+      { key: 'Publishing',    label: 'Publishing',     type: 'select', options: ['Code', 'Container'] },
+      { key: 'Slots',         label: 'Slots',          type: 'text',   placeholder: 'e.g. staging, preview' },
+    ],
+  },
+  function_app: {
+    label: 'Function App',
+    fields: [
+      { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['dotnet-isolated', 'node', 'python', 'java', 'powershell', 'custom'] },
+      { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
+      { key: 'Trigger',       label: 'Trigger',        type: 'select', options: ['HTTP', 'Timer', 'ServiceBus', 'Queue', 'Blob', 'CosmosDB', 'EventHub', 'EventGrid'] },
+      { key: 'Slots',         label: 'Slots',          type: 'text',   placeholder: 'e.g. staging' },
+    ],
+  },
   container_app: {
     label: 'Container App',
     fields: [
@@ -41,8 +74,8 @@ const AZURE = {
       { key: 'Dapr',        label: 'Dapr',        type: 'select', options: ['Enabled', 'Disabled'] },
     ],
   },
-  container_apps_environment: {
-    label: 'Container Environment',
+  container_app_environment: {
+    label: 'Container App Environment',
     fields: [
       { key: 'Environment',   label: 'Environment',   type: 'select', options: ['Consumption', 'Dedicated'] },
       { key: 'VNet',          label: 'VNet',          type: 'select', options: ['Default', 'Custom'] },

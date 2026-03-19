@@ -22,7 +22,7 @@ const COLUMNS = ['name', 'type', 'location', 'repo', 'comments']
 
 const TOOLTIPS = {
   name: 'Subsystem/component name (e.g. web, booking-db)',
-  type: 'What to deploy. Types: app_service, pg, cosmos, sql, mysql, sqlmi, aks, container_app, vm, redis, static_web_app, key_vault, app_insights, container_registry, servicebus, openai, search, storage_account, data_factory, app_configuration, frontdoor, user_assigned_identity',
+  type: 'Service type. Compute: app_service, app_service_plan, web_app, function_app, aks, container_app, container_app_environment, vm, static_web_app. Data: pg, cosmos, sql, mysql, sqlmi, redis, storage_account, data_factory, servicebus. AI: openai, search. Security: key_vault, container_registry, user_assigned_identity. Other: app_insights, app_configuration, frontdoor',
   location: 'Azure region override. Omit to use default_location.',
   repo: 'Application source repo (org/repo format). When specified, the pipeline auto-generates CI/CD caller workflows targeting this service from the given repo in a PR.',
   comments: 'Free-text hints that influence the manifest. e.g. "needs pgbouncer", "serverless", "zone redundant ha"',
@@ -36,30 +36,41 @@ const REQUIRED = new Set(['name', 'type'])
 
 const MENU_COLS = new Set(['location'])
 
-// Canonical service types — drives type-column autocomplete suggestions
+// Canonical service types — drives type-column autocomplete + filter suggestions
+// Grouped to match the manifest schema categories
 const TYPE_OPTIONS = [
+  // Compute
   'app_service',
+  'app_service_plan',
+  'web_app',
+  'function_app',
+  'aks',
+  'container_app',
+  'container_app_environment',
+  'vm',
+  'static_web_app',
+  // Data
   'pg',
   'cosmos',
   'sql',
   'mysql',
   'sqlmi',
-  'aks',
-  'container_app',
-  'vm',
   'redis',
-  'static_web_app',
-  'key_vault',
-  'app_insights',
-  'container_registry',
-  'servicebus',
-  'openai',
-  'search',
   'storage_account',
   'data_factory',
+  'servicebus',
+  // AI & Search
+  'openai',
+  'search',
+  // Security & Identity
+  'key_vault',
+  'container_registry',
+  'user_assigned_identity',
+  // Observability
+  'app_insights',
+  // Platform
   'app_configuration',
   'frontdoor',
-  'user_assigned_identity',
 ]
 
 const OPTIONS_FOR = {
@@ -228,8 +239,12 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
     setParseTextVal('')
   }
 
-  // Unique types for filter popover
-  const allServiceTypes = [...new Set(rows.map(r => r.type).filter(Boolean))].sort()
+  // Types for filter popover: canonical list + any unknown types from rows
+  const rowTypes = new Set(rows.map(r => r.type).filter(Boolean))
+  const allServiceTypes = [
+    ...TYPE_OPTIONS.filter(t => rowTypes.has(t)),
+    ...[...rowTypes].filter(t => !TYPE_OPTIONS.includes(t)).sort(),
+  ]
 
   const toggleServiceType = (st) => {
     setServiceTypeFilter(prev => {

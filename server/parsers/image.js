@@ -14,7 +14,7 @@ const PROMPT = `You are analyzing an Azure architecture diagram image. Identify 
 
 Azure diagrams use official Microsoft Azure Architecture Icons. Use these exact type values:
 
-COMPUTE: App Service / Web App / Function App → "app_service", AKS / Kubernetes → "aks", Container App → "container_app", Virtual Machine → "vm", Static Web App → "static_web_app"
+COMPUTE: App Service Plan → "app_service_plan", Web App → "web_app", Function App → "function_app", full App Service stack → "app_service", AKS / Kubernetes → "aks", Container App Environment → "container_app_environment", Container App → "container_app", Virtual Machine → "vm", Static Web App → "static_web_app"
 DATA: PostgreSQL → "pg", SQL Server/Database → "sql", SQL Managed Instance → "sqlmi", Cosmos DB → "cosmos", MySQL → "mysql", Redis → "redis", Storage Account → "storage_account", Data Factory → "data_factory"
 MESSAGING: Service Bus → "servicebus"
 SECURITY: Key Vault → "key_vault", Container Registry → "container_registry", User Assigned Identity → "user_assigned_identity"

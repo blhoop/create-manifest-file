@@ -43,13 +43,23 @@ const TYPE_PREFIXES = [
 // Canonical type names — any incoming variant is remapped to the standard value.
 // Keys are the normalized form (lowercase, spaces/underscores/slashes removed).
 const TYPE_REMAP = {
-  // Compute — old inventory/variant names → canonical
-  'appservice':       'app_service',
-  'webapp':           'app_service',
-  'appserviceslots':  'app_service',
-  'webappslots':      'app_service',
-  'functionapp':      'app_service',
-  'appserviceplan':   'app_service',
+  // Compute — variants → canonical
+  'appservice':            'app_service',
+  'appserviceslots':       'app_service',
+  'webappslots':           'app_service',
+  // Granular app service sub-types
+  'webapp':                'web_app',
+  'linuxwebapp':           'web_app',
+  'windowswebapp':         'web_app',
+  'functionapp':           'function_app',
+  'linuxfunctionapp':      'function_app',
+  'appserviceplan':        'app_service_plan',
+  'asp':                   'app_service_plan',
+  // Container Apps
+  'containerapp':          'container_app',
+  'containerappsenvironment': 'container_app_environment',
+  'containerenvironment':  'container_app_environment',
+  'cae':                   'container_app_environment',
   // Static web app
   'swa':              'static_web_app',
   'staticwebapp':     'static_web_app',
