@@ -79,7 +79,7 @@ const AZURE_TYPES = [
     service_type: 'cosmos',
     display_name: 'Cosmos DB',
     category: 'Data',
-    aliases: ['cosmosdb', 'cosmosdbaccount', 'cosmosaccount'],
+    aliases: ['cosmosdb', 'cosmosdbaccount', 'cosmosaccount', 'azurecosmosdbaccount'],
   },
   {
     service_type: 'sql',
@@ -103,7 +103,7 @@ const AZURE_TYPES = [
     service_type: 'redis',
     display_name: 'Redis Cache',
     category: 'Data',
-    aliases: ['rediscache'],
+    aliases: ['rediscache', 'azurecacheforredis'],
   },
   {
     service_type: 'storage_account',

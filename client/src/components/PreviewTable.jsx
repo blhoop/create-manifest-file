@@ -35,7 +35,18 @@ const DISPLAY_LABELS = {
 
 const REQUIRED = new Set(['name', 'type'])
 
-const MENU_COLS = new Set([])
+const MENU_COLS = new Set(['location'])
+
+const OPTIONS_FOR = {
+  location: [
+    'australiaeast', 'eastasia', 'global',
+    'eastus', 'eastus2', 'westus', 'westus2', 'centralus',
+    'northeurope', 'westeurope', 'uksouth',
+    'southeastasia', 'canadacentral', 'brazilsouth',
+    'japaneast', 'koreacentral', 'southindia',
+    'uaenorth', 'southafricanorth',
+  ],
+}
 
 // Fallback list used until /api/types responds — matches azureTypes.js order
 const TYPE_OPTIONS_DEFAULT = [
@@ -46,8 +57,6 @@ const TYPE_OPTIONS_DEFAULT = [
   'key_vault', 'container_registry', 'user_assigned_identity',
   'app_insights', 'app_configuration', 'frontdoor',
 ]
-
-const OPTIONS_FOR = {}
 
 const EXAMPLE_ROWS = [
   {

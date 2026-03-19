@@ -350,8 +350,8 @@
 .manifest-table th.col-rownum    { width: 36px; }
 .manifest-table th:nth-child(2)  { width: 20%; } /* name */
 .manifest-table th:nth-child(3)  { width: 12%; } /* type */
-.manifest-table th:nth-child(4)  { width: 10%; } /* location */
-.manifest-table th:nth-child(5)  { width: 28%; } /* repo */
+.manifest-table th:nth-child(4)  { width: 14%; } /* location */
+.manifest-table th:nth-child(5)  { width: 24%; } /* repo */
 .manifest-table th:nth-child(6)  { width: 30%; } /* comments */
 .manifest-table th.col-actions   { width: 36px; }
 
