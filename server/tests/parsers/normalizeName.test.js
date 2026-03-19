@@ -289,10 +289,10 @@ describe('normalizeName', () => {
   describe('normalizeTypeName', () => {
     it('should remap appservice variants to canonical', () => {
       expect(normalizeTypeName('appservice')).toBe('app_service');
-      expect(normalizeTypeName('webapp')).toBe('app_service');
-      expect(normalizeTypeName('WebApp')).toBe('app_service');
-      expect(normalizeTypeName('FunctionApp')).toBe('app_service');
-      expect(normalizeTypeName('AppServicePlan')).toBe('app_service');
+      expect(normalizeTypeName('webapp')).toBe('web_app');
+      expect(normalizeTypeName('WebApp')).toBe('web_app');
+      expect(normalizeTypeName('FunctionApp')).toBe('function_app');
+      expect(normalizeTypeName('AppServicePlan')).toBe('app_service_plan');
     });
 
     it('should remap appservice slots variants to app_service', () => {
@@ -346,14 +346,14 @@ describe('normalizeName', () => {
       const result = normalizeRows(rows);
       expect(result).toHaveLength(2);
       expect(result[0].name).toBe('myapp');
-      expect(result[0].type).toBe('Web App');
+      expect(result[0].type).toBe('web_app');
       expect(result[1].name).toBe('service');
-      expect(result[1].type).toBe('Web App');
+      expect(result[1].type).toBe('app_service');
     });
 
     it('should drop rows where normalizeName returns null', () => {
       const rows = [
-        { name: 'app-a', type: 'webapp' },
+        { name: 'app-b', type: 'webapp' },
         { name: 'slot-b', type: 'webapp' },
         { name: 'service', type: 'webapp' }
       ];

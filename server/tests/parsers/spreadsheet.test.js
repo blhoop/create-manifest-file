@@ -178,7 +178,7 @@ describe('parseSpreadsheet', () => {
   });
 
   describe('CSV parsing', () => {
-    it('should parse valid CSV with comma delimiter', () => {
+    it('should parse valid CSV with comma delimiter', async () => {
       const filepath = createTestCsv('valid.csv',
         ['name', 'type', 'location', 'comments'],
         [
@@ -187,13 +187,13 @@ describe('parseSpreadsheet', () => {
         ]
       );
 
-      const result = parseSpreadsheet(filepath, 'valid.csv');
+      const result = await parseSpreadsheet(filepath, 'valid.csv');
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(2);
       expect(result[0].name).toBe('web-api');
     });
 
-    it('should handle CSV with quoted values and commas', () => {
+    it('should handle CSV with quoted values and commas', async () => {
       const filepath = createTestCsv('quoted.csv',
         ['name', 'type', 'comments'],
         [
@@ -202,19 +202,19 @@ describe('parseSpreadsheet', () => {
         ]
       );
 
-      const result = parseSpreadsheet(filepath, 'quoted.csv');
+      const result = await parseSpreadsheet(filepath, 'quoted.csv');
       expect(result).toHaveLength(2);
       expect(result[0].comments).toContain('comma');
     });
   });
 
   describe('TSV parsing', () => {
-    it('should parse tab-delimited files', () => {
+    it('should parse tab-delimited files', async () => {
       const tsv = 'name\ttype\tlocation\nweb-app\tservice\teastus\ndb\tdatabase\twestus';
       const filepath = path.join(__dirname, '..', 'fixtures', 'spreadsheets', 'data.tsv');
       fs.writeFileSync(filepath, tsv);
 
-      const result = parseSpreadsheet(filepath, 'data.tsv');
+      const result = await parseSpreadsheet(filepath, 'data.tsv');
       expect(result).toHaveLength(2);
       expect(result[0].name).toBe('web-app');
       expect(result[0].location).toBe('eastus');
@@ -266,8 +266,8 @@ describe('parseSpreadsheet', () => {
 
     it('should return multiSheet object for multiple sheets', async () => {
       const filepath = await createTestExcel('multiple.xlsx', [
-        { headers: ['name', 'type'], rows: [['app1', 'service']] },
-        { headers: ['name', 'type'], rows: [['app2', 'service']] }
+        { name: 'Sheet1', headers: ['name', 'type'], rows: [['app1', 'service']] },
+        { name: 'Sheet2', headers: ['name', 'type'], rows: [['app2', 'service']] }
       ]);
 
       const result = await parseSpreadsheet(filepath, 'multiple.xlsx');

@@ -241,11 +241,7 @@ resources:
     });
 
     it('should throw error for invalid YAML syntax', async () => {
-      const yaml = `
-subscription_name: test
-  invalid indentation
-    more bad stuff
-`;
+      const yaml = 'key: [unclosed bracket';
       const filepath = writeYamlFixture('invalid-syntax.yaml', yaml);
       await expect(parseYaml(filepath)).rejects.toThrow();
     });

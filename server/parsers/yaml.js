@@ -10,7 +10,7 @@ module.exports = async function parseYaml(filePath) {
   const content = fs.readFileSync(filePath, 'utf8')
   const doc = yaml.load(content)
 
-  if (!doc || typeof doc !== 'object') {
+  if (!doc || typeof doc !== 'object' || Array.isArray(doc)) {
     throw new Error('Could not parse YAML — file appears empty or invalid')
   }
 
