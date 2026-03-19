@@ -60,9 +60,6 @@ describe('parseSpreadsheet', () => {
         type: 'app service',
         location: 'eastus',
         repo: 'org/web-api',
-        server_name: '',
-        plan_name: '',
-        function_app_name: '',
         comments: 'primary api'
       });
     });

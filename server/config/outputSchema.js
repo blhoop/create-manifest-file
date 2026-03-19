@@ -33,12 +33,17 @@ const SUBSCRIPTION_FIELDS = [
     label: 'Default Location',
     required: true,
     options: [
-      'australiaeast', 'eastasia', 'global',
-      'eastus', 'eastus2', 'westus', 'westus2', 'centralus',
-      'northeurope', 'westeurope', 'uksouth',
-      'southeastasia', 'canadacentral',
+      'australiaeast', 'eastus', 'eastus2',
+      'northcentralus', 'southeastasia', 'uksouth', 'westus3',
     ],
     hint: 'Default Azure region — individual resources can override',
+  },
+  {
+    key: 'sku_mode',
+    label: 'SKU Mode',
+    required: false,
+    options: ['premium', 'economy'],
+    hint: 'premium (default) = smallest prod-capable SKUs; economy = cheapest viable for dev/lab only',
   },
   {
     key: 'product_code',
@@ -105,24 +110,6 @@ const RESOURCE_FIELDS = [
     required: false,
     hint: 'Free-text hints (e.g. needs pgbouncer, serverless, zone redundant ha)',
   },
-  {
-    key: 'server_name',
-    label: 'server_name',
-    required: false,
-    hint: 'Parent SQL Server name — for SQLDatabase resources',
-  },
-  {
-    key: 'plan_name',
-    label: 'plan_name',
-    required: false,
-    hint: 'Parent App Service Plan name — for slot resources',
-  },
-  {
-    key: 'function_app_name',
-    label: 'function_app_name',
-    required: false,
-    hint: 'Parent Function App name — for functionappslots resources',
-  },
 ]
 
 // ---------------------------------------------------------------------------
@@ -131,7 +118,6 @@ const RESOURCE_FIELDS = [
 
 const BUILDER_TYPES = [
   'app_service',
-  'app_service_slots',
   'pg',
   'cosmos',
   'sql',
@@ -141,25 +127,21 @@ const BUILDER_TYPES = [
   'container_app',
   'vm',
   'redis',
-  'swa',
+  'static_web_app',
   'key_vault',
   'app_insights',
   'container_registry',
-  'service_bus',
-  'ai_foundry',
-  'ai_search',
+  'servicebus',
+  'openai',
+  'search',
+  'storage_account',
+  'data_factory',
+  'app_configuration',
+  'frontdoor',
+  'user_assigned_identity',
 ]
 
-const INVENTORY_TYPES = [
-  'WebApp',
-  'FunctionApp',
-  'AppServicePlan',
-  'StorageAccount',
-  'SQLServer',
-  'SQLDatabase',
-  'KeyVault',
-  'StaticSite',
-]
+const INVENTORY_TYPES = []
 
 const ALL_RESOURCE_TYPES = [...BUILDER_TYPES, ...INVENTORY_TYPES]
 
@@ -167,28 +149,7 @@ const ALL_RESOURCE_TYPES = [...BUILDER_TYPES, ...INVENTORY_TYPES]
 // Parent resource references — maps child resource types to parent types
 // ---------------------------------------------------------------------------
 
-const PARENT_REFERENCES = {
-  'SQLDatabase': {
-    field: 'server_name',
-    parentTypes: ['SQLServer', 'sql'],
-    label: 'SQL Server',
-  },
-  'appserviceslots': {
-    field: 'plan_name',
-    parentTypes: ['AppServicePlan'],
-    label: 'App Service Plan',
-  },
-  'webappslots': {
-    field: 'plan_name',
-    parentTypes: ['AppServicePlan'],
-    label: 'App Service Plan',
-  },
-  'functionappslots': {
-    field: 'function_app_name',
-    parentTypes: ['FunctionApp'],
-    label: 'Function App',
-  },
-}
+const PARENT_REFERENCES = {}
 
 // ---------------------------------------------------------------------------
 // Location defaults — applied when a resource has no explicit location
@@ -196,11 +157,10 @@ const PARENT_REFERENCES = {
 
 const LOCATION_DEFAULTS = [
   {
-    types: ['swa', 'StaticSite'],
+    types: ['static_web_app'],
     location: 'eastasia',
-    reason: 'Not available in australiaeast',
+    reason: 'Not available in australiaeast — workflow applies location_fallback automatically',
   },
-  // Add more overrides here as needed
 ]
 
 const DEFAULT_LOCATION = 'australiaeast'

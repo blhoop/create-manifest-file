@@ -287,22 +287,43 @@ describe('normalizeName', () => {
   });
 
   describe('normalizeTypeName', () => {
-    it('should remap appservice variants', () => {
-      expect(normalizeTypeName('appservice')).toBe('Web App');
-      expect(normalizeTypeName('webapp')).toBe('Web App');
-      expect(normalizeTypeName('WebApp')).toBe('Web App');
+    it('should remap appservice variants to canonical', () => {
+      expect(normalizeTypeName('appservice')).toBe('app_service');
+      expect(normalizeTypeName('webapp')).toBe('app_service');
+      expect(normalizeTypeName('WebApp')).toBe('app_service');
+      expect(normalizeTypeName('FunctionApp')).toBe('app_service');
+      expect(normalizeTypeName('AppServicePlan')).toBe('app_service');
     });
 
-    it('should remap appservice slots variants', () => {
-      expect(normalizeTypeName('appserviceslots')).toBe('Web App/Slots');
-      expect(normalizeTypeName('webappslots')).toBe('Web App/Slots');
-      expect(normalizeTypeName('WebAppSlots')).toBe('Web App/Slots');
+    it('should remap appservice slots variants to app_service', () => {
+      expect(normalizeTypeName('appserviceslots')).toBe('app_service');
+      expect(normalizeTypeName('webappslots')).toBe('app_service');
+      expect(normalizeTypeName('WebAppSlots')).toBe('app_service');
+    });
+
+    it('should remap static web app variants', () => {
+      expect(normalizeTypeName('swa')).toBe('static_web_app');
+      expect(normalizeTypeName('StaticSite')).toBe('static_web_app');
+      expect(normalizeTypeName('static_web_app')).toBe('static_web_app');
+    });
+
+    it('should remap AI and messaging types', () => {
+      expect(normalizeTypeName('ai_foundry')).toBe('openai');
+      expect(normalizeTypeName('ai_search')).toBe('search');
+      expect(normalizeTypeName('service_bus')).toBe('servicebus');
+    });
+
+    it('should remap inventory data types', () => {
+      expect(normalizeTypeName('StorageAccount')).toBe('storage_account');
+      expect(normalizeTypeName('SQLServer')).toBe('sql');
+      expect(normalizeTypeName('SQLDatabase')).toBe('sql');
+      expect(normalizeTypeName('KeyVault')).toBe('key_vault');
     });
 
     it('should handle case and whitespace variations', () => {
-      expect(normalizeTypeName('APP SERVICE')).toBe('Web App');
-      expect(normalizeTypeName('app_service')).toBe('Web App');
-      expect(normalizeTypeName('APP/SERVICE')).toBe('Web App');
+      expect(normalizeTypeName('APP SERVICE')).toBe('app_service');
+      expect(normalizeTypeName('app_service')).toBe('app_service');
+      expect(normalizeTypeName('APP/SERVICE')).toBe('app_service');
     });
 
     it('should return original type if no mapping exists', () => {

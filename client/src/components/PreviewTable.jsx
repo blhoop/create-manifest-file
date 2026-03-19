@@ -22,7 +22,7 @@ const COLUMNS = ['name', 'type', 'location', 'repo', 'comments']
 
 const TOOLTIPS = {
   name: 'Subsystem/component name (e.g. web, booking-db)',
-  type: 'What to deploy. Builder types: app_service, app_service_slots, pg, cosmos, sql, mysql, sqlmi, aks, container_app, vm, redis, swa, key_vault, app_insights, container_registry, service_bus, ai_foundry, ai_search. First resource must be a compute type.',
+  type: 'What to deploy. Types: app_service, pg, cosmos, sql, mysql, sqlmi, aks, container_app, vm, redis, static_web_app, key_vault, app_insights, container_registry, servicebus, openai, search, storage_account, data_factory, app_configuration, frontdoor, user_assigned_identity',
   location: 'Azure region override. Omit to use default_location.',
   repo: 'Application source repo (org/repo format). When specified, the pipeline auto-generates CI/CD caller workflows targeting this service from the given repo in a PR.',
   comments: 'Free-text hints that influence the manifest. e.g. "needs pgbouncer", "serverless", "zone redundant ha"',
@@ -38,10 +38,8 @@ const MENU_COLS = new Set(['location'])
 
 const OPTIONS_FOR = {
   location: [
-    'australiaeast', 'eastasia', 'global',
-    'eastus', 'eastus2', 'westus', 'westus2', 'centralus',
-    'northeurope', 'westeurope', 'uksouth',
-    'southeastasia', 'canadacentral',
+    'australiaeast', 'eastus', 'eastus2',
+    'northcentralus', 'southeastasia', 'uksouth', 'westus3',
   ],
 }
 
@@ -352,35 +350,16 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
   }
 
   const handleJsonCommentCommit = (rowIdx, commitData) => {
-    // Handle both old string format and new object format for backwards compatibility
-    const isObject = commitData && typeof commitData === 'object' && !Array.isArray(commitData)
-    const baseComment = isObject ? commitData.comment : commitData
-    const parentLink = isObject ? commitData.parentLink : null
-
-    // Build final comment including parent link if provided
-    const commentParts = []
-    if (parentLink) {
-      // Map field names to display labels
-      const labelMap = {
-        server_name: 'Server',
-        plan_name: 'Plan',
-        function_app_name: 'FunctionApp',
-      }
-      const label = labelMap[parentLink.field] || parentLink.field
-      commentParts.push(`${label}:${parentLink.value}`)
-    }
-    if (baseComment) {
-      commentParts.push(baseComment)
-    }
-    const newComment = commentParts.join(', ')
+    const newComment = (commitData && typeof commitData === 'object' && !Array.isArray(commitData))
+      ? (commitData.comment ?? '')
+      : (commitData ?? '')
 
     const oldComment = rows[rowIdx].comments ?? ''
     if (onAudit && newComment !== oldComment) {
       onAudit({ type: 'JSON_COMMENT_APPEND', row: rowIdx, oldVal: oldComment, newVal: newComment })
     }
 
-    // Update row with new comment (parent link now part of comments)
-    const updatedRow = { ...rows[rowIdx], comments: newComment, server_name: '', plan_name: '', function_app_name: '' }
+    const updatedRow = { ...rows[rowIdx], comments: newComment }
 
     onRowsChange(rows.map((r, i) => i === rowIdx ? updatedRow : r))
     setJsonPopupRow(null)
@@ -440,9 +419,8 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
         <ResourceCommentPopup
           row={rows[jsonPopupRow]}
           currentComment={rows[jsonPopupRow]?.comments ?? ''}
-          rows={rows}
           onClose={() => setJsonPopupRow(null)}
-          onCommit={(commitData) => handleJsonCommentCommit(jsonPopupRow, commitData)}
+          onCommit={(comment) => handleJsonCommentCommit(jsonPopupRow, comment)}
         />
       )}
       {showYamlPreview && (

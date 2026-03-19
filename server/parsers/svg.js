@@ -30,9 +30,6 @@ module.exports = function parseSvg(filePath) {
     type: 'Resource',
     location: '',
     repo: '',
-    server_name: '',
-    plan_name: '',
-    function_app_name: '',
     comments: '',
   }))
 }

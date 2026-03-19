@@ -40,12 +40,31 @@ const TYPE_PREFIXES = [
   'mi-',
 ]
 
-// Canonical type names — any incoming variant is remapped to the standard value
+// Canonical type names — any incoming variant is remapped to the standard value.
+// Keys are the normalized form (lowercase, spaces/underscores/slashes removed).
 const TYPE_REMAP = {
-  'appservice':      'Web App',
-  'appserviceslots': 'Web App/Slots',
-  'webapp':          'Web App',
-  'webappslots':     'Web App/Slots',
+  // Compute — old inventory/variant names → canonical
+  'appservice':       'app_service',
+  'webapp':           'app_service',
+  'appserviceslots':  'app_service',
+  'webappslots':      'app_service',
+  'functionapp':      'app_service',
+  'appserviceplan':   'app_service',
+  // Static web app
+  'swa':              'static_web_app',
+  'staticwebapp':     'static_web_app',
+  'staticsite':       'static_web_app',
+  // Messaging — old underscored name normalizes to canonical without underscore
+  'servicebus':       'servicebus',
+  // AI
+  'aifoundry':        'openai',
+  'aisearch':         'search',
+  // Data
+  'storageaccount':   'storage_account',
+  'sqlserver':        'sql',
+  'sqldatabase':      'sql',
+  // Security
+  'keyvault':         'key_vault',
 }
 
 function normalizeTypeName(type) {

@@ -12,32 +12,27 @@ const MEDIA_TYPES = {
 
 const PROMPT = `You are analyzing an Azure architecture diagram image. Identify every resource, service, or application shown and return structured data.
 
-Azure diagrams use official Microsoft Azure Architecture Icons. Common types to look for:
+Azure diagrams use official Microsoft Azure Architecture Icons. Use these exact type values:
 
-COMPUTE: App Service / Web App → "app_service", Function App → "app_service", AKS / Kubernetes → "aks", Container App → "container_app", Virtual Machine → "vm", Static Web App → "swa"
-DATA: PostgreSQL → "pg", SQL Server/Database → "sql", Cosmos DB → "cosmos", MySQL → "mysql", Redis → "redis"
-INTEGRATION: Service Bus → "service_bus", API Management → "app_service"
-SECURITY: Key Vault → "key_vault"
+COMPUTE: App Service / Web App / Function App → "app_service", AKS / Kubernetes → "aks", Container App → "container_app", Virtual Machine → "vm", Static Web App → "static_web_app"
+DATA: PostgreSQL → "pg", SQL Server/Database → "sql", SQL Managed Instance → "sqlmi", Cosmos DB → "cosmos", MySQL → "mysql", Redis → "redis", Storage Account → "storage_account", Data Factory → "data_factory"
+MESSAGING: Service Bus → "servicebus"
+SECURITY: Key Vault → "key_vault", Container Registry → "container_registry", User Assigned Identity → "user_assigned_identity"
 MONITORING: Application Insights → "app_insights"
-CONTAINERS: Container Registry → "container_registry"
-AI: Azure OpenAI / AI Foundry → "ai_foundry", AI Search → "ai_search"
-
-For inventory/existing resources use PascalCase: WebApp, FunctionApp, AppServicePlan, StorageAccount, SQLServer, SQLDatabase, KeyVault, StaticSite
+AI: Azure OpenAI / AI Foundry → "openai", AI Search → "search"
+PLATFORM: Front Door → "frontdoor", App Configuration → "app_configuration"
 
 Return a JSON array where each element has exactly these keys:
 - "name": the label shown in the diagram (the resource instance name). If unlabeled, use the type value as the name.
-- "type": the resource type using the values listed above (snake_case for builder types, PascalCase for inventory types).
+- "type": the resource type using the exact values listed above.
 - "location": Azure region slug if visible (e.g. "australiaeast"). Use empty string if not shown.
 - "repo": empty string (cannot be determined from a diagram).
-- "server_name": empty string (parent references cannot be determined from a diagram).
-- "plan_name": empty string (parent references cannot be determined from a diagram).
-- "function_app_name": empty string (parent references cannot be determined from a diagram).
-- "comments": if this resource has connectors/arrows to other resources, list them briefly e.g. "Connected to: orders-db, service-bus". Use empty string if none.
+- "comments": if this resource has connectors/arrows to other resources, list them briefly e.g. "Connected to: orders-db, servicebus". Use empty string if none.
 
 Return ONLY a valid JSON array, no markdown fences, no explanation.
 [
-  {"name":"web","type":"app_service","location":"","repo":"","server_name":"","plan_name":"","function_app_name":"","comments":"Connected to: booking-db, cache"},
-  {"name":"booking-db","type":"pg","location":"","repo":"","server_name":"","plan_name":"","function_app_name":"","comments":""}
+  {"name":"web","type":"app_service","location":"","repo":"","comments":"Connected to: booking-db, cache"},
+  {"name":"booking-db","type":"pg","location":"","repo":"","comments":""}
 ]`
 
 module.exports = async function parseImage(filePath, originalName) {

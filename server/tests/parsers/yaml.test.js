@@ -104,18 +104,13 @@ default_location: eastus
 
 resources:
   - name: app-001
-    type: Web App
-    server_name: server-1
-    plan_name: P1
-    function_app_name: func-1
+    type: app_service
 `;
       const filepath = writeYamlFixture('types.yaml', yaml);
       const result = await parseYaml(filepath);
 
       expect(typeof result.rows[0].name).toBe('string');
       expect(typeof result.rows[0].type).toBe('string');
-      expect(result.rows[0].server_name).toBe('server-1');
-      expect(result.rows[0].plan_name).toBe('P1');
     });
 
     it('should handle empty comments field', async () => {
@@ -281,27 +276,25 @@ subscription_name: test
       const yaml = `
 subscription_name: complete
 environment: uat
-default_location: westeurope
+default_location: australiaeast
 product_code: XYZ
+sku_mode: premium
 vnet_cidr: 10.1.0.0/16
 subscription_id: 87654321-4321-4321-4321-210987654321
 spn_client_id: spn-12345-67890
 
 resources:
   - name: service-1
-    type: Web App
-    location: westeurope
+    type: app_service
+    location: australiaeast
     repo: company/service-1
-    server_name: srv-1
-    plan_name: P2V2
-    function_app_name: fn-1
     comments: all fields populated
 `;
       const filepath = writeYamlFixture('complete.yaml', yaml);
       const result = await parseYaml(filepath);
 
-      expect(Object.keys(result.subscription)).toHaveLength(7);
-      expect(Object.keys(result.rows[0])).toHaveLength(8);
+      expect(Object.keys(result.subscription)).toHaveLength(8);
+      expect(Object.keys(result.rows[0])).toHaveLength(5);
     });
 
     it('should handle YAML with inconsistent resource field presence', async () => {
@@ -312,13 +305,12 @@ default_location: eastus
 
 resources:
   - name: app-1
-    type: Web App
+    type: app_service
     repo: org/app-1
     comments: has repo
   - name: app-2
-    type: Function App
-    location: westus
-    server_name: server-2
+    type: app_service
+    location: eastus
   - name: app-3
 `;
       const filepath = writeYamlFixture('inconsistent.yaml', yaml);
@@ -326,7 +318,7 @@ resources:
 
       expect(result.rows).toHaveLength(3);
       expect(result.rows[0].repo).toBe('org/app-1');
-      expect(result.rows[1].server_name).toBe('server-2');
+      expect(result.rows[1].location).toBe('eastus');
       expect(result.rows[2].name).toBe('app-3');
     });
 
