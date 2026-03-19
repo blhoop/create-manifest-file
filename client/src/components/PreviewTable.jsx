@@ -36,6 +36,32 @@ const REQUIRED = new Set(['name', 'type'])
 
 const MENU_COLS = new Set(['location'])
 
+// Canonical service types — drives type-column autocomplete suggestions
+const TYPE_OPTIONS = [
+  'app_service',
+  'pg',
+  'cosmos',
+  'sql',
+  'mysql',
+  'sqlmi',
+  'aks',
+  'container_app',
+  'vm',
+  'redis',
+  'static_web_app',
+  'key_vault',
+  'app_insights',
+  'container_registry',
+  'servicebus',
+  'openai',
+  'search',
+  'storage_account',
+  'data_factory',
+  'app_configuration',
+  'frontdoor',
+  'user_assigned_identity',
+]
+
 const OPTIONS_FOR = {
   location: [
     'australiaeast', 'eastus', 'eastus2',
@@ -116,14 +142,16 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
     if (!editingCell || !editValue.trim()) return []
     const lower = editValue.toLowerCase()
     const currentRowIdx = editingCell.row
-    return [...new Set(
-      rows
-        .filter((r, i) => i !== currentRowIdx && r[editingCell.col])
-        .map(r => r[editingCell.col])
-    )]
+    const existingValues = rows
+      .filter((r, i) => i !== currentRowIdx && r[editingCell.col])
+      .map(r => r[editingCell.col])
+    const pool = editingCell.col === 'type'
+      ? [...new Set([...TYPE_OPTIONS, ...existingValues])]
+      : [...new Set(existingValues)]
+    return pool
       .filter(v => v.toLowerCase().includes(lower) && v !== editValue)
       .sort()
-      .slice(0, 8)
+      .slice(0, 10)
   }, [editingCell, editValue, rows])
 
   useEffect(() => { setSuggestionIdx(-1) }, [suggestions])

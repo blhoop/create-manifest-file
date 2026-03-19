@@ -63,8 +63,20 @@ const TYPE_REMAP = {
   'storageaccount':   'storage_account',
   'sqlserver':        'sql',
   'sqldatabase':      'sql',
-  // Security
+  'cosmosdb':         'cosmos',
+  'cosmosdbaccount':  'cosmos',
+  'cosmosaccount':    'cosmos',
+  'datafactory':      'data_factory',
+  // Security & identity
   'keyvault':         'key_vault',
+  'managedidentity':  'user_assigned_identity',
+  'useridentity':     'user_assigned_identity',
+  'userassignedidentity': 'user_assigned_identity',
+  'identity':         'user_assigned_identity',
+  // Platform
+  'appconfiguration': 'app_configuration',
+  'frontdoor':        'frontdoor',
+  'afd':              'frontdoor',
 }
 
 function normalizeTypeName(type) {
