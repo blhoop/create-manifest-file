@@ -82,9 +82,6 @@ module.exports = function parseDrawio(filePath) {
       type,
       location: '',
       repo: '',
-      server_name: '',
-      plan_name: '',
-      function_app_name: '',
       comments: deps ? `Connected to: ${deps}` : '',
     })
   })

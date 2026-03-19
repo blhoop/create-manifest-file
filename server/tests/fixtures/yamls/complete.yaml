@@ -1,0 +1,18 @@
+
+subscription_name: complete
+environment: uat
+default_location: westeurope
+product_code: XYZ
+vnet_cidr: 10.1.0.0/16
+subscription_id: 87654321-4321-4321-4321-210987654321
+spn_client_id: spn-12345-67890
+
+resources:
+  - name: service-1
+    type: Web App
+    location: westeurope
+    repo: company/service-1
+    server_name: srv-1
+    plan_name: P2V2
+    function_app_name: fn-1
+    comments: all fields populated

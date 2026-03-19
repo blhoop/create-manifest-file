@@ -1,0 +1,5 @@
+
+subscription_name: empty-array
+environment: dev
+default_location: eastus
+resources: []

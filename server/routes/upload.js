@@ -11,8 +11,13 @@ const parseImage = require('../parsers/image')
 const parsePdf = require('../parsers/pdf')
 const parseYaml = require('../parsers/yaml')
 const { normalizeRows } = require('../parsers/normalizeName')
+const { AZURE_TYPES } = require('../config/azureTypes')
 
 const router = express.Router()
+
+router.get('/types', (_req, res) => {
+  res.json(AZURE_TYPES)
+})
 const upload = multer({ dest: path.join(__dirname, '../uploads/') })
 
 const PARSERS = {
@@ -45,9 +50,10 @@ router.post('/parse', upload.single('file'), async (req, res) => {
   try {
     const raw = await parser(file.path, file.originalname)
 
-    // YAML round-trip: subscription + rows already structured, skip normalize pipeline
+    // YAML round-trip: subscription + rows already structured, but still clean comments
     if (raw?.subscription) {
-      return res.json({ rows: raw.rows, subscription: raw.subscription })
+      const rows = normalizeRows(raw.rows)
+      return res.json({ rows, subscription: raw.subscription })
     }
 
     if (raw?.multiSheet) {

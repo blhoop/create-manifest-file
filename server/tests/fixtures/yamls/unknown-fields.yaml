@@ -1,0 +1,8 @@
+
+subscription_name: test
+environment: dev
+default_location: eastus
+unknown_field: should-not-appear
+custom_metadata: ignored
+
+resources: []

@@ -1,0 +1,8 @@
+
+subscription_name: "subscription-name"
+default_location: eastus
+
+resources:
+  - name: "app-with-special-@-#"
+    type: "Custom Type"
+    comments: "Comment with 'quotes' and \"escaped\""

@@ -1,0 +1,9 @@
+
+subscription_name: special
+environment: dev
+default_location: eastus
+
+resources:
+  - name: app
+    type: Web App
+    comments: "Plan:P1, OS:Windows, Runtime:.NET, Version:8.0"

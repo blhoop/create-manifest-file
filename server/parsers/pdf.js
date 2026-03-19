@@ -8,17 +8,13 @@ const PROMPT = `You are analyzing a PDF architecture or infrastructure document.
 Return a JSON array where each element has exactly these keys:
 - "name": the resource or component instance name as labeled. If unlabeled, use the type value as the name.
 - "type": the resource type:
-  - Azure builder types (snake_case): app_service, pg, cosmos, sql, mysql, sqlmi, aks, container_app, vm, redis, swa, key_vault, app_insights, container_registry, service_bus, ai_foundry, ai_search
-  - Azure inventory types (PascalCase): WebApp, FunctionApp, AppServicePlan, StorageAccount, SQLServer, SQLDatabase, KeyVault, StaticSite
+  - Azure types (use exact values): app_service, app_service_plan, web_app, function_app, aks, container_app, container_app_environment, vm, static_web_app, pg, cosmos, sql, mysql, sqlmi, redis, storage_account, data_factory, servicebus, openai, search, key_vault, container_registry, user_assigned_identity, app_insights, app_configuration, frontdoor
   - AWS: "AWS Lambda", "AWS S3", "AWS RDS", "AWS API Gateway", "AWS ECS"
   - GCP: "GCP Cloud Run", "GCP Pub/Sub"
   - Generic: "Database", "API Gateway", "Queue", "Storage", "Load Balancer", "Container", "Server", "Microservice"
 - "location": Azure region slug if stated (e.g. "australiaeast"). Use empty string if not stated.
 - "repo": empty string.
-- "server_name": empty string (parent references cannot be determined from a document).
-- "plan_name": empty string (parent references cannot be determined from a document).
-- "function_app_name": empty string (parent references cannot be determined from a document).
-- "comments": connections or dependencies if described e.g. "Connected to: orders-db, service-bus". Use empty string if none.
+- "comments": connections or dependencies if described e.g. "Connected to: orders-db, servicebus". Use empty string if none.
 
 Return ONLY a valid JSON array, no markdown fences, no explanation.`
 

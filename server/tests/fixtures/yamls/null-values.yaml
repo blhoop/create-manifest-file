@@ -1,0 +1,10 @@
+
+subscription_name: null-values
+environment: dev
+default_location: eastus
+
+resources:
+  - name: app-1
+    type: Web App
+    location: null
+    comments: null

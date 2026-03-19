@@ -1,0 +1,8 @@
+
+subscription_name: minimal-sub
+environment: dev
+default_location: westus
+
+resources:
+  - name: app-1
+    type: Function App

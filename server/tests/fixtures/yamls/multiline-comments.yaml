@@ -1,0 +1,12 @@
+
+subscription_name: test
+environment: dev
+default_location: eastus
+
+resources:
+  - name: app
+    type: Web App
+    comments: |
+      Multiline comment
+      Line 2
+      Line 3

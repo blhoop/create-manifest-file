@@ -30,104 +30,37 @@ const AZURE = {
       { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
     ],
   },
-  WebApp: {
-    label: 'Web App',
-    fields: [
-      { key: 'OS',            label: 'OS',             type: 'select', options: ['Windows', 'Linux'] },
-      { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'PHP'] },
-      { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
-      { key: 'SKU',           label: 'SKU',            type: 'select', options: [
-        'F1', 'D1',
-        'B1', 'B2', 'B3',
-        'S1', 'S2', 'S3',
-        'P1v2', 'P2v2', 'P3v2',
-        'P0v3', 'P1v3', 'P2v3', 'P3v3',
-        'P0v4', 'P1v4', 'P2v4', 'P3v4',
-        'I1v2', 'I2v2', 'I3v2',
-      ]},
-      { key: 'Publishing',    label: 'Publishing',     type: 'select', options: ['Code', 'Container'] },
-      { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
-    ],
-  },
-  WebAppSlots: {
-    label: 'Web App / Slots',
-    fields: [
-      { key: 'OS',            label: 'OS',             type: 'select', options: ['Windows', 'Linux'] },
-      { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'PHP'] },
-      { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
-      { key: 'SKU',           label: 'SKU',            type: 'select', options: [
-        'F1', 'D1',
-        'B1', 'B2', 'B3',
-        'S1', 'S2', 'S3',
-        'P1v2', 'P2v2', 'P3v2',
-        'P0v3', 'P1v3', 'P2v3', 'P3v3',
-        'P0v4', 'P1v4', 'P2v4', 'P3v4',
-        'I1v2', 'I2v2', 'I3v2',
-      ]},
-      { key: 'Publishing',    label: 'Publishing',     type: 'select', options: ['Code', 'Container'] },
-      { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
-    ],
-  },
-  app_service_slots: {
-    label: 'App Service / Slots',
-    fields: [
-      { key: 'OS',            label: 'OS',             type: 'select', options: ['Windows', 'Linux'] },
-      { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'PHP'] },
-      { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
-      { key: 'SKU',           label: 'SKU',            type: 'select', options: [
-        'F1', 'D1',
-        'B1', 'B2', 'B3',
-        'S1', 'S2', 'S3',
-        'P1v2', 'P2v2', 'P3v2',
-        'P0v3', 'P1v3', 'P2v3', 'P3v3',
-        'P0v4', 'P1v4', 'P2v4', 'P3v4',
-        'I1v2', 'I2v2', 'I3v2',
-      ]},
-      { key: 'Publishing',    label: 'Publishing',     type: 'select', options: ['Code', 'Container'] },
-      { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
-    ],
-  },
-  function_app_slots: {
-    label: 'Function App / Slots',
-    fields: [
-      { key: 'Slot',          label: 'Slot Name',      type: 'select', options: ['staging', 'preview', 'canary', 'blue', 'green'] },
-      { key: 'Plan',          label: 'Pricing Plan',   type: 'select', options: ['Flex Consumption', 'EP1', 'EP2', 'EP3', 'Consumption', 'Dedicated'] },
-      { key: 'OS',            label: 'OS',             type: 'select', options: ['Windows', 'Linux'] },
-      { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'PowerShell'] },
-      { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
-      { key: 'Publishing',    label: 'Publishing',     type: 'select', options: ['Code', 'Container'] },
-      { key: 'Instances',     label: 'Instance Count', type: 'select', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] },
-      { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
-    ],
-  },
-  FunctionApp: {
-    label: 'Function App',
-    fields: [
-      { key: 'Plan',          label: 'Pricing Plan',   type: 'select', options: ['Flex Consumption', 'EP1', 'EP2', 'EP3', 'Consumption', 'Dedicated'] },
-      { key: 'OS',            label: 'OS',             type: 'select', options: ['Windows', 'Linux'] },
-      { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'PowerShell'] },
-      { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
-      { key: 'Publishing',    label: 'Publishing',     type: 'select', options: ['Code', 'Container'] },
-      { key: 'Instances',     label: 'Instance Count', type: 'select', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] },
-      { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
-    ],
-  },
-  AppServicePlan: {
+  app_service_plan: {
     label: 'App Service Plan',
     fields: [
-      { key: 'OS',            label: 'OS',             type: 'select', options: ['Windows', 'Linux'] },
+      { key: 'OS',            label: 'OS',             type: 'select', options: ['Linux', 'Windows'] },
       { key: 'SKU',           label: 'SKU',            type: 'select', options: [
-        'F1', 'D1',
         'B1', 'B2', 'B3',
         'S1', 'S2', 'S3',
-        'P1v2', 'P2v2', 'P3v2',
         'P0v3', 'P1v3', 'P2v3', 'P3v3',
-        'P0v4', 'P1v4', 'P2v4', 'P3v4',
         'EP1', 'EP2', 'EP3',
-        'I1v2', 'I2v2', 'I3v2', 'I4v2', 'I5v2', 'I6v2',
+        'Y1',
       ]},
-      { key: 'Instances',     label: 'Instances',      type: 'select', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] },
       { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
+    ],
+  },
+  web_app: {
+    label: 'Web App',
+    fields: [
+      { key: 'OS',            label: 'OS',             type: 'select', options: ['Linux', 'Windows'] },
+      { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'PHP'] },
+      { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
+      { key: 'Publishing',    label: 'Publishing',     type: 'select', options: ['Code', 'Container'] },
+      { key: 'Slots',         label: 'Slots',          type: 'text',   placeholder: 'e.g. staging, preview' },
+    ],
+  },
+  function_app: {
+    label: 'Function App',
+    fields: [
+      { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['dotnet-isolated', 'node', 'python', 'java', 'powershell', 'custom'] },
+      { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
+      { key: 'Trigger',       label: 'Trigger',        type: 'select', options: ['HTTP', 'Timer', 'ServiceBus', 'Queue', 'Blob', 'CosmosDB', 'EventHub', 'EventGrid'] },
+      { key: 'Slots',         label: 'Slots',          type: 'text',   placeholder: 'e.g. staging' },
     ],
   },
   container_app: {
@@ -141,8 +74,8 @@ const AZURE = {
       { key: 'Dapr',        label: 'Dapr',        type: 'select', options: ['Enabled', 'Disabled'] },
     ],
   },
-  container_apps_environment: {
-    label: 'Container Environment',
+  container_app_environment: {
+    label: 'Container App Environment',
     fields: [
       { key: 'Environment',   label: 'Environment',   type: 'select', options: ['Consumption', 'Dedicated'] },
       { key: 'VNet',          label: 'VNet',          type: 'select', options: ['Default', 'Custom'] },
@@ -168,22 +101,11 @@ const AZURE = {
       { key: 'disk', label: 'Disk', type: 'select', options: ['Standard_LRS', 'StandardSSD_LRS', 'Premium_LRS', 'UltraSSD_LRS'] },
     ],
   },
-  swa: {
+  static_web_app: {
     label: 'Static Web App',
     fields: [
-      { key: 'sku',             label: 'SKU',              type: 'select', options: ['Free', 'Standard'] },
-      { key: 'api_backend',     label: 'API Backend',      type: 'select', options: ['Managed', 'BringYourOwn'] },
-      { key: 'private_endpoint',label: 'Private Endpoint', type: 'select', options: ['No', 'Yes'] },
-      { key: 'branch',          label: 'Branch',           type: 'text',   placeholder: 'e.g. main' },
-    ],
-  },
-  StaticSite: {
-    label: 'Static Web App',
-    fields: [
-      { key: 'sku',             label: 'SKU',              type: 'select', options: ['Free', 'Standard'] },
-      { key: 'api_backend',     label: 'API Backend',      type: 'select', options: ['Managed', 'BringYourOwn'] },
-      { key: 'private_endpoint',label: 'Private Endpoint', type: 'select', options: ['No', 'Yes'] },
-      { key: 'branch',          label: 'Branch',           type: 'text',   placeholder: 'e.g. main' },
+      { key: 'sku',    label: 'SKU',    type: 'select', options: ['Standard', 'Free'] },
+      { key: 'branch', label: 'Branch', type: 'text',   placeholder: 'e.g. main' },
     ],
   },
 
@@ -203,23 +125,6 @@ const AZURE = {
       { key: 'tier',    label: 'Tier',    type: 'select', options: ['Basic', 'Standard', 'Premium', 'GeneralPurpose', 'BusinessCritical', 'Hyperscale'] },
       { key: 'vcores',  label: 'vCores',  type: 'select', options: ['2', '4', '8', '16', '24', '32', '40', '80'] },
       { key: 'storage', label: 'Storage', type: 'text',   placeholder: 'e.g. 100GB' },
-    ],
-  },
-  SQLServer: {
-    label: 'SQL Server',
-    fields: [
-      { key: 'tier',    label: 'Tier',    type: 'select', options: ['Basic', 'Standard', 'Premium', 'GeneralPurpose', 'BusinessCritical', 'Hyperscale'] },
-      { key: 'vcores',  label: 'vCores',  type: 'select', options: ['2', '4', '8', '16', '24', '32', '40', '80'] },
-      { key: 'storage', label: 'Storage', type: 'text',   placeholder: 'e.g. 100GB' },
-    ],
-  },
-  SQLDatabase: {
-    label: 'SQL Database',
-    fields: [
-      { key: 'ComputeTier', label: 'Compute Tier', type: 'select', options: ['Provisioned', 'Serverless'] },
-      { key: 'tier',        label: 'Tier',         type: 'select', options: ['Basic', 'Standard', 'Premium', 'GeneralPurpose', 'BusinessCritical', 'Hyperscale'] },
-      { key: 'vcores',      label: 'vCores',       type: 'select', options: ['2', '4', '8', '12', '16', '24', '32', '40', '80'] },
-      { key: 'storage',     label: 'Storage',      type: 'text',   placeholder: 'e.g. 100GB' },
     ],
   },
   mysql: {
@@ -249,23 +154,19 @@ const AZURE = {
   },
 
   // ── Storage & Messaging ────────────────────────────────────────────────
-  StorageAccount: {
+  storage_account: {
     label: 'Storage Account',
     fields: [
-      { key: 'Performance', label: 'Performance', type: 'select', options: ['Standard', 'Premium'] },
-      { key: 'SKU',         label: 'Redundancy',  type: 'select', options: [
-        'Standard_LRS', 'Standard_ZRS', 'Standard_GRS', 'Standard_RAGRS',
-        'Standard_GZRS', 'Standard_RAGZRS',
+      { key: 'SKU', label: 'Redundancy', type: 'select', options: [
+        'Standard_LRS', 'Standard_ZRS', 'Standard_GRS', 'Standard_GZRS',
         'Premium_LRS', 'Premium_ZRS',
       ]},
-      { key: 'Kind',        label: 'Kind',        type: 'select', options: ['StorageV2', 'BlockBlobStorage', 'FileStorage', 'BlobStorage'] },
-      { key: 'AccessTier',  label: 'Access Tier', type: 'select', options: ['Hot', 'Cool', 'Cold', 'Archive'] },
     ],
   },
-  service_bus: {
+  servicebus: {
     label: 'Service Bus',
     fields: [
-      { key: 'sku',      label: 'SKU',      type: 'select', options: ['Basic', 'Standard', 'Premium'] },
+      { key: 'sku',      label: 'SKU',      type: 'select', options: ['Standard', 'Premium'] },
       { key: 'capacity', label: 'Capacity', type: 'select', options: ['1', '2', '4', '8', '16'] },
     ],
   },
@@ -281,17 +182,8 @@ const AZURE = {
   key_vault: {
     label: 'Key Vault',
     fields: [
-      { key: 'sku',              label: 'SKU',            type: 'select', options: ['Standard', 'Premium'] },
-      { key: 'soft_delete',      label: 'Soft Delete',    type: 'select', options: ['Yes', 'No'] },
-      { key: 'purge_protection', label: 'Purge Protect',  type: 'select', options: ['Yes', 'No'] },
-    ],
-  },
-  KeyVault: {
-    label: 'Key Vault',
-    fields: [
-      { key: 'sku',              label: 'SKU',            type: 'select', options: ['Standard', 'Premium'] },
-      { key: 'soft_delete',      label: 'Soft Delete',    type: 'select', options: ['Yes', 'No'] },
-      { key: 'purge_protection', label: 'Purge Protect',  type: 'select', options: ['Yes', 'No'] },
+      { key: 'sku',              label: 'SKU',           type: 'select', options: ['Standard', 'Premium'] },
+      { key: 'purge_protection', label: 'Purge Protect', type: 'select', options: ['Yes', 'No'] },
     ],
   },
 
@@ -312,19 +204,41 @@ const AZURE = {
   },
 
   // ── AI ─────────────────────────────────────────────────────────────────
-  ai_foundry: {
-    label: 'AI Foundry',
+  openai: {
+    label: 'Azure OpenAI / AI Foundry',
     fields: [
-      { key: 'sku', label: 'SKU', type: 'select', options: ['Basic', 'Standard', 'Enterprise'] },
+      { key: 'models', label: 'Models', type: 'text', placeholder: 'e.g. gpt-4o, text-embedding-3-large' },
     ],
   },
-  ai_search: {
+  search: {
     label: 'AI Search',
     fields: [
-      { key: 'sku',        label: 'SKU',        type: 'select', options: ['Free', 'Basic', 'S1', 'S2', 'S3', 'L1', 'L2'] },
+      { key: 'sku',        label: 'SKU',        type: 'select', options: ['basic', 'standard', 'standard2', 'standard3', 'storage_optimized_l1', 'storage_optimized_l2'] },
       { key: 'replicas',   label: 'Replicas',   type: 'text',   placeholder: 'e.g. 1' },
       { key: 'partitions', label: 'Partitions', type: 'text',   placeholder: 'e.g. 1' },
     ],
+  },
+
+  // ── Platform ───────────────────────────────────────────────────────────
+  data_factory: {
+    label: 'Data Factory',
+    fields: [],
+  },
+  app_configuration: {
+    label: 'App Configuration',
+    fields: [
+      { key: 'sku', label: 'SKU', type: 'select', options: ['standard', 'free'] },
+    ],
+  },
+  frontdoor: {
+    label: 'Azure Front Door',
+    fields: [
+      { key: 'sku', label: 'SKU', type: 'select', options: ['Standard_AzureFrontDoor', 'Premium_AzureFrontDoor'] },
+    ],
+  },
+  user_assigned_identity: {
+    label: 'User Assigned Identity',
+    fields: [],
   },
 }
 

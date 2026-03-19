@@ -1,0 +1,11 @@
+
+subscription_name: test
+environment: prod
+default_location: eastus
+
+resources:
+  - name: app-001
+    type: Web App
+    server_name: server-1
+    plan_name: P1
+    function_app_name: func-1
