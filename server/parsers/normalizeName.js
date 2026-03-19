@@ -42,57 +42,20 @@ const TYPE_PREFIXES = [
 
 // Canonical type names — any incoming variant is remapped to the standard value.
 // Keys are the normalized form (lowercase, spaces/underscores/slashes removed).
-const TYPE_REMAP = {
-  // Compute — variants → canonical
-  'appservice':            'app_service',
-  'appserviceslots':       'app_service',
-  'webappslots':           'app_service',
-  // Granular app service sub-types
-  'webapp':                'web_app',
-  'linuxwebapp':           'web_app',
-  'windowswebapp':         'web_app',
-  'functionapp':           'function_app',
-  'linuxfunctionapp':      'function_app',
-  'appserviceplan':        'app_service_plan',
-  'asp':                   'app_service_plan',
-  // Container Apps
-  'containerapp':          'container_app',
-  'containerappsenvironment': 'container_app_environment',
-  'containerenvironment':  'container_app_environment',
-  'cae':                   'container_app_environment',
-  // Static web app
-  'swa':              'static_web_app',
-  'staticwebapp':     'static_web_app',
-  'staticsite':       'static_web_app',
-  // Messaging — old underscored name normalizes to canonical without underscore
-  'servicebus':       'servicebus',
-  // AI
-  'aifoundry':        'openai',
-  'aisearch':         'search',
-  // Data
-  'storageaccount':   'storage_account',
-  'sqlserver':        'sql',
-  'sqldatabase':      'sql',
-  'cosmosdb':         'cosmos',
-  'cosmosdbaccount':  'cosmos',
-  'cosmosaccount':    'cosmos',
-  'datafactory':      'data_factory',
-  // Security & identity
-  'keyvault':         'key_vault',
-  'managedidentity':  'user_assigned_identity',
-  'useridentity':     'user_assigned_identity',
-  'userassignedidentity': 'user_assigned_identity',
-  'identity':         'user_assigned_identity',
-  // Platform
-  'appconfiguration': 'app_configuration',
-  'frontdoor':        'frontdoor',
-  'afd':              'frontdoor',
-}
+// Source of truth: server/config/azureTypes.js
+const { TYPE_REMAP, BUILDER_TYPES } = require('../config/azureTypes')
+const { DEFAULT_LOCATION } = require('../config/outputSchema')
+const CANONICAL_TYPES = new Set(BUILDER_TYPES)
 
 function normalizeTypeName(type) {
   if (!type || typeof type !== 'string') return type
   const key = type.toLowerCase().replace(/[\s_/]+/g, '')
-  return TYPE_REMAP[key] ?? type
+  // 1. Alias match (e.g. FunctionApp/slots → function_app)
+  if (TYPE_REMAP[key]) return TYPE_REMAP[key]
+  // 2. Already canonical but wrong case (e.g. Redis → redis)
+  if (CANONICAL_TYPES.has(key)) return key
+  // 3. Unknown — return as-is
+  return type
 }
 
 // ─── Org-specific prefixes ────────────────────────────────────────────────────
@@ -190,10 +153,13 @@ function normalizeRows(rows) {
   for (const row of rows) {
     const normalized = normalizeName(row.name)
     if (normalized === null) continue
+    // Clear location if it equals the subscription default — it's redundant as an override
+    const location = (row.location || '').trim()
     out.push({
       ...row,
       name: normalized,
       type: normalizeTypeName(row.type),
+      location: location.toLowerCase() === DEFAULT_LOCATION ? '' : location,
       comments: cleanComments(row.comments)
     })
   }

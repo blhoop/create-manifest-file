@@ -45,6 +45,25 @@
 
 .btn-add-row:hover { background: #bee3f8; }
 
+.btn-undo {
+  background: #fffff0;
+  color: #744210;
+  border: 1px solid #f6e05e;
+  border-radius: 6px;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-undo:hover:not(:disabled) { background: #fefcbf; }
+
+.btn-undo:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .btn-yaml-preview {
   background: #ebf4ff;
   color: #2c5282;
@@ -889,6 +908,19 @@
 
 .fill-target td {
   background: #eff6ff !important;
+}
+
+/* Unknown service type warning */
+.row-unknown-type td {
+  outline: 1px solid #fef08a;
+  outline-offset: -1px;
+}
+
+.type-unknown-icon {
+  margin-left: 5px;
+  color: #ca8a04;
+  font-size: 0.85em;
+  cursor: default;
 }
 
 .fill-target td.editable-cell {

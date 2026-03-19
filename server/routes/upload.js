@@ -11,8 +11,13 @@ const parseImage = require('../parsers/image')
 const parsePdf = require('../parsers/pdf')
 const parseYaml = require('../parsers/yaml')
 const { normalizeRows } = require('../parsers/normalizeName')
+const { AZURE_TYPES } = require('../config/azureTypes')
 
 const router = express.Router()
+
+router.get('/types', (_req, res) => {
+  res.json(AZURE_TYPES)
+})
 const upload = multer({ dest: path.join(__dirname, '../uploads/') })
 
 const PARSERS = {

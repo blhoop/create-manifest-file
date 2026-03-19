@@ -116,40 +116,7 @@ const RESOURCE_FIELDS = [
 // Resource type lists
 // ---------------------------------------------------------------------------
 
-const BUILDER_TYPES = [
-  // Compute
-  'app_service',            // full stack: ASP + web app + function app
-  'app_service_plan',       // standalone App Service Plan
-  'web_app',                // standalone Web App
-  'function_app',           // standalone Function App
-  'aks',
-  'container_app',          // full stack: CAE + container app
-  'container_app_environment', // standalone Container App Environment
-  'vm',
-  'static_web_app',
-  // Data
-  'pg',
-  'cosmos',
-  'sql',
-  'mysql',
-  'sqlmi',
-  'redis',
-  'storage_account',
-  'data_factory',
-  'servicebus',
-  // AI & Search
-  'openai',
-  'search',
-  // Security & Identity
-  'key_vault',
-  'container_registry',
-  'user_assigned_identity',
-  // Observability
-  'app_insights',
-  // Platform
-  'app_configuration',
-  'frontdoor',
-]
+const { BUILDER_TYPES } = require('./azureTypes')
 
 const INVENTORY_TYPES = []
 

@@ -30,61 +30,30 @@ const TOOLTIPS = {
 
 const DISPLAY_LABELS = {
   repo: 'scm repo',
+  location: 'location override',
 }
 
 const REQUIRED = new Set(['name', 'type'])
 
-const MENU_COLS = new Set(['location'])
+const MENU_COLS = new Set([])
 
-// Canonical service types — drives type-column autocomplete + filter suggestions
-// Grouped to match the manifest schema categories
-const TYPE_OPTIONS = [
-  // Compute
-  'app_service',
-  'app_service_plan',
-  'web_app',
-  'function_app',
-  'aks',
-  'container_app',
-  'container_app_environment',
-  'vm',
-  'static_web_app',
-  // Data
-  'pg',
-  'cosmos',
-  'sql',
-  'mysql',
-  'sqlmi',
-  'redis',
-  'storage_account',
-  'data_factory',
-  'servicebus',
-  // AI & Search
-  'openai',
-  'search',
-  // Security & Identity
-  'key_vault',
-  'container_registry',
-  'user_assigned_identity',
-  // Observability
-  'app_insights',
-  // Platform
-  'app_configuration',
-  'frontdoor',
+// Fallback list used until /api/types responds — matches azureTypes.js order
+const TYPE_OPTIONS_DEFAULT = [
+  'app_service', 'app_service_plan', 'web_app', 'function_app',
+  'aks', 'container_app', 'container_app_environment', 'vm', 'static_web_app',
+  'pg', 'cosmos', 'sql', 'mysql', 'sqlmi', 'redis', 'storage_account', 'data_factory', 'servicebus',
+  'openai', 'search',
+  'key_vault', 'container_registry', 'user_assigned_identity',
+  'app_insights', 'app_configuration', 'frontdoor',
 ]
 
-const OPTIONS_FOR = {
-  location: [
-    'australiaeast', 'eastus', 'eastus2',
-    'northcentralus', 'southeastasia', 'uksouth', 'westus3',
-  ],
-}
+const OPTIONS_FOR = {}
 
 const EXAMPLE_ROWS = [
   {
     name: 'web',
     type: 'app_service',
-    location: 'australiaeast',
+    location: '',
     repo: 'MyOrg/ob-app',
     comments: 'main web app',
   },
@@ -101,6 +70,30 @@ const EXAMPLE_ROWS = [
 const getCommentDisplayText = (row) => row.comments ?? ''
 
 export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, getYaml }) {
+  const [typeOptions, setTypeOptions] = useState(TYPE_OPTIONS_DEFAULT)
+
+  const UNDO_LIMIT = 7
+  const [undoStack, setUndoStack] = useState([])
+
+  const changeRows = useCallback((newRows) => {
+    setUndoStack(prev => [...prev.slice(-(UNDO_LIMIT - 1)), rows])
+    onRowsChange(newRows)
+  }, [rows, onRowsChange])
+
+  const undo = useCallback(() => {
+    if (undoStack.length === 0) return
+    const prev = undoStack[undoStack.length - 1]
+    setUndoStack(s => s.slice(0, -1))
+    onRowsChange(prev)
+  }, [undoStack, onRowsChange])
+
+  useEffect(() => {
+    fetch('/api/types')
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setTypeOptions(data.map(t => t.service_type)) })
+      .catch(() => {/* keep fallback */})
+  }, [])
+
   const [editingCell, setEditingCell] = useState(null)
   const [editValue, setEditValue] = useState('')
   const [suggestionIdx, setSuggestionIdx] = useState(-1)
@@ -157,13 +150,13 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
       .filter((r, i) => i !== currentRowIdx && r[editingCell.col])
       .map(r => r[editingCell.col])
     const pool = editingCell.col === 'type'
-      ? [...new Set([...TYPE_OPTIONS, ...existingValues])]
+      ? [...new Set([...typeOptions, ...existingValues])]
       : [...new Set(existingValues)]
     return pool
       .filter(v => v.toLowerCase().includes(lower) && v !== editValue)
       .sort()
       .slice(0, 10)
-  }, [editingCell, editValue, rows])
+  }, [editingCell, editValue, rows, typeOptions])
 
   useEffect(() => { setSuggestionIdx(-1) }, [suggestions])
 
@@ -182,14 +175,14 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
 
   const applySetAll = () => {
     if (onAudit) onAudit({ type: 'SET_ALL', col: colMenu, value: menuSetVal, count: rows.length })
-    onRowsChange(rows.map(r => ({ ...r, [colMenu]: menuSetVal })))
+    changeRows(rows.map(r => ({ ...r, [colMenu]: menuSetVal })))
     setColMenu(null)
   }
 
   const applyClearAll = () => {
     const count = rows.filter(r => r[colMenu]).length
     if (onAudit) onAudit({ type: 'SET_ALL', col: colMenu, value: '', count })
-    onRowsChange(rows.map(r => ({ ...r, [colMenu]: '' })))
+    changeRows(rows.map(r => ({ ...r, [colMenu]: '' })))
     setColMenu(null)
   }
 
@@ -200,7 +193,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
   const applyFindReplace = () => {
     if (!menuFind.trim()) return
     if (onAudit) onAudit({ type: 'FIND_REPLACE', col: colMenu, find: menuFind, replace: menuReplace, count: matchCount })
-    onRowsChange(rows.map(r =>
+    changeRows(rows.map(r =>
       r[colMenu] === menuFind ? { ...r, [colMenu]: menuReplace } : r
     ))
     setColMenu(null)
@@ -234,7 +227,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
       return { ...r, name: nameVal }
     })
     if (onAudit && changes.length) onAudit({ type: 'PARSE_SPOKE_NAMES', terms: parseTextTerms, changes })
-    onRowsChange(updatedRows)
+    changeRows(updatedRows)
     setShowParseText(false)
     setParseTextVal('')
   }
@@ -242,8 +235,8 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
   // Types for filter popover: canonical list + any unknown types from rows
   const rowTypes = new Set(rows.map(r => r.type).filter(Boolean))
   const allServiceTypes = [
-    ...TYPE_OPTIONS.filter(t => rowTypes.has(t)),
-    ...[...rowTypes].filter(t => !TYPE_OPTIONS.includes(t)).sort(),
+    ...typeOptions.filter(t => rowTypes.has(t)),
+    ...[...rowTypes].filter(t => !typeOptions.includes(t)).sort(),
   ]
 
   const toggleServiceType = (st) => {
@@ -291,7 +284,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
     const updated = rows.map((r, i) =>
       i === editingCell.row ? { ...r, [editingCell.col]: editValue } : r
     )
-    onRowsChange(updated)
+    changeRows(updated)
     if (nextCell) {
       setEditingCell(nextCell)
       setEditValue(updated[nextCell.row]?.[nextCell.col] ?? '')
@@ -338,14 +331,14 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
 
   const deleteRow = (rowIdx) => {
     if (onAudit) onAudit({ type: 'ROW_DELETED', rowNum: rowIdx, rowData: rows[rowIdx] })
-    onRowsChange(rows.filter((_, i) => i !== rowIdx))
+    changeRows(rows.filter((_, i) => i !== rowIdx))
     if (editingCell?.row === rowIdx) setEditingCell(null)
   }
 
   const addRow = () => {
     if (onAudit) onAudit({ type: 'ROW_ADDED' })
     const empty = Object.fromEntries(COLUMNS.map(c => [c, '']))
-    onRowsChange([...rows, empty])
+    changeRows([...rows, empty])
   }
 
   const startFillDrag = (e, dispIdx) => {
@@ -380,7 +373,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
           if (i !== sourceDispIdx && displayRows[i]) toUpdate.add(displayRows[i].idx)
         }
         if (toUpdate.size > 0) {
-          onRowsChange(rows.map((r, i) => toUpdate.has(i) ? { ...r, comments: value } : r))
+          changeRows(rows.map((r, i) => toUpdate.has(i) ? { ...r, comments: value } : r))
           if (onAudit) onAudit({ type: 'FILL_DOWN_COMMENTS', sourceRow: displayRows[sourceDispIdx].idx, count: toUpdate.size })
         }
       }
@@ -404,7 +397,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
 
     const updatedRow = { ...rows[rowIdx], comments: newComment }
 
-    onRowsChange(rows.map((r, i) => i === rowIdx ? updatedRow : r))
+    changeRows(rows.map((r, i) => i === rowIdx ? updatedRow : r))
     setJsonPopupRow(null)
   }
 
@@ -550,6 +543,12 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
             {showExample ? 'Hide Example' : 'Show Example'}
           </button>
           <button className="btn-add-row" onClick={addRow}>+ Add Row</button>
+          <button
+            className="btn-undo"
+            onClick={undo}
+            disabled={undoStack.length === 0}
+            title={undoStack.length > 0 ? `Undo (${undoStack.length} step${undoStack.length > 1 ? 's' : ''} available)` : 'Nothing to undo'}
+          >↩ Undo</button>
           <button className="btn-detach" onClick={onDetach}>Detach File</button>
         </div>
       </div>
@@ -707,7 +706,11 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
               <tr
                 key={idx}
                 data-disp-idx={dispIdx}
-                className={[selectedRows.has(idx) ? 'row-selected' : '', fillRange.has(dispIdx) ? 'fill-target' : ''].filter(Boolean).join(' ')}
+                className={[
+                  selectedRows.has(idx) ? 'row-selected' : '',
+                  fillRange.has(dispIdx) ? 'fill-target' : '',
+                  row.type && !typeOptions.includes(row.type) ? 'row-unknown-type' : '',
+                ].filter(Boolean).join(' ')}
               >
                 <td className="col-rownum" onMouseDown={e => handleRowNumClick(idx, e)}>
                   <span className="row-num">{idx + 1}</span>
@@ -748,6 +751,12 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
                           <span className="cell-text">
                             {col === 'comments' ? getCommentDisplayText(row) : (row[col] ?? '')}
                           </span>
+                          {col === 'type' && row.type && !typeOptions.includes(row.type) && (
+                            <span
+                              className="type-unknown-icon"
+                              title="Warning: The resource service type may not exist."
+                            >⚠</span>
+                          )}
                           {col === 'comments' && (
                             <>
                               <button
