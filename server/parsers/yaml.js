@@ -23,11 +23,14 @@ module.exports = async function parseYaml(filePath) {
   // Extract resources rows
   const resources = Array.isArray(doc.resources) ? doc.resources : []
   const rows = resources.map(r => ({
-    name:     r.name     != null ? String(r.name)     : '',
-    type:     r.type     != null ? String(r.type)     : '',
-    location: r.location != null ? String(r.location) : '',
-    repo:     r.repo     != null ? String(r.repo)     : '',
-    comments: r.comments != null ? String(r.comments) : '',
+    name:              r.name              != null ? String(r.name)              : '',
+    type:              r.type              != null ? String(r.type)              : '',
+    location:          r.location          != null ? String(r.location)          : '',
+    repo:              r.repo              != null ? String(r.repo)              : '',
+    server_name:       r.server_name       != null ? String(r.server_name)       : '',
+    plan_name:         r.plan_name         != null ? String(r.plan_name)         : '',
+    function_app_name: r.function_app_name != null ? String(r.function_app_name) : '',
+    comments:          r.comments          != null ? String(r.comments)          : '',
   }))
 
   return { subscription, rows }

@@ -105,6 +105,24 @@ const RESOURCE_FIELDS = [
     required: false,
     hint: 'Free-text hints (e.g. needs pgbouncer, serverless, zone redundant ha)',
   },
+  {
+    key: 'server_name',
+    label: 'server_name',
+    required: false,
+    hint: 'Parent SQL Server name — for SQLDatabase resources',
+  },
+  {
+    key: 'plan_name',
+    label: 'plan_name',
+    required: false,
+    hint: 'Parent App Service Plan name — for slot resources',
+  },
+  {
+    key: 'function_app_name',
+    label: 'function_app_name',
+    required: false,
+    hint: 'Parent Function App name — for functionappslots resources',
+  },
 ]
 
 // ---------------------------------------------------------------------------
@@ -146,6 +164,33 @@ const INVENTORY_TYPES = [
 const ALL_RESOURCE_TYPES = [...BUILDER_TYPES, ...INVENTORY_TYPES]
 
 // ---------------------------------------------------------------------------
+// Parent resource references — maps child resource types to parent types
+// ---------------------------------------------------------------------------
+
+const PARENT_REFERENCES = {
+  'SQLDatabase': {
+    field: 'server_name',
+    parentTypes: ['SQLServer', 'sql'],
+    label: 'SQL Server',
+  },
+  'appserviceslots': {
+    field: 'plan_name',
+    parentTypes: ['AppServicePlan'],
+    label: 'App Service Plan',
+  },
+  'webappslots': {
+    field: 'plan_name',
+    parentTypes: ['AppServicePlan'],
+    label: 'App Service Plan',
+  },
+  'functionappslots': {
+    field: 'function_app_name',
+    parentTypes: ['FunctionApp'],
+    label: 'Function App',
+  },
+}
+
+// ---------------------------------------------------------------------------
 // Location defaults — applied when a resource has no explicit location
 // ---------------------------------------------------------------------------
 
@@ -170,6 +215,7 @@ module.exports = {
   BUILDER_TYPES,
   INVENTORY_TYPES,
   ALL_RESOURCE_TYPES,
+  PARENT_REFERENCES,
   LOCATION_DEFAULTS,
   DEFAULT_LOCATION,
 }

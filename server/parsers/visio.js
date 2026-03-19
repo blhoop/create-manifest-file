@@ -75,6 +75,9 @@ module.exports = async function parseVisio(filePath) {
         type,
         location: '',
         repo: '',
+        server_name: '',
+        plan_name: '',
+        function_app_name: '',
         comments: shapeDeps ? `Connected to: ${shapeDeps}` : '',
       })
     })

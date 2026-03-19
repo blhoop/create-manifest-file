@@ -12,6 +12,30 @@ const CLONE_PARENT_MAP = {
   'functionappslots': ['functionapp'],            // function_app_slots, Function App/Slots
 }
 
+// Maps child resource types to their parent reference config
+const PARENT_REFERENCES = {
+  'sqldatabase': {
+    field: 'server_name',
+    parentTypes: ['sqlserver', 'sql'],
+    label: 'SQL Server',
+  },
+  'appserviceslots': {
+    field: 'plan_name',
+    parentTypes: ['appserviceplan'],
+    label: 'App Service Plan',
+  },
+  'webappslots': {
+    field: 'plan_name',
+    parentTypes: ['appserviceplan'],
+    label: 'App Service Plan',
+  },
+  'functionappslots': {
+    field: 'function_app_name',
+    parentTypes: ['functionapp'],
+    label: 'Function App',
+  },
+}
+
 /** Parse a `key:value, key:value` comment string back into field values + leftover notes. */
 function parseComment(comment) {
   const values = {}
@@ -58,26 +82,45 @@ export default function ResourceCommentPopup({ row, currentComment, rows, onClos
   // Clone from parent state
   const parentTypes = CLONE_PARENT_MAP[normalizeType(row?.type)]
   const [cloneEnabled, setCloneEnabled] = useState(false)
-  const [selectedParent, setSelectedParent] = useState('')
+  const [selectedCloneParent, setSelectedCloneParent] = useState('')
 
-  const parentRows = useMemo(() => {
+  const cloneParentRows = useMemo(() => {
     if (!parentTypes || !rows) return []
     return rows.filter(r => r.name && parentTypes.includes(normalizeType(r.type)))
   }, [parentTypes, rows])
 
+  // Parent reference state (for linking to parent resources)
+  const parentRefConfig = PARENT_REFERENCES[normalizeType(row?.type)]
+  const [parentLinkEnabled, setParentLinkEnabled] = useState(false)
+  const [selectedParentLink, setSelectedParentLink] = useState(row?.[parentRefConfig?.field] ?? '')
+
+  const parentLinkRows = useMemo(() => {
+    if (!parentRefConfig || !rows) return []
+    return rows.filter(r => r.name && r.name !== row?.name && parentRefConfig.parentTypes.includes(normalizeType(r.type)))
+  }, [parentRefConfig, rows, row])
+
   const handleCloneToggle = (checked) => {
     setCloneEnabled(checked)
-    if (!checked) setSelectedParent('')
+    if (!checked) setSelectedCloneParent('')
   }
 
-  const handleParentSelect = (parentName) => {
-    setSelectedParent(parentName)
+  const handleCloneParentSelect = (parentName) => {
+    setSelectedCloneParent(parentName)
     if (!parentName) return
-    const parentRow = parentRows.find(r => r.name === parentName)
+    const parentRow = cloneParentRows.find(r => r.name === parentName)
     if (!parentRow) return
     const { values, notes: parentNotes } = parseComment(parentRow.comments ?? '')
     setFieldValues(values)
     setNotes(parentNotes)
+  }
+
+  const handleParentLinkToggle = (checked) => {
+    setParentLinkEnabled(checked)
+    if (!checked) setSelectedParentLink('')
+  }
+
+  const handleParentLinkSelect = (parentName) => {
+    setSelectedParentLink(parentName)
   }
 
   const preview = hasFields
@@ -99,7 +142,14 @@ export default function ResourceCommentPopup({ row, currentComment, rows, onClos
   }
 
   const handleDone = () => {
-    onCommit(preview)
+    const commitData = {
+      comment: preview,
+      parentLink: parentLinkEnabled && selectedParentLink ? {
+        field: parentRefConfig.field,
+        value: selectedParentLink,
+      } : null,
+    }
+    onCommit(commitData)
     onClose()
   }
 
@@ -122,6 +172,36 @@ export default function ResourceCommentPopup({ row, currentComment, rows, onClos
 
         <div className="rcp-body">
 
+          {parentRefConfig && (
+            <div className="rcp-clone-section">
+              <label className="rcp-clone-label">
+                <input
+                  type="checkbox"
+                  checked={parentLinkEnabled}
+                  onChange={e => handleParentLinkToggle(e.target.checked)}
+                />
+                Link to Parent {parentRefConfig.label}
+              </label>
+              {parentLinkEnabled && (
+                <select
+                  className="rcp-clone-select"
+                  value={selectedParentLink}
+                  onChange={e => handleParentLinkSelect(e.target.value)}
+                >
+                  <option value="">— select parent —</option>
+                  {parentLinkRows.map(r => (
+                    <option key={r.name} value={r.name}>
+                      {r.name} ({r.type})
+                    </option>
+                  ))}
+                </select>
+              )}
+              {parentLinkEnabled && parentLinkRows.length === 0 && (
+                <p className="rcp-clone-empty">No matching {parentRefConfig.label.toLowerCase()} resources found in the table.</p>
+              )}
+            </div>
+          )}
+
           {parentTypes && (
             <div className="rcp-clone-section">
               <label className="rcp-clone-label">
@@ -135,18 +215,18 @@ export default function ResourceCommentPopup({ row, currentComment, rows, onClos
               {cloneEnabled && (
                 <select
                   className="rcp-clone-select"
-                  value={selectedParent}
-                  onChange={e => handleParentSelect(e.target.value)}
+                  value={selectedCloneParent}
+                  onChange={e => handleCloneParentSelect(e.target.value)}
                 >
                   <option value="">— select parent —</option>
-                  {parentRows.map(r => (
+                  {cloneParentRows.map(r => (
                     <option key={r.name} value={r.name}>
                       {r.name} ({r.type})
                     </option>
                   ))}
                 </select>
               )}
-              {cloneEnabled && parentRows.length === 0 && (
+              {cloneEnabled && cloneParentRows.length === 0 && (
                 <p className="rcp-clone-empty">No matching parent resources found in the table.</p>
               )}
             </div>
@@ -213,10 +293,20 @@ export default function ResourceCommentPopup({ row, currentComment, rows, onClos
             </div>
           )}
 
-          {preview && (
+          {(preview || (parentLinkEnabled && selectedParentLink)) && (
             <div className="rcp-preview">
-              <span className="rcp-preview-label">Preview</span>
-              <span className="rcp-preview-value">{preview}</span>
+              {preview && (
+                <>
+                  <span className="rcp-preview-label">Comment</span>
+                  <span className="rcp-preview-value">{preview}</span>
+                </>
+              )}
+              {parentRefConfig && parentLinkEnabled && selectedParentLink && (
+                <>
+                  <span className="rcp-preview-label" style={{marginTop: preview ? '0.5rem' : 0}}>Parent Link</span>
+                  <span className="rcp-preview-value">{parentRefConfig.label}: {selectedParentLink}</span>
+                </>
+              )}
             </div>
           )}
         </div>
