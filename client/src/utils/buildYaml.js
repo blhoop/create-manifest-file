@@ -42,11 +42,9 @@ export function buildYamlContent(rows, subscription) {
   out.push(`# ${spokeName} -- Spoke Infrastructure Manifest`)
   out.push('# Schema: manifest-schema.json v1')
 
-  out.push('')
-  out.push('schema_version: "1"')
-
   // ── spoke ──────────────────────────────────────────────────────────────
   out.push(...sectionHeader('SPOKE — Identity & metadata'))
+  out.push('schema_version: "1"')
   out.push('spoke:')
   if (sub.spoke_name)           out.push(`  name: ${q(sub.spoke_name)}`)
   if (sub.spoke_name)           out.push(`  subscription: ${q(sub.spoke_name)}`)
