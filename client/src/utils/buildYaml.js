@@ -219,9 +219,12 @@ export function buildYamlContent(rows, subscription) {
   out.push(...sectionHeader('COMPUTE'))
   out.push('compute:')
 
+  let firstComputeSub = true
+  const computeBlank = () => { if (!firstComputeSub) out.push(''); firstComputeSub = false }
+
   // plan_defaults — emit whenever there are web or function apps (or explicit plan rows)
   if (hasWebApps || hasFuncApps || planRows.length > 0) {
-    out.push('')
+    computeBlank()
     out.push('  # --- Plan Defaults ---')
     out.push('  # Each web app and function app gets its own dedicated plan from this spec.')
     out.push("  # Use share_plan_with on an app to reuse another app's plan.")
@@ -243,19 +246,17 @@ export function buildYamlContent(rows, subscription) {
 
   // web_apps
   if (hasWebApps) {
-    out.push('')
+    computeBlank()
     out.push('  # --- Web Apps ---')
     out.push('  web_apps:')
-    let instanceCounter = 1
     for (const row of webApps) {
       const cf = parseCommentFields(row.comments)
       const id = `web_${row.name || 'app'}`
       const mod = resolveModule(row.type, cf)
-      const instNum = String(instanceCounter++).padStart(3, '0')
       out.push(`    - id: ${q(id)}`)
       out.push(`      subsystem: ${q(row.name || 'app')}`)
       out.push(`      module: ${mod}`)
-      out.push(`      instance_number: '${instNum}'`)
+      out.push(`      instance_number: '001'`)
       if (hasVnet) out.push(`      vnet_integration_subnet_id: snet_appservices`)
       // Check if a secondary web ASP matches this app by name → plan_override
       const appNameLower = (row.name || '').toLowerCase()
@@ -280,21 +281,19 @@ export function buildYamlContent(rows, subscription) {
 
   // function_apps
   if (hasFuncApps) {
-    out.push('')
+    computeBlank()
     out.push('  # --- Function Apps ---')
     out.push('  function_apps:')
-    let instanceCounter = 1
     for (const row of funcApps) {
       const cf = parseCommentFields(row.comments)
       const id = `func_${row.name || 'func'}`
       const mod = resolveModule(row.type, cf)
       const runtime = cf.Runtime || 'dotnet-isolated'
-      const instNum = String(instanceCounter++).padStart(3, '0')
       out.push(`    - id: ${q(id)}`)
       out.push(`      subsystem: ${q(row.name || 'func')}`)
       out.push(`      module: ${mod}`)
       out.push(`      runtime: ${q(runtime)}`)
-      out.push(`      instance_number: '${instNum}'`)
+      out.push(`      instance_number: '001'`)
       if (hasVnet) out.push(`      vnet_integration_subnet_id: snet_appservices`)
       // Check if a secondary func ASP matches this app by name → plan_override
       const appNameLower = (row.name || '').toLowerCase()
@@ -320,19 +319,17 @@ export function buildYamlContent(rows, subscription) {
   // static_sites
   const staticSites = mapped.compute.static_sites
   if (staticSites.length > 0) {
-    out.push('')
+    computeBlank()
     out.push('  # --- Static Sites ---')
     out.push('  static_sites:')
-    let instanceCounter = 1
     for (const row of staticSites) {
       const cf = parseCommentFields(row.comments)
       const id = `swa_${row.name || 'frontend'}`
-      const instNum = String(instanceCounter++).padStart(3, '0')
       out.push(`    - id: ${q(id)}`)
       out.push(`      subsystem: ${q(row.name || 'frontend')}`)
       out.push(`      module: terraform-azurerm-static-web-app`)
       if (cf.sku) out.push(`      sku: ${q(cf.sku)}`)
-      out.push(`      instance_number: '${instNum}'`)
+      out.push(`      instance_number: '001'`)
       if (row.repo) out.push(`      # app_repo: ${row.repo}`)
     }
   }
@@ -343,8 +340,11 @@ export function buildYamlContent(rows, subscription) {
     out.push(...sectionHeader('DATA'))
     out.push('data:')
 
+    let firstDataSub = true
+    const dataBlank = () => { if (!firstDataSub) out.push(''); firstDataSub = false }
+
     if (mapped.data.databases.length > 0) {
-      out.push('')
+      dataBlank()
       out.push('  # --- Databases ---')
       out.push('  databases:')
       for (const row of mapped.data.databases) {
@@ -363,24 +363,22 @@ export function buildYamlContent(rows, subscription) {
     }
 
     if (mapped.data.storage_accounts.length > 0) {
-      out.push('')
+      dataBlank()
       out.push('  # --- Storage Accounts ---')
       out.push('  storage_accounts:')
-      let instanceCounter = 1
       for (const row of mapped.data.storage_accounts) {
         const cf = parseCommentFields(row.comments)
-        const instNum = String(instanceCounter++).padStart(3, '0')
         out.push(`    - subsystem: ${q(row.name || 'storage')}`)
         out.push(`      module: terraform-azurerm-storage-account`)
         out.push(`      sku: ${q(cf.SKU || cf.sku || 'Standard_LRS')}`)
         out.push(`      kind: ${q(cf.Kind || cf.kind || 'StorageV2')}`)
-        out.push(`      instance_number: '${instNum}'`)
+        out.push(`      instance_number: '001'`)
         if (row.comments) out.push(`      # comments: ${row.comments}`)
       }
     }
 
     if (mapped.data.caching.length > 0) {
-      out.push('')
+      dataBlank()
       out.push('  # --- Caching ---')
       out.push('  caching:')
       for (const row of mapped.data.caching) {
@@ -397,7 +395,7 @@ export function buildYamlContent(rows, subscription) {
     }
 
     if (mapped.data.search.length > 0) {
-      out.push('')
+      dataBlank()
       out.push('  # --- Search ---')
       out.push('  search:')
       for (const row of mapped.data.search) {
@@ -411,7 +409,7 @@ export function buildYamlContent(rows, subscription) {
     }
 
     if (mapped.data.factories.length > 0) {
-      out.push('')
+      dataBlank()
       out.push('  # --- Data Factories ---')
       out.push('  factories:')
       for (const row of mapped.data.factories) {
@@ -428,8 +426,11 @@ export function buildYamlContent(rows, subscription) {
     out.push(...sectionHeader('SECURITY'))
     out.push('security:')
 
+    let firstSecSub = true
+    const secBlank = () => { if (!firstSecSub) out.push(''); firstSecSub = false }
+
     if (mapped.security.key_vaults.length > 0) {
-      out.push('')
+      secBlank()
       out.push('  # --- Key Vaults ---')
       out.push('  key_vaults:')
       for (const row of mapped.security.key_vaults) {
@@ -449,16 +450,14 @@ export function buildYamlContent(rows, subscription) {
     }
 
     if (mapped.security.managed_identities.length > 0) {
-      out.push('')
+      secBlank()
       out.push('  # --- Managed Identities ---')
       out.push('  managed_identities:')
-      let instanceCounter = 1
       for (const row of mapped.security.managed_identities) {
-        const instNum = String(instanceCounter++).padStart(3, '0')
         out.push(`    - id: ${q(`mi_${row.name || 'identity'}`)}`)
         out.push(`      subsystem: ${q(row.name || 'identity')}`)
         out.push(`      module: terraform-azurerm-user-assigned-identity`)
-        out.push(`      instance_number: '${instNum}'`)
+        out.push(`      instance_number: '001'`)
       }
     }
   }
