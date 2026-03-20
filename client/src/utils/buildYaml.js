@@ -1,0 +1,390 @@
+/**
+ * buildYaml.js — generates the nested spoke infrastructure manifest YAML
+ * from the flat row array + subscription panel state.
+ */
+
+import { SCHEMA_MAPPING, parseCommentFields, resolveModule } from '../config/schemaMapping.js'
+
+// ---------------------------------------------------------------------------
+// YAML scalar quoting
+// ---------------------------------------------------------------------------
+function q(val) {
+  if (val == null || val === '') return ''
+  const s = String(val)
+  if (/[:#\{\}\[\]\n]/.test(s) || /^[-?!|>%@`&*]/.test(s.trim())) {
+    return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+  }
+  return s
+}
+
+function line(indent, key, val) {
+  if (val == null || val === '') return null
+  return `${' '.repeat(indent)}${key}: ${q(val)}`
+}
+
+function sectionHeader(title) {
+  return [
+    '',
+    '# ---------------------------------------------------------------------------',
+    `# ${title}`,
+    '# ---------------------------------------------------------------------------',
+  ]
+}
+
+// ---------------------------------------------------------------------------
+// Main builder
+// ---------------------------------------------------------------------------
+export function buildYamlContent(rows, subscription) {
+  const sub = subscription
+  const out = []
+
+  out.push('# =============================================================================')
+  out.push('# Spoke Infrastructure Manifest')
+  out.push('# =============================================================================')
+
+  // ── spoke ──────────────────────────────────────────────────────────────
+  out.push(...sectionHeader('SPOKE — Identity & metadata'))
+  out.push('spoke:')
+  if (sub.spoke_name)           out.push(`  name: ${q(sub.spoke_name)}`)
+  if (sub.spoke_name)           out.push(`  subscription: ${q(sub.spoke_name)}`)
+  if (sub.owner)                out.push(`  owner: ${q(sub.owner)}`)
+  if (sub.description)          out.push(`  description: ${q(sub.description)}`)
+  if (sub.sku_mode)             out.push(`  sku_mode: ${q(sub.sku_mode)}`)
+  if (sub.management_group_id)  out.push(`  management_group_id: ${q(sub.management_group_id)}`)
+  if (sub.new_subscription != null && sub.new_subscription !== '') {
+    out.push(`  new_subscription: ${sub.new_subscription === 'false' || sub.new_subscription === false ? 'false' : 'true'}`)
+  }
+  if (sub.infra_repo)           out.push(`  infra_repo: ${q(sub.infra_repo)}`)
+
+  // ── ctm_properties ─────────────────────────────────────────────────────
+  out.push(...sectionHeader('CTM PROPERTIES — Used for resource naming only'))
+  out.push('ctm_properties:')
+  out.push(`  product: ${q(sub.product || sub.product_code || '')}`)
+
+  // ── environments ───────────────────────────────────────────────────────
+  out.push(...sectionHeader('ENVIRONMENTS'))
+  out.push('environments:')
+  const env = sub.environment || 'dev'
+  const loc = sub.default_location || sub.location || ''
+  out.push(`  ${env}:`)
+  if (loc) out.push(`    location: ${q(loc)}`)
+
+  // ── tags ───────────────────────────────────────────────────────────────
+  out.push(...sectionHeader('TAGS'))
+  out.push('tags:')
+  out.push(`  owner: ${q(sub.owner || '[TBD]')}`)
+  out.push(`  cost_center: ${q(sub.cost_center || '[TBD]')}`)
+  out.push(`  project: ${q(sub.project || '[TBD]')}`)
+  out.push(`  data_classification: ${q(sub.data_classification || 'internal')}`)
+
+  // ── network ────────────────────────────────────────────────────────────
+  out.push(...sectionHeader('NETWORK'))
+  out.push('network:')
+  out.push('')
+  out.push('  # --- VNets ---')
+  out.push('  vnets:')
+  out.push('    - id: vnet')
+  if (sub.vnet_cidr) out.push(`      cidr: ${q(sub.vnet_cidr)}`)
+  out.push('      dns_servers: hub-inherited')
+  out.push('      peering: hub-network-vnet')
+  out.push('')
+  out.push('  # --- Subnets ---')
+  out.push('  subnets:')
+  out.push('    - id: snet_privateendpoints')
+  out.push('      vnet_id: vnet')
+  out.push('      cidr: "[TBD]"')
+  out.push('      delegation: null')
+  out.push('      purpose: Private endpoints')
+  out.push('')
+  out.push('  # --- NSGs ---')
+  out.push('  nsgs:')
+  out.push('    - id: nsg_privateendpoints')
+  out.push('      subnet_id: snet_privateendpoints')
+  out.push('      rules: []')
+  out.push('')
+  out.push('  # --- Private Endpoints ---')
+  out.push('  private_endpoints: []')
+  out.push('')
+  out.push('  # --- DNS Zones ---')
+  out.push('  dns_zones: []')
+
+  // ── partition rows by schema section ───────────────────────────────────
+  const mapped = {
+    compute:      { app_service_plans: [], web_apps: [], function_apps: [], static_sites: [] },
+    data:         { databases: [], caching: [], search: [], factories: [] },
+    security:     { key_vaults: [], managed_identities: [] },
+    observability:{ app_insights: [] },
+  }
+  const unmappedRows = []
+
+  for (const row of (rows || [])) {
+    const mapping = SCHEMA_MAPPING[row.type]
+    if (!mapping || mapping.unmapped) {
+      unmappedRows.push(row)
+      continue
+    }
+    const { section, sub_key } = mapping
+    if (mapped[section]?.[sub_key]) {
+      mapped[section][sub_key].push(row)
+    }
+  }
+
+  // Auto-detect which asp to assign — if one asp_plan exists, all web/function apps use it
+  const plans = mapped.compute.app_service_plans
+  const defaultAspId = plans.length === 1 ? (plans[0].name || 'asp') : null
+
+  // ── compute ────────────────────────────────────────────────────────────
+  out.push(...sectionHeader('COMPUTE'))
+  out.push('compute:')
+
+  // app_service_plans
+  if (plans.length > 0) {
+    out.push('')
+    out.push('  # --- App Service Plans ---')
+    out.push('  app_service_plans:')
+    for (const row of plans) {
+      const cf = parseCommentFields(row.comments)
+      const id = row.name || 'asp'
+      out.push(`    - id: ${q(id)}`)
+      out.push(`      subsystem: ${q(id)}`)
+      out.push(`      module: terraform-azurerm-app-service-plan`)
+      if (cf.OS)  out.push(`      os_type: ${q(cf.OS)}`)
+      if (cf.SKU) out.push(`      sku: ${q(cf.SKU)}`)
+      if (row.comments) out.push(`      # comments: ${row.comments}`)
+    }
+  }
+
+  // web_apps
+  const webApps = mapped.compute.web_apps
+  if (webApps.length > 0) {
+    out.push('')
+    out.push('  # --- Web Apps ---')
+    out.push('  web_apps:')
+    let instanceCounter = 1
+    for (const row of webApps) {
+      const cf = parseCommentFields(row.comments)
+      const id = `web_${row.name || 'app'}`
+      const mod = resolveModule(row.type, cf)
+      const aspId = defaultAspId
+        ? `asp_${defaultAspId}`
+        : (plans.length > 1 ? `# asp_id: [assign manually]` : 'asp')
+      const instNum = String(instanceCounter++).padStart(3, '0')
+      out.push(`    - id: ${q(id)}`)
+      out.push(`      subsystem: ${q(row.name || 'app')}`)
+      out.push(`      module: ${mod}`)
+      if (plans.length > 0) {
+        const aspRef = defaultAspId ? `asp_${defaultAspId}` : null
+        if (aspRef) out.push(`      asp_id: ${q(aspRef)}`)
+        else out.push(`      asp_id: "[assign manually]" # multiple plans detected`)
+      }
+      out.push(`      instance_number: '${instNum}'`)
+      if (row.repo) out.push(`      # app_repo: ${row.repo}`)
+      if (row.comments) out.push(`      # comments: ${row.comments}`)
+    }
+  }
+
+  // function_apps
+  const funcApps = mapped.compute.function_apps
+  if (funcApps.length > 0) {
+    out.push('')
+    out.push('  # --- Function Apps ---')
+    out.push('  function_apps:')
+    let instanceCounter = 1
+    for (const row of funcApps) {
+      const cf = parseCommentFields(row.comments)
+      const id = `func_${row.name || 'func'}`
+      const mod = resolveModule(row.type, cf)
+      const runtime = cf.Runtime || 'dotnet-isolated'
+      const instNum = String(instanceCounter++).padStart(3, '0')
+      out.push(`    - id: ${q(id)}`)
+      out.push(`      subsystem: ${q(row.name || 'func')}`)
+      out.push(`      module: ${mod}`)
+      if (plans.length > 0) {
+        const aspRef = defaultAspId ? `asp_${defaultAspId}` : null
+        if (aspRef) out.push(`      asp_id: ${q(aspRef)}`)
+        else out.push(`      asp_id: "[assign manually]" # multiple plans detected`)
+      }
+      out.push(`      runtime: ${q(runtime)}`)
+      out.push(`      instance_number: '${instNum}'`)
+      if (row.repo) out.push(`      # app_repo: ${row.repo}`)
+      if (row.comments) out.push(`      # comments: ${row.comments}`)
+    }
+  }
+
+  // static_sites
+  const staticSites = mapped.compute.static_sites
+  if (staticSites.length > 0) {
+    out.push('')
+    out.push('  # --- Static Sites ---')
+    out.push('  static_sites:')
+    let instanceCounter = 1
+    for (const row of staticSites) {
+      const cf = parseCommentFields(row.comments)
+      const id = `swa_${row.name || 'frontend'}`
+      const instNum = String(instanceCounter++).padStart(3, '0')
+      out.push(`    - id: ${q(id)}`)
+      out.push(`      subsystem: ${q(row.name || 'frontend')}`)
+      out.push(`      module: terraform-azurerm-static-web-app`)
+      if (cf.sku) out.push(`      sku: ${q(cf.sku)}`)
+      out.push(`      instance_number: '${instNum}'`)
+      if (row.repo) out.push(`      # app_repo: ${row.repo}`)
+    }
+  }
+
+  // ── data ───────────────────────────────────────────────────────────────
+  const hasData = Object.values(mapped.data).some(a => a.length > 0)
+  if (hasData) {
+    out.push(...sectionHeader('DATA'))
+    out.push('data:')
+
+    if (mapped.data.databases.length > 0) {
+      out.push('')
+      out.push('  # --- Databases ---')
+      out.push('  databases:')
+      for (const row of mapped.data.databases) {
+        const cf = parseCommentFields(row.comments)
+        const mapping = SCHEMA_MAPPING[row.type]
+        const id = row.name || row.type
+        out.push(`    - id: ${q(id)}`)
+        out.push(`      subsystem: ${q(id)}`)
+        out.push(`      type: ${mapping.db_type}`)
+        out.push(`      module: ${mapping.module}`)
+        // SKU — prefer comment field, fall back to tier
+        const sku = cf.sku || cf.SKU || cf.tier || cf.Tier || ''
+        if (sku) out.push(`      sku: ${q(sku)}`)
+        if (row.comments) out.push(`      # comments: ${row.comments}`)
+      }
+    }
+
+    if (mapped.data.caching.length > 0) {
+      out.push('')
+      out.push('  # --- Caching ---')
+      out.push('  caching:')
+      for (const row of mapped.data.caching) {
+        const cf = parseCommentFields(row.comments)
+        out.push(`    - id: ${q(row.name || 'redis')}`)
+        out.push(`      subsystem: ${q(row.name || 'cache')}`)
+        out.push(`      module: terraform-azurerm-managed-redis`)
+        const sku = cf.sku || cf.SKU || ''
+        const cap = cf.capacity || cf.Capacity || ''
+        const fullSku = sku && cap ? `${sku}_${cap}` : (sku || cap || '')
+        if (fullSku) out.push(`      sku: ${q(fullSku)}`)
+        if (row.comments) out.push(`      # comments: ${row.comments}`)
+      }
+    }
+
+    if (mapped.data.search.length > 0) {
+      out.push('')
+      out.push('  # --- Search ---')
+      out.push('  search:')
+      for (const row of mapped.data.search) {
+        const cf = parseCommentFields(row.comments)
+        out.push(`    - id: ${q(row.name || 'search')}`)
+        out.push(`      subsystem: ${q(row.name || 'search')}`)
+        out.push(`      module: terraform-azurerm-search-service`)
+        if (cf.sku) out.push(`      sku: ${q(cf.sku)}`)
+        if (row.comments) out.push(`      # comments: ${row.comments}`)
+      }
+    }
+
+    if (mapped.data.factories.length > 0) {
+      out.push('')
+      out.push('  # --- Data Factories ---')
+      out.push('  factories:')
+      for (const row of mapped.data.factories) {
+        out.push(`    - id: ${q(row.name || 'adf')}`)
+        out.push(`      subsystem: ${q(row.name || 'adf')}`)
+        out.push(`      module: terraform-azurerm-data-factory`)
+      }
+    }
+  }
+
+  // ── security ───────────────────────────────────────────────────────────
+  const hasSecurity = Object.values(mapped.security).some(a => a.length > 0)
+  if (hasSecurity) {
+    out.push(...sectionHeader('SECURITY'))
+    out.push('security:')
+
+    if (mapped.security.key_vaults.length > 0) {
+      out.push('')
+      out.push('  # --- Key Vaults ---')
+      out.push('  key_vaults:')
+      for (const row of mapped.security.key_vaults) {
+        out.push(`    - id: ${q(row.name || 'kv')}`)
+        out.push(`      subsystem: ${q(row.name || sub.product || sub.product_code || 'kv')}`)
+        out.push(`      module: terraform-azurerm-key-vault`)
+        out.push(`      access_model: RBAC`)
+        out.push(`      consumers: []`)
+        if (row.comments) out.push(`      # comments: ${row.comments}`)
+      }
+    }
+
+    if (mapped.security.managed_identities.length > 0) {
+      out.push('')
+      out.push('  # --- Managed Identities ---')
+      out.push('  managed_identities:')
+      let instanceCounter = 1
+      for (const row of mapped.security.managed_identities) {
+        const instNum = String(instanceCounter++).padStart(3, '0')
+        out.push(`    - id: ${q(`mi_${row.name || 'identity'}`)}`)
+        out.push(`      subsystem: ${q(row.name || 'identity')}`)
+        out.push(`      module: terraform-azurerm-user-assigned-identity`)
+        out.push(`      instance_number: '${instNum}'`)
+      }
+    }
+  }
+
+  // ── observability ──────────────────────────────────────────────────────
+  const appInsights = mapped.observability.app_insights
+  const product = sub.product || sub.product_code || 'myapp'
+  out.push(...sectionHeader('OBSERVABILITY'))
+  out.push('observability:')
+  out.push('')
+  out.push('  # --- Log Analytics Workspace ---')
+  out.push('  log_analytics_workspace:')
+  out.push('    id: law')
+  out.push(`    subsystem: ${q(product)}`)
+  out.push('    module: terraform-azurerm-log-analytics-workspace')
+  out.push('    retention_days: 30')
+
+  if (appInsights.length > 0) {
+    out.push('')
+    out.push('  # --- Application Insights ---')
+    out.push('  app_insights:')
+    for (const row of appInsights) {
+      const cf = parseCommentFields(row.comments)
+      out.push(`    - id: ${q(row.name || 'appi')}`)
+      out.push(`      subsystem: ${q(row.name || product)}`)
+      out.push(`      module: terraform-azurerm-application-insights`)
+      out.push(`      workspace_id: law`)
+      if (cf.retention) out.push(`      retention_days: ${cf.retention}`)
+      if (row.comments) out.push(`      # comments: ${row.comments}`)
+    }
+  }
+
+  // ── dependencies ───────────────────────────────────────────────────────
+  out.push(...sectionHeader('DEPENDENCIES — External resources this spoke connects to'))
+  out.push('dependencies:')
+  out.push('  - name: hub-network-vnet')
+  out.push('    type: vnet_peering')
+  out.push('    direction: bidirectional')
+
+  // ── unmapped resources ─────────────────────────────────────────────────
+  if (unmappedRows.length > 0) {
+    out.push('')
+    out.push('# ---------------------------------------------------------------------------')
+    out.push('# RESOURCES NOT MAPPED TO SCHEMA')
+    out.push('# The following resources have no equivalent in this schema version.')
+    out.push('# Add them manually or raise with the platform team.')
+    out.push('# ---------------------------------------------------------------------------')
+    for (const row of unmappedRows) {
+      out.push(`# - name: ${row.name || ''}`)
+      out.push(`#   type: ${row.type || ''}`)
+      if (row.location) out.push(`#   location: ${row.location}`)
+      if (row.repo)     out.push(`#   repo: ${row.repo}`)
+      if (row.comments) out.push(`#   comments: ${row.comments}`)
+    }
+  }
+
+  return out.join('\n')
+}
