@@ -77,6 +77,28 @@ export function buildYamlContent(rows, subscription) {
   out.push(`  project: ${q(sub.project || '[TBD]')}`)
   out.push(`  data_classification: ${q(sub.data_classification || 'internal')}`)
 
+  // ── pre-scan rows for NSG rules and consumers ──────────────────────────
+  // Collect before emitting network/security sections
+  const appServicesNsgRules = []
+  for (const row of (rows || [])) {
+    if (['web_app', 'app_service', 'app_service_plan', 'function_app'].includes(row.type)) {
+      if (Array.isArray(row.nsg_rules) && row.nsg_rules.length > 0) {
+        appServicesNsgRules.push(...row.nsg_rules)
+      }
+    }
+  }
+  // Deduplicate by rule name
+  const seenRuleNames = new Set()
+  const dedupedNsgRules = appServicesNsgRules.filter(r => {
+    if (!r.name || seenRuleNames.has(r.name)) return false
+    seenRuleNames.add(r.name)
+    return true
+  })
+
+  const hasAppServiceRows = (rows || []).some(r =>
+    ['web_app', 'app_service', 'app_service_plan', 'function_app'].includes(r.type)
+  )
+
   // ── network ────────────────────────────────────────────────────────────
   out.push(...sectionHeader('NETWORK'))
   out.push('network:')
@@ -90,6 +112,13 @@ export function buildYamlContent(rows, subscription) {
   out.push('')
   out.push('  # --- Subnets ---')
   out.push('  subnets:')
+  if (hasAppServiceRows) {
+    out.push('    - id: snet_appservices')
+    out.push('      vnet_id: vnet')
+    out.push('      cidr: "[TBD]"')
+    out.push('      delegation: Microsoft.Web/serverFarms')
+    out.push('      purpose: App Service VNet integration')
+  }
   out.push('    - id: snet_privateendpoints')
   out.push('      vnet_id: vnet')
   out.push('      cidr: "[TBD]"')
@@ -98,6 +127,25 @@ export function buildYamlContent(rows, subscription) {
   out.push('')
   out.push('  # --- NSGs ---')
   out.push('  nsgs:')
+  if (hasAppServiceRows) {
+    out.push('    - id: nsg_appservices')
+    out.push('      subnet_id: snet_appservices')
+    if (dedupedNsgRules.length > 0) {
+      out.push('      rules:')
+      for (const rule of dedupedNsgRules) {
+        out.push(`        - name: ${q(rule.name)}`)
+        out.push(`          priority: ${rule.priority}`)
+        out.push(`          direction: ${q(rule.direction)}`)
+        out.push(`          access: ${q(rule.access)}`)
+        out.push(`          protocol: ${q(rule.protocol)}`)
+        out.push(`          source_address_prefix: ${q(rule.source_address_prefix)}`)
+        out.push(`          destination_port_range: ${q(rule.destination_port_range)}`)
+        if (rule.description) out.push(`          description: ${q(rule.description)}`)
+      }
+    } else {
+      out.push('      rules: []')
+    }
+  }
   out.push('    - id: nsg_privateendpoints')
   out.push('      subnet_id: snet_privateendpoints')
   out.push('      rules: []')
@@ -134,20 +182,33 @@ export function buildYamlContent(rows, subscription) {
   const webApps  = mapped.compute.web_apps
   const funcApps = mapped.compute.function_apps
 
-  // Prefer a plan row whose name doesn't contain 'func' for web_app defaults; vice versa for funcs
-  const webPlanRow  = planRows.find(r => !/func/i.test(r.name)) ?? planRows[0]
-  const funcPlanRow = planRows.find(r => /func/i.test(r.name))  ?? planRows[0]
+  // Classify each ASP row as 'web' or 'func':
+  //   1. PlanFor comment field takes priority  (PlanFor:Web App / PlanFor:Function App)
+  //   2. Row name containing 'func' → func, otherwise → web
+  const getAspType = r => {
+    const cf = parseCommentFields(r.comments)
+    const pf = (cf.PlanFor || '').toLowerCase()
+    if (pf.includes('func')) return 'func'
+    if (pf.includes('web') || pf.includes('app')) return 'web'
+    return /func/i.test(r.name) ? 'func' : 'web'
+  }
+
+  const webPlanRows  = planRows.filter(r => getAspType(r) === 'web')
+  const funcPlanRows = planRows.filter(r => getAspType(r) === 'func')
+
+  // First of each type drives plan_defaults; extras can drive plan_override on matched apps
+  const webPlanRow  = webPlanRows[0]  ?? planRows[0]
+  const funcPlanRow = funcPlanRows[0] ?? (planRows.length > 1 ? planRows[1] : planRows[0])
 
   const webPlanCf  = parseCommentFields(webPlanRow?.comments)
   const funcPlanCf = parseCommentFields(funcPlanRow?.comments)
-  // Also pull from first app's comments as fallback
+  // Also pull OS from first app's comments as fallback (web_app popup has an OS field)
   const firstWebCf  = parseCommentFields(webApps[0]?.comments)
-  const firstFuncCf = parseCommentFields(funcApps[0]?.comments)
 
   const webOs  = webPlanCf.OS  || firstWebCf.OS  || 'Windows'
-  const webSku = webPlanCf.SKU || firstWebCf.SKU || 'P1v3'
-  const funcOs  = funcPlanCf.OS  || firstFuncCf.OS  || 'Windows'
-  const funcSku = funcPlanCf.SKU || firstFuncCf.SKU || 'EP1'
+  const webSku = webPlanCf.SKU || 'P1v3'
+  const funcOs  = funcPlanCf.OS  || 'Windows'
+  const funcSku = funcPlanCf.SKU || 'EP1'
 
   const hasWebApps  = webApps.length > 0
   const hasFuncApps = funcApps.length > 0
@@ -165,12 +226,14 @@ export function buildYamlContent(rows, subscription) {
     out.push("  # Use share_plan_with on an app to reuse another app's plan.")
     out.push('  # Use plan_override on an app to override these defaults for that app only.')
     out.push('  plan_defaults:')
-    if (hasWebApps || planRows.length > 0) {
+    if (hasWebApps || webPlanRows.length > 0 || planRows.length > 0) {
+      if (webPlanRow) out.push(`    # source: ${webPlanRow.name} — set PlanFor, OS, SKU via row popup`)
       out.push('    web_app:')
       out.push(`      os_type: ${q(webOs)}`)
       out.push(`      sku: ${q(webSku)}`)
     }
-    if (hasFuncApps || planRows.length > 0) {
+    if (hasFuncApps || funcPlanRows.length > 0 || planRows.length > 0) {
+      if (funcPlanRow && funcPlanRow !== webPlanRow) out.push(`    # source: ${funcPlanRow.name} — set PlanFor, OS, SKU via row popup`)
       out.push('    function_app:')
       out.push(`      os_type: ${q(funcOs)}`)
       out.push(`      sku: ${q(funcSku)}`)
@@ -193,6 +256,22 @@ export function buildYamlContent(rows, subscription) {
       out.push(`      module: ${mod}`)
       out.push(`      instance_number: '${instNum}'`)
       if (hasVnet) out.push(`      vnet_integration_subnet_id: snet_appservices`)
+      // Check if a secondary web ASP matches this app by name → plan_override
+      const appNameLower = (row.name || '').toLowerCase()
+      const overrideAsp = webPlanRows.slice(1).find(asp => {
+        const aspName = (asp.name || '').toLowerCase()
+        return aspName.includes(appNameLower) || appNameLower.includes(aspName)
+      })
+      if (overrideAsp) {
+        const ocf = parseCommentFields(overrideAsp.comments)
+        const oOs  = ocf.OS  || webOs
+        const oSku = ocf.SKU || webSku
+        if (oOs !== webOs || oSku !== webSku) {
+          out.push(`      plan_override:`)
+          out.push(`        os_type: ${q(oOs)}`)
+          out.push(`        sku: ${q(oSku)}`)
+        }
+      }
       if (row.repo) out.push(`      # app_repo: ${row.repo}`)
       if (row.comments) out.push(`      # comments: ${row.comments}`)
     }
@@ -216,6 +295,22 @@ export function buildYamlContent(rows, subscription) {
       out.push(`      runtime: ${q(runtime)}`)
       out.push(`      instance_number: '${instNum}'`)
       if (hasVnet) out.push(`      vnet_integration_subnet_id: snet_appservices`)
+      // Check if a secondary func ASP matches this app by name → plan_override
+      const appNameLower = (row.name || '').toLowerCase()
+      const overrideAsp = funcPlanRows.slice(1).find(asp => {
+        const aspName = (asp.name || '').toLowerCase()
+        return aspName.includes(appNameLower) || appNameLower.includes(aspName)
+      })
+      if (overrideAsp) {
+        const ocf = parseCommentFields(overrideAsp.comments)
+        const oOs  = ocf.OS  || funcOs
+        const oSku = ocf.SKU || funcSku
+        if (oOs !== funcOs || oSku !== funcSku) {
+          out.push(`      plan_override:`)
+          out.push(`        os_type: ${q(oOs)}`)
+          out.push(`        sku: ${q(oSku)}`)
+        }
+      }
       if (row.repo) out.push(`      # app_repo: ${row.repo}`)
       if (row.comments) out.push(`      # comments: ${row.comments}`)
     }
@@ -320,11 +415,17 @@ export function buildYamlContent(rows, subscription) {
       out.push('  # --- Key Vaults ---')
       out.push('  key_vaults:')
       for (const row of mapped.security.key_vaults) {
+        const kvConsumers = Array.isArray(row.consumers) ? row.consumers.filter(c => c?.trim()) : []
         out.push(`    - id: ${q(row.name || 'kv')}`)
         out.push(`      subsystem: ${q(row.name || sub.product || sub.product_code || 'kv')}`)
         out.push(`      module: terraform-azurerm-key-vault`)
         out.push(`      access_model: RBAC`)
-        out.push(`      consumers: []`)
+        if (kvConsumers.length > 0) {
+          out.push(`      consumers:`)
+          kvConsumers.forEach(c => out.push(`        - ${q(c)}`))
+        } else {
+          out.push(`      consumers: []`)
+        }
         if (row.comments) out.push(`      # comments: ${row.comments}`)
       }
     }

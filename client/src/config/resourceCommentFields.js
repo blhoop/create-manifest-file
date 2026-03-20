@@ -33,6 +33,7 @@ const AZURE = {
   app_service_plan: {
     label: 'App Service Plan',
     fields: [
+      { key: 'PlanFor',       label: 'Plan For',       type: 'select', options: ['Web App', 'Function App'] },
       { key: 'OS',            label: 'OS',             type: 'select', options: ['Linux', 'Windows'] },
       { key: 'SKU',           label: 'SKU',            type: 'select', options: [
         'B1', 'B2', 'B3',
