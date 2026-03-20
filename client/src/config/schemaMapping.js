@@ -91,9 +91,12 @@ export const SCHEMA_MAPPING = {
     module: 'terraform-azurerm-data-factory',
   },
 
-  // No schema equivalent
-  storage_account: { unmapped: true },
-  servicebus:      { unmapped: true },
+  storage_account: {
+    section: 'data',
+    sub_key: 'storage_accounts',
+    module: 'terraform-azurerm-storage-account',
+  },
+  servicebus: { unmapped: true },
 
   // ── Security ─────────────────────────────────────────────────────────────
   key_vault: {

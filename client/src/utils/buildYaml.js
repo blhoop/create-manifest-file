@@ -44,7 +44,7 @@ export function buildYamlContent(rows, subscription) {
 
   // ── spoke ──────────────────────────────────────────────────────────────
   out.push(...sectionHeader('SPOKE — Identity & metadata'))
-  out.push('schema_version: "1"')
+  out.push("schema_version: '1.1.0'")
   out.push('spoke:')
   if (sub.spoke_name)           out.push(`  name: ${q(sub.spoke_name)}`)
   if (sub.spoke_name)           out.push(`  subscription: ${q(sub.spoke_name)}`)
@@ -160,7 +160,7 @@ export function buildYamlContent(rows, subscription) {
   // ── partition rows by schema section ───────────────────────────────────
   const mapped = {
     compute:      { app_service_plans: [], web_apps: [], function_apps: [], static_sites: [] },
-    data:         { databases: [], caching: [], search: [], factories: [] },
+    data:         { databases: [], storage_accounts: [], caching: [], search: [], factories: [] },
     security:     { key_vaults: [], managed_identities: [] },
     observability:{ app_insights: [] },
   }
@@ -358,6 +358,23 @@ export function buildYamlContent(rows, subscription) {
         // SKU — prefer comment field, fall back to tier
         const sku = cf.sku || cf.SKU || cf.tier || cf.Tier || ''
         if (sku) out.push(`      sku: ${q(sku)}`)
+        if (row.comments) out.push(`      # comments: ${row.comments}`)
+      }
+    }
+
+    if (mapped.data.storage_accounts.length > 0) {
+      out.push('')
+      out.push('  # --- Storage Accounts ---')
+      out.push('  storage_accounts:')
+      let instanceCounter = 1
+      for (const row of mapped.data.storage_accounts) {
+        const cf = parseCommentFields(row.comments)
+        const instNum = String(instanceCounter++).padStart(3, '0')
+        out.push(`    - subsystem: ${q(row.name || 'storage')}`)
+        out.push(`      module: terraform-azurerm-storage-account`)
+        out.push(`      sku: ${q(cf.SKU || cf.sku || 'Standard_LRS')}`)
+        out.push(`      kind: ${q(cf.Kind || cf.kind || 'StorageV2')}`)
+        out.push(`      instance_number: '${instNum}'`)
         if (row.comments) out.push(`      # comments: ${row.comments}`)
       }
     }

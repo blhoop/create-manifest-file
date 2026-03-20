@@ -158,10 +158,11 @@ const AZURE = {
   storage_account: {
     label: 'Storage Account',
     fields: [
-      { key: 'SKU', label: 'Redundancy', type: 'select', options: [
+      { key: 'SKU',  label: 'Redundancy', type: 'select', options: [
         'Standard_LRS', 'Standard_ZRS', 'Standard_GRS', 'Standard_GZRS',
         'Premium_LRS', 'Premium_ZRS',
       ]},
+      { key: 'Kind', label: 'Kind',       type: 'select', options: ['StorageV2', 'BlobStorage'] },
     ],
   },
   servicebus: {
