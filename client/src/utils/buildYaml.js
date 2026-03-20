@@ -38,9 +38,12 @@ export function buildYamlContent(rows, subscription) {
   const sub = subscription
   const out = []
 
-  out.push('# =============================================================================')
-  out.push('# Spoke Infrastructure Manifest')
-  out.push('# =============================================================================')
+  const spokeName = sub.spoke_name || 'Spoke Infrastructure'
+  out.push(`# ${spokeName} -- Spoke Infrastructure Manifest`)
+  out.push('# Schema: manifest-schema.json v1')
+
+  out.push('')
+  out.push('schema_version: "1"')
 
   // ── spoke ──────────────────────────────────────────────────────────────
   out.push(...sectionHeader('SPOKE — Identity & metadata'))
