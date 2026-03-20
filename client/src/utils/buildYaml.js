@@ -129,34 +129,56 @@ export function buildYamlContent(rows, subscription) {
     }
   }
 
-  // Auto-detect which asp to assign — if one asp_plan exists, all web/function apps use it
-  const plans = mapped.compute.app_service_plans
-  const defaultAspId = plans.length === 1 ? (plans[0].name || 'asp') : null
+  // Derive plan_defaults from app_service_plan rows (if any) or comment fields on web/func apps
+  const planRows = mapped.compute.app_service_plans
+  const webApps  = mapped.compute.web_apps
+  const funcApps = mapped.compute.function_apps
+
+  // Prefer a plan row whose name doesn't contain 'func' for web_app defaults; vice versa for funcs
+  const webPlanRow  = planRows.find(r => !/func/i.test(r.name)) ?? planRows[0]
+  const funcPlanRow = planRows.find(r => /func/i.test(r.name))  ?? planRows[0]
+
+  const webPlanCf  = parseCommentFields(webPlanRow?.comments)
+  const funcPlanCf = parseCommentFields(funcPlanRow?.comments)
+  // Also pull from first app's comments as fallback
+  const firstWebCf  = parseCommentFields(webApps[0]?.comments)
+  const firstFuncCf = parseCommentFields(funcApps[0]?.comments)
+
+  const webOs  = webPlanCf.OS  || firstWebCf.OS  || 'Windows'
+  const webSku = webPlanCf.SKU || firstWebCf.SKU || 'P1v3'
+  const funcOs  = funcPlanCf.OS  || firstFuncCf.OS  || 'Windows'
+  const funcSku = funcPlanCf.SKU || firstFuncCf.SKU || 'EP1'
+
+  const hasWebApps  = webApps.length > 0
+  const hasFuncApps = funcApps.length > 0
+  const hasVnet     = !!(sub.vnet_cidr)
 
   // ── compute ────────────────────────────────────────────────────────────
   out.push(...sectionHeader('COMPUTE'))
   out.push('compute:')
 
-  // app_service_plans
-  if (plans.length > 0) {
+  // plan_defaults — emit whenever there are web or function apps (or explicit plan rows)
+  if (hasWebApps || hasFuncApps || planRows.length > 0) {
     out.push('')
-    out.push('  # --- App Service Plans ---')
-    out.push('  app_service_plans:')
-    for (const row of plans) {
-      const cf = parseCommentFields(row.comments)
-      const id = row.name || 'asp'
-      out.push(`    - id: ${q(id)}`)
-      out.push(`      subsystem: ${q(id)}`)
-      out.push(`      module: terraform-azurerm-app-service-plan`)
-      if (cf.OS)  out.push(`      os_type: ${q(cf.OS)}`)
-      if (cf.SKU) out.push(`      sku: ${q(cf.SKU)}`)
-      if (row.comments) out.push(`      # comments: ${row.comments}`)
+    out.push('  # --- Plan Defaults ---')
+    out.push('  # Each web app and function app gets its own dedicated plan from this spec.')
+    out.push("  # Use share_plan_with on an app to reuse another app's plan.")
+    out.push('  # Use plan_override on an app to override these defaults for that app only.')
+    out.push('  plan_defaults:')
+    if (hasWebApps || planRows.length > 0) {
+      out.push('    web_app:')
+      out.push(`      os_type: ${q(webOs)}`)
+      out.push(`      sku: ${q(webSku)}`)
+    }
+    if (hasFuncApps || planRows.length > 0) {
+      out.push('    function_app:')
+      out.push(`      os_type: ${q(funcOs)}`)
+      out.push(`      sku: ${q(funcSku)}`)
     }
   }
 
   // web_apps
-  const webApps = mapped.compute.web_apps
-  if (webApps.length > 0) {
+  if (hasWebApps) {
     out.push('')
     out.push('  # --- Web Apps ---')
     out.push('  web_apps:')
@@ -165,27 +187,19 @@ export function buildYamlContent(rows, subscription) {
       const cf = parseCommentFields(row.comments)
       const id = `web_${row.name || 'app'}`
       const mod = resolveModule(row.type, cf)
-      const aspId = defaultAspId
-        ? `asp_${defaultAspId}`
-        : (plans.length > 1 ? `# asp_id: [assign manually]` : 'asp')
       const instNum = String(instanceCounter++).padStart(3, '0')
       out.push(`    - id: ${q(id)}`)
       out.push(`      subsystem: ${q(row.name || 'app')}`)
       out.push(`      module: ${mod}`)
-      if (plans.length > 0) {
-        const aspRef = defaultAspId ? `asp_${defaultAspId}` : null
-        if (aspRef) out.push(`      asp_id: ${q(aspRef)}`)
-        else out.push(`      asp_id: "[assign manually]" # multiple plans detected`)
-      }
       out.push(`      instance_number: '${instNum}'`)
+      if (hasVnet) out.push(`      vnet_integration_subnet_id: snet_appservices`)
       if (row.repo) out.push(`      # app_repo: ${row.repo}`)
       if (row.comments) out.push(`      # comments: ${row.comments}`)
     }
   }
 
   // function_apps
-  const funcApps = mapped.compute.function_apps
-  if (funcApps.length > 0) {
+  if (hasFuncApps) {
     out.push('')
     out.push('  # --- Function Apps ---')
     out.push('  function_apps:')
@@ -199,13 +213,9 @@ export function buildYamlContent(rows, subscription) {
       out.push(`    - id: ${q(id)}`)
       out.push(`      subsystem: ${q(row.name || 'func')}`)
       out.push(`      module: ${mod}`)
-      if (plans.length > 0) {
-        const aspRef = defaultAspId ? `asp_${defaultAspId}` : null
-        if (aspRef) out.push(`      asp_id: ${q(aspRef)}`)
-        else out.push(`      asp_id: "[assign manually]" # multiple plans detected`)
-      }
       out.push(`      runtime: ${q(runtime)}`)
       out.push(`      instance_number: '${instNum}'`)
+      if (hasVnet) out.push(`      vnet_integration_subnet_id: snet_appservices`)
       if (row.repo) out.push(`      # app_repo: ${row.repo}`)
       if (row.comments) out.push(`      # comments: ${row.comments}`)
     }

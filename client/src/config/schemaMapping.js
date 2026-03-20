@@ -11,9 +11,10 @@
 
 export const SCHEMA_MAPPING = {
   // ── Compute ──────────────────────────────────────────────────────────────
+  // app_service_plan rows feed compute.plan_defaults (not an array section)
   app_service_plan: {
     section: 'compute',
-    sub_key: 'app_service_plans',
+    sub_key: 'app_service_plans', // used only for partitioning in buildYaml; builder reads from this bucket to derive plan_defaults
     module: 'terraform-azurerm-app-service-plan',
   },
   app_service: {

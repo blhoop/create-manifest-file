@@ -88,7 +88,34 @@ function parseNewFormat(doc) {
   // ---------------------------------------------------------------------------
   const rows = []
 
-  // compute.app_service_plans
+  // compute.plan_defaults (v1.0.0+) — synthesise app_service_plan rows to preserve OS/SKU
+  const planDefaults = doc.compute?.plan_defaults
+  if (planDefaults?.web_app) {
+    rows.push({
+      name:     'web',
+      type:     'app_service_plan',
+      location: '',
+      repo:     '',
+      comments: buildCommentFromEntry(planDefaults.web_app, [
+        { commentKey: 'OS', yamlKey: 'os_type' },
+        { commentKey: 'SKU', yamlKey: 'sku' },
+      ]),
+    })
+  }
+  if (planDefaults?.function_app) {
+    rows.push({
+      name:     'func',
+      type:     'app_service_plan',
+      location: '',
+      repo:     '',
+      comments: buildCommentFromEntry(planDefaults.function_app, [
+        { commentKey: 'OS', yamlKey: 'os_type' },
+        { commentKey: 'SKU', yamlKey: 'sku' },
+      ]),
+    })
+  }
+
+  // compute.app_service_plans (pre-v1.0.0 format — kept for backwards compat)
   for (const entry of (doc.compute?.app_service_plans ?? [])) {
     rows.push({
       name:     entry.id ?? entry.subsystem ?? '',
