@@ -203,7 +203,7 @@ export function parseCommentFields(comments) {
  * Falls back to Windows if OS is not specified.
  */
 export function resolveModule(serviceType, commentFields) {
-  const os = (commentFields.OS || commentFields.os || '').toLowerCase()
+  const os = (commentFields.os_type || commentFields.OS || commentFields.os || '').toLowerCase()
   const isLinux = os === 'linux'
 
   if (serviceType === 'function_app') {

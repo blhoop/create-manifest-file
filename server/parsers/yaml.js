@@ -28,12 +28,14 @@ function parseCommentFields(comments) {
 
 // ---------------------------------------------------------------------------
 // Reconstruct comment string from known YAML entry fields
+// Supports dot-notation for nested keys, e.g. "plan_override.sku"
 // ---------------------------------------------------------------------------
 function buildCommentFromEntry(entry, commentKeys) {
   const parts = []
   for (const { commentKey, yamlKey } of commentKeys) {
-    if (entry[yamlKey] != null && entry[yamlKey] !== '') {
-      parts.push(`${commentKey}:${entry[yamlKey]}`)
+    const val = yamlKey.split('.').reduce((obj, k) => obj?.[k], entry)
+    if (val != null && val !== '') {
+      parts.push(`${commentKey}:${val}`)
     }
   }
   return parts.join(', ')
@@ -88,7 +90,7 @@ function parseNewFormat(doc) {
   // ---------------------------------------------------------------------------
   const rows = []
 
-  // compute.plan_defaults (v1.0.0+) — synthesise app_service_plan rows to preserve OS/SKU
+  // compute.plan_defaults (v1.0.0+) — synthesise app_service_plan rows to preserve os_type/sku
   const planDefaults = doc.compute?.plan_defaults
   if (planDefaults?.web_app) {
     rows.push({
@@ -97,8 +99,8 @@ function parseNewFormat(doc) {
       location: '',
       repo:     '',
       comments: buildCommentFromEntry(planDefaults.web_app, [
-        { commentKey: 'OS', yamlKey: 'os_type' },
-        { commentKey: 'SKU', yamlKey: 'sku' },
+        { commentKey: 'os_type', yamlKey: 'os_type' },
+        { commentKey: 'sku',     yamlKey: 'sku' },
       ]),
     })
   }
@@ -109,8 +111,8 @@ function parseNewFormat(doc) {
       location: '',
       repo:     '',
       comments: buildCommentFromEntry(planDefaults.function_app, [
-        { commentKey: 'OS', yamlKey: 'os_type' },
-        { commentKey: 'SKU', yamlKey: 'sku' },
+        { commentKey: 'os_type', yamlKey: 'os_type' },
+        { commentKey: 'sku',     yamlKey: 'sku' },
       ]),
     })
   }
@@ -137,7 +139,9 @@ function parseNewFormat(doc) {
       location: '',
       repo:     entry.app_repo ?? '',
       comments: buildCommentFromEntry(entry, [
-        { commentKey: 'OS', yamlKey: 'os_type' },
+        { commentKey: 'os_type',          yamlKey: 'os_type' },
+        { commentKey: 'share_plan_with',  yamlKey: 'share_plan_with' },
+        { commentKey: 'plan_override_sku', yamlKey: 'plan_override.sku' },
       ]),
     })
   }
@@ -150,7 +154,9 @@ function parseNewFormat(doc) {
       location: '',
       repo:     entry.app_repo ?? '',
       comments: buildCommentFromEntry(entry, [
-        { commentKey: 'Runtime', yamlKey: 'runtime' },
+        { commentKey: 'runtime',          yamlKey: 'runtime' },
+        { commentKey: 'share_plan_with',  yamlKey: 'share_plan_with' },
+        { commentKey: 'plan_override_sku', yamlKey: 'plan_override.sku' },
       ]),
     })
   }
@@ -163,7 +169,8 @@ function parseNewFormat(doc) {
       location: '',
       repo:     entry.app_repo ?? '',
       comments: buildCommentFromEntry(entry, [
-        { commentKey: 'sku', yamlKey: 'sku' },
+        { commentKey: 'sku',      yamlKey: 'sku' },
+        { commentKey: 'location', yamlKey: 'location' },
       ]),
     })
   }
@@ -188,9 +195,13 @@ function parseNewFormat(doc) {
       location: '',
       repo:     entry.app_repo ?? '',
       comments: buildCommentFromEntry(entry, [
-        { commentKey: 'CPU', yamlKey: 'cpu' },
-        { commentKey: 'Memory', yamlKey: 'memory' },
-        { commentKey: 'MinReplicas', yamlKey: 'min_replicas' },
+        { commentKey: 'image',        yamlKey: 'image' },
+        { commentKey: 'cpu',          yamlKey: 'cpu' },
+        { commentKey: 'memory',       yamlKey: 'memory' },
+        { commentKey: 'min_replicas', yamlKey: 'min_replicas' },
+        { commentKey: 'max_replicas', yamlKey: 'max_replicas' },
+        { commentKey: 'target_port',  yamlKey: 'target_port' },
+        { commentKey: 'transport',    yamlKey: 'transport' },
       ]),
     })
   }
@@ -203,8 +214,12 @@ function parseNewFormat(doc) {
       location: '',
       repo:     '',
       comments: buildCommentFromEntry(entry, [
-        { commentKey: 'version', yamlKey: 'kubernetes_version' },
-        { commentKey: 'node_sku', yamlKey: 'default_node_pool.vm_size' },
+        { commentKey: 'kubernetes_version', yamlKey: 'kubernetes_version' },
+        { commentKey: 'sku_tier',           yamlKey: 'sku_tier' },
+        { commentKey: 'vm_size',            yamlKey: 'default_node_pool.vm_size' },
+        { commentKey: 'node_count',         yamlKey: 'default_node_pool.node_count' },
+        { commentKey: 'min_count',          yamlKey: 'default_node_pool.min_count' },
+        { commentKey: 'max_count',          yamlKey: 'default_node_pool.max_count' },
       ]),
     })
   }
@@ -217,8 +232,10 @@ function parseNewFormat(doc) {
       location: '',
       repo:     '',
       comments: buildCommentFromEntry(entry, [
-        { commentKey: 'os', yamlKey: 'os_type' },
-        { commentKey: 'size', yamlKey: 'vm_size' },
+        { commentKey: 'os_type',              yamlKey: 'os_type' },
+        { commentKey: 'vm_size',              yamlKey: 'vm_size' },
+        { commentKey: 'admin_username',       yamlKey: 'admin_username' },
+        { commentKey: 'storage_account_type', yamlKey: 'os_disk.storage_account_type' },
       ]),
     })
   }
@@ -231,7 +248,7 @@ function parseNewFormat(doc) {
       location: '',
       repo:     '',
       comments: buildCommentFromEntry(entry, [
-        { commentKey: 'sku', yamlKey: 'sku' },
+        { commentKey: 'sku',          yamlKey: 'sku' },
         { commentKey: 'service_mode', yamlKey: 'service_mode' },
       ]),
     })
@@ -246,7 +263,9 @@ function parseNewFormat(doc) {
       location: '',
       repo:     '',
       comments: buildCommentFromEntry(apim, [
-        { commentKey: 'sku', yamlKey: 'sku' },
+        { commentKey: 'sku',             yamlKey: 'sku' },
+        { commentKey: 'publisher_name',  yamlKey: 'publisher_name' },
+        { commentKey: 'publisher_email', yamlKey: 'publisher_email' },
       ]),
     })
   }
@@ -273,14 +292,20 @@ function parseNewFormat(doc) {
 
   // data.caching
   for (const entry of (doc.data?.caching ?? [])) {
+    // sku in schema is "Balanced_B0" — split into tier+size for popup fields
+    const fullSku = entry.sku ?? ''
+    const skuParts = fullSku.split('_')
+    const tier = skuParts[0] || ''
+    const size = skuParts[1] || ''
+    const cacheParts = []
+    if (tier) cacheParts.push(`sku:${tier}`)
+    if (size) cacheParts.push(`capacity:${size}`)
     rows.push({
       name:     entry.subsystem ?? entry.id ?? '',
       type:     'redis',
       location: '',
       repo:     '',
-      comments: buildCommentFromEntry(entry, [
-        { commentKey: 'sku', yamlKey: 'sku' },
-      ]),
+      comments: cacheParts.join(', '),
     })
   }
 
@@ -292,7 +317,9 @@ function parseNewFormat(doc) {
       location: '',
       repo:     '',
       comments: buildCommentFromEntry(entry, [
-        { commentKey: 'sku', yamlKey: 'sku' },
+        { commentKey: 'sku',             yamlKey: 'sku' },
+        { commentKey: 'replica_count',   yamlKey: 'replica_count' },
+        { commentKey: 'partition_count', yamlKey: 'partition_count' },
       ]),
     })
   }
@@ -305,6 +332,20 @@ function parseNewFormat(doc) {
       location: '',
       repo:     '',
       comments: '',
+    })
+  }
+
+  // data.storage_accounts
+  for (const entry of (doc.data?.storage_accounts ?? [])) {
+    rows.push({
+      name:     entry.subsystem ?? entry.id ?? '',
+      type:     'storage_account',
+      location: '',
+      repo:     '',
+      comments: buildCommentFromEntry(entry, [
+        { commentKey: 'sku',  yamlKey: 'sku' },
+        { commentKey: 'kind', yamlKey: 'kind' },
+      ]),
     })
   }
 
@@ -379,7 +420,7 @@ function parseNewFormat(doc) {
       location: '',
       repo:     '',
       comments: buildCommentFromEntry(entry, [
-        { commentKey: 'retention', yamlKey: 'retention_days' },
+        { commentKey: 'retention_days', yamlKey: 'retention_days' },
       ]),
     })
   }

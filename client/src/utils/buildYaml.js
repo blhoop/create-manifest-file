@@ -212,13 +212,13 @@ export function buildYamlContent(rows, subscription) {
 
   const webPlanCf  = parseCommentFields(webPlanRow?.comments)
   const funcPlanCf = parseCommentFields(funcPlanRow?.comments)
-  // Also pull OS from first app's comments as fallback (web_app popup has an OS field)
+  // Also pull os_type from first app's comments as fallback (web_app popup has an os_type field)
   const firstWebCf  = parseCommentFields(webApps[0]?.comments)
 
-  const webOs  = webPlanCf.OS  || firstWebCf.OS  || 'Windows'
-  const webSku = webPlanCf.SKU || 'P1v3'
-  const funcOs  = funcPlanCf.OS  || 'Windows'
-  const funcSku = funcPlanCf.SKU || 'EP1'
+  const webOs  = webPlanCf.os_type || webPlanCf.OS  || firstWebCf.os_type || firstWebCf.OS  || 'Windows'
+  const webSku = webPlanCf.sku     || webPlanCf.SKU  || 'P1v3'
+  const funcOs  = funcPlanCf.os_type || funcPlanCf.OS  || 'Windows'
+  const funcSku = funcPlanCf.sku     || funcPlanCf.SKU  || 'EP1'
 
   const hasWebApps  = webApps.length > 0
   const hasFuncApps = funcApps.length > 0
@@ -240,13 +240,13 @@ export function buildYamlContent(rows, subscription) {
     out.push('  # Use plan_override on an app to override these defaults for that app only.')
     out.push('  plan_defaults:')
     if (hasWebApps || webPlanRows.length > 0 || planRows.length > 0) {
-      if (webPlanRow) out.push(`    # source: ${webPlanRow.name} — set PlanFor, OS, SKU via row popup`)
+      if (webPlanRow) out.push(`    # source: ${webPlanRow.name} — set PlanFor, os_type, sku via row popup`)
       out.push('    web_app:')
       out.push(`      os_type: ${q(webOs)}`)
       out.push(`      sku: ${q(webSku)}`)
     }
     if (hasFuncApps || funcPlanRows.length > 0 || planRows.length > 0) {
-      if (funcPlanRow && funcPlanRow !== webPlanRow) out.push(`    # source: ${funcPlanRow.name} — set PlanFor, OS, SKU via row popup`)
+      if (funcPlanRow && funcPlanRow !== webPlanRow) out.push(`    # source: ${funcPlanRow.name} — set PlanFor, os_type, sku via row popup`)
       out.push('    function_app:')
       out.push(`      os_type: ${q(funcOs)}`)
       out.push(`      sku: ${q(funcSku)}`)
@@ -267,24 +267,32 @@ export function buildYamlContent(rows, subscription) {
       out.push(`      module: ${mod}`)
       out.push(`      instance_number: '001'`)
       if (hasVnet) out.push(`      vnet_integration_subnet_id: snet_appservices`)
-      // Check if a secondary web ASP matches this app by name → plan_override
-      const appNameLower = (row.name || '').toLowerCase()
-      const overrideAsp = webPlanRows.slice(1).find(asp => {
-        const aspName = (asp.name || '').toLowerCase()
-        return aspName.includes(appNameLower) || appNameLower.includes(aspName)
-      })
-      if (overrideAsp) {
-        const ocf = parseCommentFields(overrideAsp.comments)
-        const oOs  = ocf.OS  || webOs
-        const oSku = ocf.SKU || webSku
-        if (oOs !== webOs || oSku !== webSku) {
-          out.push(`      plan_override:`)
-          out.push(`        os_type: ${q(oOs)}`)
-          out.push(`        sku: ${q(oSku)}`)
+      if (cf.share_plan_with) out.push(`      share_plan_with: ${q(cf.share_plan_with)}`)
+      // plan_override — explicit popup field takes priority, then fall back to ASP row matching
+      const planOverrideSku = cf.plan_override_sku
+      if (planOverrideSku) {
+        out.push(`      plan_override:`)
+        out.push(`        os_type: ${q(cf.os_type || webOs)}`)
+        out.push(`        sku: ${q(planOverrideSku)}`)
+      } else {
+        // Legacy: match secondary ASP row by name
+        const appNameLower = (row.name || '').toLowerCase()
+        const overrideAsp = webPlanRows.slice(1).find(asp => {
+          const aspName = (asp.name || '').toLowerCase()
+          return aspName.includes(appNameLower) || appNameLower.includes(aspName)
+        })
+        if (overrideAsp) {
+          const ocf = parseCommentFields(overrideAsp.comments)
+          const oOs  = ocf.os_type || ocf.OS || webOs
+          const oSku = ocf.sku || ocf.SKU || webSku
+          if (oOs !== webOs || oSku !== webSku) {
+            out.push(`      plan_override:`)
+            out.push(`        os_type: ${q(oOs)}`)
+            out.push(`        sku: ${q(oSku)}`)
+          }
         }
       }
       if (row.repo) out.push(`      # app_repo: ${row.repo}`)
-      if (row.comments) out.push(`      # comments: ${row.comments}`)
     }
   }
 
@@ -297,31 +305,38 @@ export function buildYamlContent(rows, subscription) {
       const cf = parseCommentFields(row.comments)
       const id = `func_${row.name || 'func'}`
       const mod = resolveModule(row.type, cf)
-      const runtime = cf.Runtime || 'dotnet-isolated'
+      const runtime = cf.runtime || cf.Runtime || 'dotnet-isolated'
       out.push(`    - id: ${q(id)}`)
       out.push(`      subsystem: ${q(row.name || 'func')}`)
       out.push(`      module: ${mod}`)
       out.push(`      runtime: ${q(runtime)}`)
       out.push(`      instance_number: '001'`)
       if (hasVnet) out.push(`      vnet_integration_subnet_id: snet_appservices`)
-      // Check if a secondary func ASP matches this app by name → plan_override
-      const appNameLower = (row.name || '').toLowerCase()
-      const overrideAsp = funcPlanRows.slice(1).find(asp => {
-        const aspName = (asp.name || '').toLowerCase()
-        return aspName.includes(appNameLower) || appNameLower.includes(aspName)
-      })
-      if (overrideAsp) {
-        const ocf = parseCommentFields(overrideAsp.comments)
-        const oOs  = ocf.OS  || funcOs
-        const oSku = ocf.SKU || funcSku
-        if (oOs !== funcOs || oSku !== funcSku) {
-          out.push(`      plan_override:`)
-          out.push(`        os_type: ${q(oOs)}`)
-          out.push(`        sku: ${q(oSku)}`)
+      if (cf.share_plan_with) out.push(`      share_plan_with: ${q(cf.share_plan_with)}`)
+      // plan_override — explicit popup field takes priority, then fall back to ASP row matching
+      const planOverrideSku = cf.plan_override_sku
+      if (planOverrideSku) {
+        out.push(`      plan_override:`)
+        out.push(`        sku: ${q(planOverrideSku)}`)
+      } else {
+        // Legacy: match secondary ASP row by name
+        const appNameLower = (row.name || '').toLowerCase()
+        const overrideAsp = funcPlanRows.slice(1).find(asp => {
+          const aspName = (asp.name || '').toLowerCase()
+          return aspName.includes(appNameLower) || appNameLower.includes(aspName)
+        })
+        if (overrideAsp) {
+          const ocf = parseCommentFields(overrideAsp.comments)
+          const oOs  = ocf.os_type || ocf.OS || funcOs
+          const oSku = ocf.sku || ocf.SKU || funcSku
+          if (oOs !== funcOs || oSku !== funcSku) {
+            out.push(`      plan_override:`)
+            out.push(`        os_type: ${q(oOs)}`)
+            out.push(`        sku: ${q(oSku)}`)
+          }
         }
       }
       if (row.repo) out.push(`      # app_repo: ${row.repo}`)
-      if (row.comments) out.push(`      # comments: ${row.comments}`)
     }
   }
 
@@ -339,6 +354,7 @@ export function buildYamlContent(rows, subscription) {
       out.push(`      module: terraform-azurerm-static-web-app`)
       if (cf.sku) out.push(`      sku: ${q(cf.sku)}`)
       out.push(`      instance_number: '001'`)
+      if (cf.location) out.push(`      location: ${q(cf.location)}`)
       if (row.repo) out.push(`      # app_repo: ${row.repo}`)
     }
   }
@@ -348,10 +364,11 @@ export function buildYamlContent(rows, subscription) {
   if (caeRows.length > 0) {
     computeBlank()
     const cae = caeRows[0]
+    const caeCf = parseCommentFields(cae.comments)
     out.push('  # --- Container App Environment ---')
     out.push('  container_app_environment:')
     out.push(`    subsystem: ${q(cae.name || 'compute')}`)
-    out.push(`    infrastructure_subnet_id: snet_containerenvironment`)
+    out.push(`    infrastructure_subnet_id: ${q(caeCf.infrastructure_subnet_id || 'snet_containerenvironment')}`)
     out.push(`    log_analytics_workspace_id: law`)
   }
 
@@ -366,14 +383,14 @@ export function buildYamlContent(rows, subscription) {
       out.push(`    - subsystem: ${q(row.name || 'app')}`)
       out.push(`      module: terraform-azurerm-container-app`)
       out.push(`      instance_number: '001'`)
-      out.push(`      image: "[TBD]"`)
-      out.push(`      cpu: ${cf.CPU || '0.5'}`)
-      out.push(`      memory: ${cf.Memory || '1.0'}`)
-      out.push(`      min_replicas: ${cf.MinReplicas || '0'}`)
-      out.push(`      max_replicas: 3`)
-      out.push(`      target_port: 80`)
+      out.push(`      image: ${q(cf.image || '[TBD]')}`)
+      out.push(`      cpu: ${cf.cpu || '0.5'}`)
+      out.push(`      memory: ${cf.memory || '1.0'}`)
+      out.push(`      min_replicas: ${cf.min_replicas || '0'}`)
+      out.push(`      max_replicas: ${cf.max_replicas || '3'}`)
+      out.push(`      target_port: ${cf.target_port || '80'}`)
+      if (cf.transport) out.push(`      transport: ${q(cf.transport)}`)
       if (row.repo) out.push(`      # app_repo: ${row.repo}`)
-      if (row.comments) out.push(`      # comments: ${row.comments}`)
     }
   }
 
@@ -388,13 +405,14 @@ export function buildYamlContent(rows, subscription) {
       out.push(`    - subsystem: ${q(row.name || 'compute')}`)
       out.push(`      module: terraform-azurerm-aks`)
       out.push(`      instance_number: '001'`)
-      if (cf.version) out.push(`      kubernetes_version: '${cf.version}'`)
-      out.push(`      sku_tier: Standard`)
+      if (cf.kubernetes_version) out.push(`      kubernetes_version: '${cf.kubernetes_version}'`)
+      out.push(`      sku_tier: ${q(cf.sku_tier || 'Standard')}`)
       out.push(`      default_node_pool:`)
-      out.push(`        vm_size: ${q(cf.node_sku || 'Standard_D2s_v5')}`)
+      out.push(`        vm_size: ${q(cf.vm_size || 'Standard_D2s_v5')}`)
       out.push(`        node_count: ${cf.node_count || 2}`)
+      if (cf.min_count) out.push(`        min_count: ${cf.min_count}`)
+      if (cf.max_count) out.push(`        max_count: ${cf.max_count}`)
       out.push(`        vnet_subnet_id: snet_aks_system`)
-      if (row.comments) out.push(`      # comments: ${row.comments}`)
     }
   }
 
@@ -406,18 +424,18 @@ export function buildYamlContent(rows, subscription) {
     out.push('  virtual_machines:')
     for (const row of vms) {
       const cf = parseCommentFields(row.comments)
-      const osType = cf.os || cf.OS || 'Linux'
+      const osType = cf.os_type || 'Linux'
       const mod = resolveModule('vm', cf)
       out.push(`    - subsystem: ${q(row.name || 'vm')}`)
       out.push(`      module: ${mod}`)
       out.push(`      os_type: ${q(osType)}`)
       out.push(`      instance_number: '001'`)
-      out.push(`      vm_size: ${q(cf.size || 'Standard_D2s_v5')}`)
+      out.push(`      vm_size: ${q(cf.vm_size || 'Standard_D2s_v5')}`)
+      if (cf.admin_username) out.push(`      admin_username: ${q(cf.admin_username)}`)
       out.push(`      subnet_id: snet_compute`)
       out.push(`      os_disk:`)
       out.push(`        size_gb: 128`)
-      out.push(`        storage_account_type: ${q(cf.disk || 'Premium_LRS')}`)
-      if (row.comments) out.push(`      # comments: ${row.comments}`)
+      out.push(`        storage_account_type: ${q(cf.storage_account_type || 'Premium_LRS')}`)
     }
   }
 
@@ -448,11 +466,10 @@ export function buildYamlContent(rows, subscription) {
     out.push('  apim:')
     out.push(`    subsystem: ${q(apimRow.name || 'compute')}`)
     out.push(`    module: terraform-azurerm-api-management`)
-    out.push(`    sku: ${q(apimCf.sku || apimCf.SKU || 'Developer_1')}`)
-    out.push(`    publisher_name: "[TBD]"`)
-    out.push(`    publisher_email: "[TBD]"`)
+    out.push(`    sku: ${q(apimCf.sku || 'Developer_1')}`)
+    out.push(`    publisher_name: ${q(apimCf.publisher_name || '[TBD]')}`)
+    out.push(`    publisher_email: ${q(apimCf.publisher_email || '[TBD]')}`)
     out.push(`    instance_number: '001'`)
-    if (apimRow.comments) out.push(`    # comments: ${apimRow.comments}`)
   }
 
   // ── data ───────────────────────────────────────────────────────────────
@@ -491,10 +508,9 @@ export function buildYamlContent(rows, subscription) {
         const cf = parseCommentFields(row.comments)
         out.push(`    - subsystem: ${q(row.name || 'storage')}`)
         out.push(`      module: terraform-azurerm-storage-account`)
-        out.push(`      sku: ${q(cf.SKU || cf.sku || 'Standard_LRS')}`)
-        out.push(`      kind: ${q(cf.Kind || cf.kind || 'StorageV2')}`)
+        out.push(`      sku: ${q(cf.sku || cf.SKU || 'Standard_LRS')}`)
+        out.push(`      kind: ${q(cf.kind || cf.Kind || 'StorageV2')}`)
         out.push(`      instance_number: '001'`)
-        if (row.comments) out.push(`      # comments: ${row.comments}`)
       }
     }
 
@@ -521,11 +537,11 @@ export function buildYamlContent(rows, subscription) {
       out.push('  search:')
       for (const row of mapped.data.search) {
         const cf = parseCommentFields(row.comments)
-        out.push(`    - id: ${q(row.name || 'search')}`)
-        out.push(`      subsystem: ${q(row.name || 'search')}`)
+        out.push(`    - subsystem: ${q(row.name || 'search')}`)
         out.push(`      module: terraform-azurerm-search-service`)
         if (cf.sku) out.push(`      sku: ${q(cf.sku)}`)
-        if (row.comments) out.push(`      # comments: ${row.comments}`)
+        if (cf.replica_count) out.push(`      replica_count: ${cf.replica_count}`)
+        if (cf.partition_count) out.push(`      partition_count: ${cf.partition_count}`)
       }
     }
 
@@ -644,12 +660,11 @@ export function buildYamlContent(rows, subscription) {
     out.push('  app_insights:')
     for (const row of appInsights) {
       const cf = parseCommentFields(row.comments)
-      out.push(`    - id: ${q(row.name || 'appi')}`)
-      out.push(`      subsystem: ${q(row.name || product)}`)
+      out.push(`    - subsystem: ${q(row.name || product)}`)
       out.push(`      module: terraform-azurerm-application-insights`)
       out.push(`      workspace_id: law`)
-      if (cf.retention) out.push(`      retention_days: ${cf.retention}`)
-      if (row.comments) out.push(`      # comments: ${row.comments}`)
+      const retDays = cf.retention_days || cf.retention
+      if (retDays) out.push(`      retention_days: ${retDays}`)
     }
   }
 

@@ -1,8 +1,11 @@
 /**
- * Structured comment fields per provider and resource type.
- * Used by ResourceCommentPopup to render type-aware forms.
+ * Structured comment fields per resource type, keyed to match schema-template-v1.3.0.yml
+ * field names. The comment string stored on each row is "key:value, key2:value2".
  *
- * To add a new provider or resource type: add an entry here — no component changes needed.
+ * Rules:
+ *   - DERIVED schema fields (id, module, instance_number, subsystem) are omitted — handled automatically.
+ *   - Keys match the YAML field name from the schema exactly.
+ *   - REQUIRED schema fields come first, OPTIONAL below.
  *
  * Field types:
  *   select — dropdown with fixed options array
@@ -11,189 +14,241 @@
 
 const AZURE = {
   // ── Compute ────────────────────────────────────────────────────────────
+
+  // plan_defaults.web_app / plan_defaults.function_app
+  // PlanFor is an internal routing key (not in schema) — kept to classify the ASP row
+  app_service_plan: {
+    label: 'App Service Plan',
+    fields: [
+      { key: 'PlanFor',  label: 'Plan For', type: 'select', options: ['Web App', 'Function App'] },
+      { key: 'os_type',  label: 'OS',       type: 'select', options: ['Windows', 'Linux'] },
+      { key: 'sku',      label: 'SKU',      type: 'select', options: [
+        'B1', 'B2', 'B3',
+        'S1', 'S2', 'S3',
+        'P0v3', 'P1v3', 'P2v3', 'P3v3',
+        'P0v4', 'P1v4', 'P2v4', 'P3v4',
+        'EP1', 'EP2', 'EP3',
+        'Y1',
+      ]},
+    ],
+  },
+
+  // compute.web_apps
   app_service: {
     label: 'App Service',
     fields: [
-      { key: 'OS',            label: 'OS',             type: 'select', options: ['Windows', 'Linux'] },
-      { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'PHP'] },
-      { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
-      { key: 'SKU',           label: 'SKU',            type: 'select', options: [
-        'F1', 'D1',
-        'B1', 'B2', 'B3',
-        'S1', 'S2', 'S3',
-        'P1v2', 'P2v2', 'P3v2',
+      { key: 'os_type',          label: 'OS',               type: 'select', options: ['Windows', 'Linux'] },
+      { key: 'share_plan_with',  label: 'Share Plan With',   type: 'text',   placeholder: 'e.g. web_api (another app\'s id)' },
+      { key: 'plan_override_sku', label: 'Plan Override SKU', type: 'select', options: [
         'P0v3', 'P1v3', 'P2v3', 'P3v3',
         'P0v4', 'P1v4', 'P2v4', 'P3v4',
         'I1v2', 'I2v2', 'I3v2',
       ]},
-      { key: 'Publishing',    label: 'Publishing',     type: 'select', options: ['Code', 'Container'] },
-      { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
-    ],
-  },
-  app_service_plan: {
-    label: 'App Service Plan',
-    fields: [
-      { key: 'PlanFor',       label: 'Plan For',       type: 'select', options: ['Web App', 'Function App'] },
-      { key: 'OS',            label: 'OS',             type: 'select', options: ['Linux', 'Windows'] },
-      { key: 'SKU',           label: 'SKU',            type: 'select', options: [
-        'B1', 'B2', 'B3',
-        'S1', 'S2', 'S3',
-        'P0v3', 'P1v3', 'P2v3', 'P3v3',
-        'EP1', 'EP2', 'EP3',
-        'Y1',
-      ]},
-      { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
     ],
   },
   web_app: {
     label: 'Web App',
     fields: [
-      { key: 'OS',            label: 'OS',             type: 'select', options: ['Linux', 'Windows'] },
-      { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'PHP'] },
-      { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
-      { key: 'Publishing',    label: 'Publishing',     type: 'select', options: ['Code', 'Container'] },
-      { key: 'Slots',         label: 'Slots',          type: 'text',   placeholder: 'e.g. staging, preview' },
+      { key: 'os_type',          label: 'OS',               type: 'select', options: ['Windows', 'Linux'] },
+      { key: 'share_plan_with',  label: 'Share Plan With',   type: 'text',   placeholder: 'e.g. web_api (another app\'s id)' },
+      { key: 'plan_override_sku', label: 'Plan Override SKU', type: 'select', options: [
+        'P0v3', 'P1v3', 'P2v3', 'P3v3',
+        'P0v4', 'P1v4', 'P2v4', 'P3v4',
+        'I1v2', 'I2v2', 'I3v2',
+      ]},
     ],
   },
+
+  // compute.function_apps
   function_app: {
     label: 'Function App',
     fields: [
-      { key: 'Runtime',       label: 'Runtime',        type: 'select', options: ['dotnet-isolated', 'node', 'python', 'java', 'powershell', 'custom'] },
-      { key: 'Version',       label: 'Version',        type: 'text',   placeholder: 'e.g. 8.0, 20 LTS' },
-      { key: 'Trigger',       label: 'Trigger',        type: 'select', options: ['HTTP', 'Timer', 'ServiceBus', 'Queue', 'Blob', 'CosmosDB', 'EventHub', 'EventGrid'] },
-      { key: 'Slots',         label: 'Slots',          type: 'text',   placeholder: 'e.g. staging' },
+      { key: 'runtime',          label: 'Runtime',           type: 'select', options: ['dotnet-isolated', 'node', 'python', 'java', 'powershell', 'custom'] },
+      { key: 'share_plan_with',  label: 'Share Plan With',   type: 'text',   placeholder: 'e.g. func_booking-expiry (another func\'s id)' },
+      { key: 'plan_override_sku', label: 'Plan Override SKU', type: 'select', options: ['EP1', 'EP2', 'EP3'] },
     ],
   },
-  container_app: {
-    label: 'Container App',
-    fields: [
-      { key: 'Plan',        label: 'Plan',        type: 'select', options: ['Consumption', 'Dedicated'] },
-      { key: 'DevStack',    label: 'Dev Stack',   type: 'select', options: ['.NET', 'Node', 'Python', 'Java', 'Go', 'Other'] },
-      { key: 'CPU',         label: 'CPU',         type: 'select', options: ['0.25', '0.5', '0.75', '1.0', '1.25', '1.5', '1.75', '2.0'] },
-      { key: 'Memory',      label: 'Memory',      type: 'select', options: ['0.5Gi', '1Gi', '1.5Gi', '2Gi', '3Gi', '4Gi'] },
-      { key: 'MinReplicas', label: 'Min Replicas', type: 'select', options: ['0', '1', '2', '3'] },
-      { key: 'Dapr',        label: 'Dapr',        type: 'select', options: ['Enabled', 'Disabled'] },
-    ],
-  },
-  container_app_environment: {
-    label: 'Container App Environment',
-    fields: [
-      { key: 'Environment',   label: 'Environment',   type: 'select', options: ['Consumption', 'Dedicated'] },
-      { key: 'VNet',          label: 'VNet',          type: 'select', options: ['Default', 'Custom'] },
-      { key: 'ZoneRedundant', label: 'Zone Redundant', type: 'select', options: ['Enabled', 'Disabled'] },
-      { key: 'KEDA',          label: 'KEDA Version',  type: 'text',   placeholder: 'e.g. 2.17.2' },
-      { key: 'Dapr',          label: 'Dapr Version',  type: 'text',   placeholder: 'e.g. 1.13.6' },
-    ],
-  },
-  aks: {
-    label: 'AKS',
-    fields: [
-      { key: 'version',    label: 'K8s Version', type: 'text',   placeholder: 'e.g. 1.29' },
-      { key: 'node_sku',   label: 'Node SKU',    type: 'text',   placeholder: 'e.g. Standard_D4s_v3' },
-      { key: 'node_count', label: 'Node Count',  type: 'text',   placeholder: 'e.g. 3' },
-      { key: 'network',    label: 'Network',     type: 'select', options: ['kubenet', 'azure-cni', 'azure-cni-overlay'] },
-    ],
-  },
-  vm: {
-    label: 'Virtual Machine',
-    fields: [
-      { key: 'os',   label: 'OS',   type: 'select', options: ['Windows', 'Linux'] },
-      { key: 'size', label: 'Size', type: 'text',   placeholder: 'e.g. Standard_D2s_v3' },
-      { key: 'disk', label: 'Disk', type: 'select', options: ['Standard_LRS', 'StandardSSD_LRS', 'Premium_LRS', 'UltraSSD_LRS'] },
-    ],
-  },
+
+  // compute.static_sites
   static_web_app: {
     label: 'Static Web App',
     fields: [
-      { key: 'sku',    label: 'SKU',    type: 'select', options: ['Standard', 'Free'] },
-      { key: 'branch', label: 'Branch', type: 'text',   placeholder: 'e.g. main' },
+      { key: 'sku',      label: 'SKU',              type: 'select', options: ['Standard', 'Free'] },
+      { key: 'location', label: 'Location Override', type: 'text',   placeholder: 'e.g. eastasia (limited regions)' },
     ],
   },
+
+  // compute.container_app_environment (singleton)
+  container_app_environment: {
+    label: 'Container App Environment',
+    fields: [
+      { key: 'infrastructure_subnet_id', label: 'Infra Subnet', type: 'text', placeholder: 'e.g. snet_containerenvironment' },
+    ],
+  },
+
+  // compute.container_apps
+  container_app: {
+    label: 'Container App',
+    fields: [
+      { key: 'image',        label: 'Image',        type: 'text',   placeholder: 'e.g. mcr.microsoft.com/hello-world:latest' },
+      { key: 'cpu',          label: 'CPU',          type: 'select', options: ['0.25', '0.5', '0.75', '1.0', '1.25', '1.5', '1.75', '2.0'] },
+      { key: 'memory',       label: 'Memory (Gi)',  type: 'select', options: ['0.5', '1.0', '1.5', '2.0', '3.0', '4.0'] },
+      { key: 'min_replicas', label: 'Min Replicas', type: 'select', options: ['0', '1', '2', '3'] },
+      { key: 'max_replicas', label: 'Max Replicas', type: 'text',   placeholder: 'e.g. 10' },
+      { key: 'target_port',  label: 'Target Port',  type: 'text',   placeholder: 'e.g. 80' },
+      { key: 'transport',    label: 'Transport',    type: 'select', options: ['auto', 'http', 'http2', 'tcp'] },
+    ],
+  },
+
+  // compute.aks_clusters
+  aks: {
+    label: 'AKS',
+    fields: [
+      { key: 'kubernetes_version', label: 'K8s Version',   type: 'text',   placeholder: 'e.g. 1.29' },
+      { key: 'sku_tier',          label: 'SKU Tier',       type: 'select', options: ['Standard', 'Free'] },
+      { key: 'vm_size',           label: 'Node VM Size',   type: 'text',   placeholder: 'e.g. Standard_D4s_v5' },
+      { key: 'node_count',        label: 'Node Count',     type: 'text',   placeholder: 'e.g. 3' },
+      { key: 'min_count',         label: 'Min Count',      type: 'text',   placeholder: 'e.g. 1' },
+      { key: 'max_count',         label: 'Max Count',      type: 'text',   placeholder: 'e.g. 10' },
+      { key: 'network_plugin',    label: 'Network Plugin', type: 'select', options: ['azure-cni', 'azure-cni-overlay', 'kubenet'] },
+    ],
+  },
+
+  // compute.virtual_machines
+  vm: {
+    label: 'Virtual Machine',
+    fields: [
+      { key: 'os_type',              label: 'OS',           type: 'select', options: ['Linux', 'Windows'] },
+      { key: 'vm_size',              label: 'VM Size',      type: 'text',   placeholder: 'e.g. Standard_D2s_v5' },
+      { key: 'admin_username',       label: 'Admin User',   type: 'text',   placeholder: 'e.g. azureuser' },
+      { key: 'storage_account_type', label: 'OS Disk Type', type: 'select', options: ['Premium_LRS', 'StandardSSD_LRS', 'Standard_LRS'] },
+    ],
+  },
+
+  // compute.signalr
   signalr: {
     label: 'SignalR Service',
     fields: [
       { key: 'sku',          label: 'SKU',          type: 'select', options: ['Free_F1', 'Standard_S1', 'Premium_P1'] },
-      { key: 'service_mode', label: 'Service Mode',  type: 'select', options: ['Default', 'Serverless', 'Classic'] },
+      { key: 'service_mode', label: 'Service Mode', type: 'select', options: ['Default', 'Serverless', 'Classic'] },
     ],
   },
+
+  // compute.apim (singleton)
   apim: {
     label: 'API Management',
     fields: [
-      { key: 'sku', label: 'SKU', type: 'select', options: ['Developer_1', 'Basic_1', 'Standard_1', 'Premium_1'] },
+      { key: 'sku',             label: 'SKU',             type: 'select', options: ['Developer_1', 'Basic_1', 'Standard_1', 'Premium_1'] },
+      { key: 'publisher_name',  label: 'Publisher Name',  type: 'text',   placeholder: 'e.g. My Org' },
+      { key: 'publisher_email', label: 'Publisher Email', type: 'text',   placeholder: 'e.g. api@example.com' },
     ],
   },
 
   // ── Databases ──────────────────────────────────────────────────────────
-  pg: {
-    label: 'PostgreSQL',
-    fields: [
-      { key: 'version', label: 'Version', type: 'select', options: ['11', '12', '13', '14', '15', '16'] },
-      { key: 'sku',     label: 'SKU',     type: 'select', options: ['Burstable_B1ms', 'Burstable_B2s', 'Burstable_B4ms', 'GeneralPurpose_D2s_v3', 'GeneralPurpose_D4s_v3', 'GeneralPurpose_D8s_v3', 'MemoryOptimized_E2ds_v4', 'MemoryOptimized_E4ds_v4'] },
-      { key: 'storage', label: 'Storage', type: 'text',   placeholder: 'e.g. 32GB' },
-      { key: 'ha',      label: 'HA',      type: 'select', options: ['Yes', 'No'] },
-    ],
-  },
-  sql: {
-    label: 'Azure SQL',
-    fields: [
-      { key: 'tier',    label: 'Tier',    type: 'select', options: ['Basic', 'Standard', 'Premium', 'GeneralPurpose', 'BusinessCritical', 'Hyperscale'] },
-      { key: 'vcores',  label: 'vCores',  type: 'select', options: ['2', '4', '8', '16', '24', '32', '40', '80'] },
-      { key: 'storage', label: 'Storage', type: 'text',   placeholder: 'e.g. 100GB' },
-    ],
-  },
-  mysql: {
-    label: 'MySQL',
-    fields: [
-      { key: 'version', label: 'Version', type: 'select', options: ['5.7', '8.0'] },
-      { key: 'sku',     label: 'SKU',     type: 'select', options: ['Burstable_B1ms', 'Burstable_B2s', 'GeneralPurpose_D2ds_v4', 'GeneralPurpose_D4ds_v4', 'MemoryOptimized_E2ds_v4', 'MemoryOptimized_E4ds_v4'] },
-      { key: 'storage', label: 'Storage', type: 'text',   placeholder: 'e.g. 32GB' },
-      { key: 'ha',      label: 'HA',      type: 'select', options: ['Yes', 'No'] },
-    ],
-  },
-  sqlmi: {
-    label: 'SQL Managed Instance',
-    fields: [
-      { key: 'tier',    label: 'Tier',    type: 'select', options: ['GeneralPurpose', 'BusinessCritical'] },
-      { key: 'vcores',  label: 'vCores',  type: 'select', options: ['4', '8', '16', '24', '32', '40', '64', '80'] },
-      { key: 'storage', label: 'Storage', type: 'text',   placeholder: 'e.g. 256GB' },
-    ],
-  },
+
+  // data.databases — type: cosmos_account
   cosmos: {
     label: 'Cosmos DB',
     fields: [
+      { key: 'sku',         label: 'Tier',        type: 'select', options: ['serverless', 'provisioned'] },
       { key: 'api',         label: 'API',         type: 'select', options: ['SQL', 'MongoDB', 'Cassandra', 'Gremlin', 'Table'] },
-      { key: 'tier',        label: 'Tier',        type: 'select', options: ['Serverless', 'Provisioned'] },
       { key: 'consistency', label: 'Consistency', type: 'select', options: ['Eventual', 'Session', 'ConsistentPrefix', 'BoundedStaleness', 'Strong'] },
     ],
   },
 
-  // ── Storage & Messaging ────────────────────────────────────────────────
-  storage_account: {
-    label: 'Storage Account',
+  // data.databases — type: mssql_server
+  sql: {
+    label: 'Azure SQL',
     fields: [
-      { key: 'SKU',  label: 'Redundancy', type: 'select', options: [
-        'Standard_LRS', 'Standard_ZRS', 'Standard_GRS', 'Standard_GZRS',
-        'Premium_LRS', 'Premium_ZRS',
-      ]},
-      { key: 'Kind', label: 'Kind',       type: 'select', options: ['StorageV2', 'BlobStorage'] },
-    ],
-  },
-  servicebus: {
-    label: 'Service Bus',
-    fields: [
-      { key: 'sku',      label: 'SKU',      type: 'select', options: ['Standard', 'Premium'] },
-      { key: 'capacity', label: 'Capacity', type: 'select', options: ['1', '2', '4', '8', '16'] },
-    ],
-  },
-  redis: {
-    label: 'Managed Redis',
-    fields: [
-      { key: 'sku',      label: 'Tier',     type: 'select', options: ['Balanced', 'MemoryOptimized', 'FlashOptimized'] },
-      { key: 'capacity', label: 'Size',     type: 'select', options: ['B0', 'B1', 'B3', 'B5', 'B10', 'B20', 'B50', 'B100', 'B250', 'B500', 'B700', 'B1000'] },
+      { key: 'sku', label: 'SKU', type: 'text', placeholder: 'e.g. GP_Gen5_2, GP_Gen5_4, BC_Gen5_2' },
     ],
   },
 
-  // ── Data ───────────────────────────────────────────────────────────────
+  // data.databases — type: postgresql_flexible_server
+  pg: {
+    label: 'PostgreSQL',
+    fields: [
+      { key: 'sku',        label: 'SKU',        type: 'select', options: [
+        'GP_Standard_D2s_v3', 'GP_Standard_D4s_v3', 'GP_Standard_D8s_v3',
+        'MO_Standard_E2ds_v4', 'MO_Standard_E4ds_v4',
+      ]},
+      { key: 'version',    label: 'Version',    type: 'select', options: ['13', '14', '15', '16'] },
+      { key: 'storage_mb', label: 'Storage MB', type: 'text',   placeholder: 'e.g. 32768' },
+    ],
+  },
+
+  // data.databases — type: mysql_flexible_server
+  mysql: {
+    label: 'MySQL',
+    fields: [
+      { key: 'sku',     label: 'SKU',     type: 'select', options: [
+        'Burstable_Standard_B1ms', 'Burstable_Standard_B2s',
+        'GeneralPurpose_Standard_D2ds_v4', 'GeneralPurpose_Standard_D4ds_v4',
+        'MemoryOptimized_Standard_E2ds_v4', 'MemoryOptimized_Standard_E4ds_v4',
+      ]},
+      { key: 'version', label: 'Version', type: 'select', options: ['5.7', '8.0'] },
+    ],
+  },
+
+  // data.databases — type: mssql_managed_instance
+  sqlmi: {
+    label: 'SQL Managed Instance',
+    fields: [
+      { key: 'sku',          label: 'SKU',     type: 'text',   placeholder: 'e.g. GP_Gen5_4, BC_Gen5_8' },
+      { key: 'license_type', label: 'License', type: 'select', options: ['LicenseIncluded', 'BasePrice'] },
+    ],
+  },
+
+  // ── Storage & Messaging ────────────────────────────────────────────────
+
+  // data.storage_accounts
+  storage_account: {
+    label: 'Storage Account',
+    fields: [
+      { key: 'sku',  label: 'Redundancy', type: 'select', options: [
+        'Standard_LRS', 'Standard_ZRS', 'Standard_GRS', 'Standard_GZRS',
+        'Premium_LRS', 'Premium_ZRS',
+      ]},
+      { key: 'kind', label: 'Kind',       type: 'select', options: ['StorageV2', 'BlobStorage'] },
+    ],
+  },
+
+  // data.messaging (service bus)
+  servicebus: {
+    label: 'Service Bus',
+    fields: [
+      { key: 'sku',    label: 'SKU',    type: 'select', options: ['Basic', 'Standard', 'Premium'] },
+      { key: 'queues', label: 'Queues', type: 'text',   placeholder: 'e.g. orders, notifications' },
+      { key: 'topics', label: 'Topics', type: 'text',   placeholder: 'e.g. events, audit' },
+    ],
+  },
+
+  // data.caching (Managed Redis)
+  redis: {
+    label: 'Managed Redis',
+    fields: [
+      { key: 'sku',      label: 'Tier', type: 'select', options: ['Balanced', 'MemoryOptimized', 'FlashOptimized'] },
+      { key: 'capacity', label: 'Size', type: 'select', options: ['B0', 'B1', 'B3', 'B5', 'B10', 'B20', 'B50', 'B100', 'B250', 'B500', 'B700', 'B1000'] },
+    ],
+  },
+
+  // data.search
+  search: {
+    label: 'AI Search',
+    fields: [
+      { key: 'sku',             label: 'SKU',        type: 'select', options: ['basic', 'standard', 'standard2', 'standard3', 'storage_optimized_l1', 'storage_optimized_l2'] },
+      { key: 'replica_count',   label: 'Replicas',   type: 'text',   placeholder: 'e.g. 1' },
+      { key: 'partition_count', label: 'Partitions', type: 'text',   placeholder: 'e.g. 1' },
+    ],
+  },
+
+  // data.factories
+  data_factory: {
+    label: 'Data Factory',
+    fields: [],
+  },
+
+  // data.backup_vaults
   backup_vault: {
     label: 'Backup Vault',
     fields: [
@@ -202,66 +257,69 @@ const AZURE = {
   },
 
   // ── Security & Identity ────────────────────────────────────────────────
+
+  // security.key_vaults
   key_vault: {
     label: 'Key Vault',
     fields: [
-      { key: 'sku',              label: 'SKU',           type: 'select', options: ['Standard', 'Premium'] },
-      { key: 'purge_protection', label: 'Purge Protect', type: 'select', options: ['Yes', 'No'] },
+      { key: 'sku',          label: 'SKU',          type: 'select', options: ['standard', 'premium'] },
+      { key: 'access_model', label: 'Access Model', type: 'select', options: ['RBAC', 'access_policy'] },
     ],
   },
 
-  // ── DevOps & Platform ──────────────────────────────────────────────────
+  // security.container_registries
   container_registry: {
     label: 'Container Registry',
     fields: [
-      { key: 'sku',          label: 'SKU',           type: 'select', options: ['Basic', 'Standard', 'Premium'] },
-      { key: 'geo_rep',      label: 'Geo-replicated', type: 'select', options: ['Yes', 'No'] },
+      { key: 'sku',           label: 'SKU',             type: 'select', options: ['Basic', 'Standard', 'Premium'] },
+      { key: 'georeplications', label: 'Geo-replications', type: 'text', placeholder: 'e.g. eastus2, westeurope' },
     ],
   },
+
+  // security.managed_identities
+  user_assigned_identity: {
+    label: 'User Assigned Identity',
+    fields: [],
+  },
+
+  // ── Observability ──────────────────────────────────────────────────────
+
+  // observability.app_insights
   app_insights: {
     label: 'App Insights',
     fields: [
-      { key: 'retention', label: 'Retention (days)', type: 'select', options: ['30', '60', '90', '120', '180', '270', '365', '550', '730'] },
-      { key: 'sampling',  label: 'Sampling',         type: 'select', options: ['Adaptive', 'Fixed', 'Ingestion', 'None'] },
+      { key: 'retention_days', label: 'Retention (days)', type: 'select', options: ['30', '60', '90', '120', '180', '270', '365', '550', '730'] },
     ],
   },
 
-  // ── AI ─────────────────────────────────────────────────────────────────
-  openai: {
-    label: 'Azure OpenAI / AI Foundry',
-    fields: [
-      { key: 'models', label: 'Models', type: 'text', placeholder: 'e.g. gpt-4o, text-embedding-3-large' },
-    ],
-  },
-  search: {
-    label: 'AI Search',
-    fields: [
-      { key: 'sku',        label: 'SKU',        type: 'select', options: ['basic', 'standard', 'standard2', 'standard3', 'storage_optimized_l1', 'storage_optimized_l2'] },
-      { key: 'replicas',   label: 'Replicas',   type: 'text',   placeholder: 'e.g. 1' },
-      { key: 'partitions', label: 'Partitions', type: 'text',   placeholder: 'e.g. 1' },
-    ],
-  },
+  // ── App Configuration ──────────────────────────────────────────────────
 
-  // ── Platform ───────────────────────────────────────────────────────────
-  data_factory: {
-    label: 'Data Factory',
-    fields: [],
-  },
   app_configuration: {
     label: 'App Configuration',
     fields: [
       { key: 'sku', label: 'SKU', type: 'select', options: ['standard', 'free'] },
     ],
   },
+
+  // ── AI ─────────────────────────────────────────────────────────────────
+
+  // ai.foundry
+  openai: {
+    label: 'Azure AI Foundry',
+    fields: [
+      { key: 'sku',      label: 'SKU',      type: 'text', placeholder: 'e.g. S0' },
+      { key: 'projects', label: 'Projects', type: 'text', placeholder: 'e.g. my-project, another-project' },
+    ],
+  },
+
+  // ── Front Door ─────────────────────────────────────────────────────────
+
+  // frontdoor.profile
   frontdoor: {
     label: 'Azure Front Door',
     fields: [
       { key: 'sku', label: 'SKU', type: 'select', options: ['Standard_AzureFrontDoor', 'Premium_AzureFrontDoor'] },
     ],
-  },
-  user_assigned_identity: {
-    label: 'User Assigned Identity',
-    fields: [],
   },
 }
 
