@@ -5,11 +5,10 @@ default_location: eastus
 
 resources:
   - name: app-1
-    type: Web App
+    type: app_service
     repo: org/app-1
     comments: has repo
   - name: app-2
-    type: Function App
-    location: westus
-    server_name: server-2
+    type: app_service
+    location: eastus
   - name: app-3

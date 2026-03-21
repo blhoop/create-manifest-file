@@ -67,6 +67,18 @@ const AZURE_TYPES = [
     category: 'Compute',
     aliases: ['swa', 'staticwebapp', 'staticsite'],
   },
+  {
+    service_type: 'signalr',
+    display_name: 'SignalR Service',
+    category: 'Compute',
+    aliases: ['signalrservice', 'azuresignalr'],
+  },
+  {
+    service_type: 'apim',
+    display_name: 'API Management',
+    category: 'Compute',
+    aliases: ['apimanagement', 'apimservice'],
+  },
 
   // ── Data ───────────────────────────────────────────────────────────────────
   {
@@ -79,7 +91,7 @@ const AZURE_TYPES = [
     service_type: 'cosmos',
     display_name: 'Cosmos DB',
     category: 'Data',
-    aliases: ['cosmosdb', 'cosmosdbaccount', 'cosmosaccount'],
+    aliases: ['cosmosdb', 'cosmosdbaccount', 'cosmosaccount', 'azurecosmosdbaccount'],
   },
   {
     service_type: 'sql',
@@ -103,7 +115,7 @@ const AZURE_TYPES = [
     service_type: 'redis',
     display_name: 'Redis Cache',
     category: 'Data',
-    aliases: ['rediscache'],
+    aliases: ['rediscache', 'azurecacheforredis'],
   },
   {
     service_type: 'storage_account',
@@ -122,6 +134,12 @@ const AZURE_TYPES = [
     display_name: 'Service Bus',
     category: 'Data',
     aliases: ['azureservicebus'],
+  },
+  {
+    service_type: 'backup_vault',
+    display_name: 'Backup Vault',
+    category: 'Data',
+    aliases: ['backupvault', 'azurebackup', 'recoveryservicesvault'],
   },
 
   // ── Networking ─────────────────────────────────────────────────────────────

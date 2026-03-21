@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import FileUpload from './components/FileUpload.jsx'
 import PreviewTable from './components/PreviewTable.jsx'
+import { buildYamlContent } from './utils/buildYaml.js'
 import './App.css'
 
-const STORAGE_KEY = 'manifest_session'
+const STORAGE_KEY = 'manifest_session_v2'
 
 function loadSession() {
   try {
@@ -20,7 +21,12 @@ function saveSession(rows, fileName, sheets, activeSheetIdx, auditLog, subscript
 
 export default function App() {
   const session = loadSession()
-  const defaultSubscription = { subscription_name: '', environment: '', default_location: '', product_code: '', vnet_cidr: '', subscription_id: '', spn_client_id: '' }
+  const defaultSubscription = {
+    spoke_name: '', owner: '', product: '', environment: '', default_location: '',
+    cost_center: '', project: '', data_classification: '',
+    infra_repo: '', sku_mode: '', management_group_id: '', vnet_cidr: '',
+    new_subscription: 'true', subscription_id: '', description: '',
+  }
   const [rows, setRows] = useState(session?.rows ?? null)
   const [fileName, setFileName] = useState(session?.fileName ?? '')
   const [sheets, setSheets] = useState(session?.sheets ?? null)
@@ -85,53 +91,7 @@ export default function App() {
     localStorage.removeItem(STORAGE_KEY)
   }
 
-  // Quote a YAML scalar value if it contains characters that would produce invalid YAML
-  const yamlScalar = (val) => {
-    if (!val) return ''
-    const s = String(val)
-    // Needs quoting if: contains colon, hash, YAML structural chars, or leading special chars
-    if (/[:#\{\}\[\]\n]/.test(s) || /^[-?!|>%@`&*]/.test(s.trim())) {
-      return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
-    }
-    return s
-  }
-
-  const buildYamlContent = () => {
-    const lines = []
-    const sub = subscription
-
-    lines.push('# ---------------------------------------------------------------------------')
-    lines.push('# REQUIRED — Subscription identity')
-    lines.push('# ---------------------------------------------------------------------------')
-    if (sub.subscription_name) lines.push(`subscription_name: ${yamlScalar(sub.subscription_name)}`)
-    if (sub.environment) lines.push(`environment: ${yamlScalar(sub.environment)}`)
-    if (sub.default_location) lines.push(`default_location: ${yamlScalar(sub.default_location)}`)
-
-    const optionalSubFields = ['product_code', 'vnet_cidr', 'subscription_id', 'spn_client_id']
-    const hasOptional = optionalSubFields.some(k => sub[k])
-    if (hasOptional) {
-      lines.push('')
-      lines.push('# ---------------------------------------------------------------------------')
-      lines.push('# OPTIONAL — Overrides and existing infrastructure')
-      lines.push('# ---------------------------------------------------------------------------')
-      optionalSubFields.forEach(k => { if (sub[k]) lines.push(`${k}: ${yamlScalar(sub[k])}`) })
-    }
-
-    lines.push('')
-    lines.push('# ---------------------------------------------------------------------------')
-    lines.push('# RESOURCES')
-    lines.push('# ---------------------------------------------------------------------------')
-    lines.push('resources:')
-    rows.forEach(row => {
-      lines.push(`  - name: ${yamlScalar(row.name ?? '')}`)
-      lines.push(`    type: ${yamlScalar(row.type ?? '')}`)
-      if (row.location) lines.push(`    location: ${yamlScalar(row.location)}`)
-      if (row.repo) lines.push(`    repo: ${yamlScalar(row.repo)}`)
-      if (row.comments) lines.push(`    comments: ${yamlScalar(row.comments)}`)
-    })
-
-    return lines.join('\n')
-  }
+  const getYaml = () => buildYamlContent(rows, subscription)
 
   const formatAuditLog = () => {
     const started = auditLog[0]?.timestamp
@@ -188,7 +148,7 @@ export default function App() {
       // Write YAML
       const yamlHandle = await dirHandle.getFileHandle(baseName + '.yml', { create: true })
       const yamlWritable = await yamlHandle.createWritable()
-      await yamlWritable.write(buildYamlContent())
+      await yamlWritable.write(getYaml())
       await yamlWritable.close()
 
       // Write audit
@@ -202,7 +162,7 @@ export default function App() {
       if (err.name === 'AbortError') return
       // Fallback: download both via anchor
       const baseName = fileName.trim() || 'manifest'
-      const yamlBlob = new Blob([buildYamlContent()], { type: 'application/yaml' })
+      const yamlBlob = new Blob([getYaml()], { type: 'application/yaml' })
       const yamlUrl = URL.createObjectURL(yamlBlob)
       const a1 = document.createElement('a')
       a1.href = yamlUrl; a1.download = baseName + '.yml'; a1.click()
@@ -226,12 +186,14 @@ export default function App() {
       </header>
 
       <main className="app-main">
-        <FileUpload
-          onParsed={handleParsed}
-          onError={handleError}
-          setLoading={setLoading}
-          loading={loading}
-        />
+        {!rows && !loading && (
+          <FileUpload
+            onParsed={handleParsed}
+            onError={handleError}
+            setLoading={setLoading}
+            loading={loading}
+          />
+        )}
 
         {error && <div className="error-banner">{error}</div>}
 
@@ -257,62 +219,127 @@ export default function App() {
             )}
             <div className="subscription-panel">
               <div className="subscription-panel-header">
-                <span className="subscription-panel-title">Subscription</span>
+                <span className="subscription-panel-title">Spoke</span>
                 <span className="subscription-panel-hint">Required fields define the spoke identity</span>
               </div>
               <div className="subscription-fields">
+
+                {/* Identity — required */}
                 <div className="sub-field-group required-group">
                   <div className="sub-field">
-                    <label>subscription_name <span className="sub-required">*</span></label>
-                    <input
-                      type="text"
-                      value={subscription.subscription_name}
-                      onChange={e => setSubscription(s => ({ ...s, subscription_name: e.target.value }))}
-                      placeholder="e.g. Order Book"
-                    />
+                    <label>spoke_name <span className="sub-required">*</span></label>
+                    <input type="text" value={subscription.spoke_name}
+                      onChange={e => setSubscription(s => ({ ...s, spoke_name: e.target.value }))}
+                      placeholder="e.g. order-book-001" />
+                  </div>
+                  <div className="sub-field">
+                    <label>owner <span className="sub-required">*</span></label>
+                    <input type="text" value={subscription.owner}
+                      onChange={e => setSubscription(s => ({ ...s, owner: e.target.value }))}
+                      placeholder="e.g. Platform Engineering" />
+                  </div>
+                  <div className="sub-field">
+                    <label>product <span className="sub-required">*</span></label>
+                    <input type="text" value={subscription.product}
+                      onChange={e => setSubscription(s => ({ ...s, product: e.target.value }))}
+                      placeholder="e.g. ob" />
                   </div>
                   <div className="sub-field">
                     <label>environment <span className="sub-required">*</span></label>
-                    <select
-                      value={subscription.environment}
-                      onChange={e => setSubscription(s => ({ ...s, environment: e.target.value }))}
-                    >
+                    <select value={subscription.environment}
+                      onChange={e => setSubscription(s => ({ ...s, environment: e.target.value }))}>
                       <option value="">— select —</option>
                       {['dev','test','uat','preprod','prod','lab'].map(v => <option key={v} value={v}>{v}</option>)}
                     </select>
                   </div>
                   <div className="sub-field">
-                    <label>default_location <span className="sub-required">*</span></label>
-                    <select
-                      value={subscription.default_location}
-                      onChange={e => setSubscription(s => ({ ...s, default_location: e.target.value }))}
-                    >
+                    <label>location <span className="sub-required">*</span></label>
+                    <select value={subscription.default_location}
+                      onChange={e => setSubscription(s => ({ ...s, default_location: e.target.value }))}>
                       <option value="">— select —</option>
-                      {['australiaeast','eastasia','global','eastus','eastus2','westus','westus2','centralus','northeurope','westeurope','uksouth','southeastasia','canadacentral'].map(v => <option key={v} value={v}>{v}</option>)}
+                      {['australiaeast','eastasia','eastus','eastus2','northcentralus','southeastasia','uksouth','westus3','westeurope','canadacentral','centralus','westus2'].map(v => <option key={v} value={v}>{v}</option>)}
                     </select>
                   </div>
                 </div>
+
+                {/* Tagging */}
                 <div className="sub-field-group optional-group">
                   <div className="sub-field">
-                    <label>product_code</label>
-                    <input type="text" value={subscription.product_code} onChange={e => setSubscription(s => ({ ...s, product_code: e.target.value }))} placeholder="e.g. ob" />
+                    <label>cost_center</label>
+                    <input type="text" value={subscription.cost_center}
+                      onChange={e => setSubscription(s => ({ ...s, cost_center: e.target.value }))}
+                      placeholder="e.g. CC-1234" />
+                  </div>
+                  <div className="sub-field">
+                    <label>project</label>
+                    <input type="text" value={subscription.project}
+                      onChange={e => setSubscription(s => ({ ...s, project: e.target.value }))}
+                      placeholder="e.g. my-project" />
+                  </div>
+                  <div className="sub-field">
+                    <label>data_classification</label>
+                    <select value={subscription.data_classification}
+                      onChange={e => setSubscription(s => ({ ...s, data_classification: e.target.value }))}>
+                      <option value="">— select —</option>
+                      {['internal','confidential','public','restricted'].map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div className="sub-field">
+                    <label>infra_repo</label>
+                    <input type="text" value={subscription.infra_repo}
+                      onChange={e => setSubscription(s => ({ ...s, infra_repo: e.target.value }))}
+                      placeholder="e.g. my-spoke-001-infra" />
+                  </div>
+                </div>
+
+                {/* Infrastructure — optional */}
+                <div className="sub-field-group optional-group">
+                  <div className="sub-field">
+                    <label>sku_mode</label>
+                    <select value={subscription.sku_mode}
+                      onChange={e => setSubscription(s => ({ ...s, sku_mode: e.target.value }))}>
+                      <option value="">— select —</option>
+                      {['premium','standard'].map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
                   </div>
                   <div className="sub-field">
                     <label>vnet_cidr</label>
-                    <input type="text" value={subscription.vnet_cidr} onChange={e => setSubscription(s => ({ ...s, vnet_cidr: e.target.value }))} placeholder="e.g. 10.3.0.0/22" />
+                    <input type="text" value={subscription.vnet_cidr}
+                      onChange={e => setSubscription(s => ({ ...s, vnet_cidr: e.target.value }))}
+                      placeholder="e.g. 10.3.0.0/24" />
                   </div>
                   <div className="sub-field">
-                    <label>subscription_id</label>
-                    <input type="text" value={subscription.subscription_id} onChange={e => setSubscription(s => ({ ...s, subscription_id: e.target.value }))} placeholder="UUID" />
+                    <label>management_group_id</label>
+                    <input type="text" value={subscription.management_group_id}
+                      onChange={e => setSubscription(s => ({ ...s, management_group_id: e.target.value }))}
+                      placeholder="e.g. converge" />
                   </div>
                   <div className="sub-field">
-                    <label>spn_client_id</label>
-                    <input type="text" value={subscription.spn_client_id} onChange={e => setSubscription(s => ({ ...s, spn_client_id: e.target.value }))} placeholder="UUID" />
+                    <label>new_subscription</label>
+                    <select value={subscription.new_subscription}
+                      onChange={e => setSubscription(s => ({ ...s, new_subscription: e.target.value }))}>
+                      {['true','false'].map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                  </div>
+                  {subscription.new_subscription === 'false' && (
+                    <div className="sub-field">
+                      <label>subscription_id</label>
+                      <input type="text" value={subscription.subscription_id}
+                        onChange={e => setSubscription(s => ({ ...s, subscription_id: e.target.value }))}
+                        placeholder="UUID" />
+                    </div>
+                  )}
+                  <div className="sub-field">
+                    <label>description</label>
+                    <input type="text" value={subscription.description}
+                      onChange={e => setSubscription(s => ({ ...s, description: e.target.value }))}
+                      placeholder="Short description of the workload" />
                   </div>
                 </div>
+
               </div>
             </div>
-            <PreviewTable rows={rows} onRowsChange={r => setRows(sortByType(r))} onDetach={handleDetach} onAudit={addAudit} getYaml={buildYamlContent} />
+            <PreviewTable rows={rows} onRowsChange={r => setRows(sortByType(r))} onDetach={handleDetach} onAudit={addAudit} getYaml={getYaml} />
             <div className="download-bar">
               <span>{rows.length} row{rows.length !== 1 ? 's' : ''} found</span>
               <div className="download-controls">

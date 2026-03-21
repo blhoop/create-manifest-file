@@ -1,0 +1,3 @@
+name	type	location
+web-app	service	eastus
+db	database	westus

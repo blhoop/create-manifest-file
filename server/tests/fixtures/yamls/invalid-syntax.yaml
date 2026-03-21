@@ -1,4 +1,1 @@
-
-subscription_name: test
-  invalid indentation
-    more bad stuff
+key: [unclosed bracket

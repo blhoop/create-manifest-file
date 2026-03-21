@@ -1,0 +1,32 @@
+
+spoke:
+  name: minimal-new
+  owner: Team
+
+ctm_properties:
+  product: min
+
+environments:
+  dev:
+    location: australiaeast
+
+tags:
+  owner: Team
+  cost_center: '[TBD]'
+  project: '[TBD]'
+  data_classification: internal
+
+network:
+  vnets: []
+  subnets: []
+  nsgs: []
+  private_endpoints: []
+  dns_zones: []
+
+observability:
+  log_analytics_workspace:
+    id: law
+    subsystem: min
+    module: terraform-azurerm-log-analytics-workspace
+
+dependencies: []

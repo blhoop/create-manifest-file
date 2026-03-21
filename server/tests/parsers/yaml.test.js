@@ -358,6 +358,340 @@ resources: []
     });
   });
 
+  describe('New nested format (spoke:)', () => {
+    it('should detect and parse new format with spoke key', async () => {
+      const yaml = `
+spoke:
+  name: order-book-001
+  subscription: order-book-001
+  owner: Platform Engineering
+  sku_mode: premium
+  infra_repo: order-book-001-infra
+
+ctm_properties:
+  product: ob
+
+environments:
+  dev:
+    location: australiaeast
+
+tags:
+  owner: Platform Engineering
+  cost_center: CC-1234
+  project: order-book
+  data_classification: internal
+
+network:
+  vnets:
+    - id: vnet
+      cidr: 10.3.0.0/24
+  subnets:
+    - id: snet_privateendpoints
+      vnet_id: vnet
+      cidr: 10.3.0.64/27
+      delegation: null
+  nsgs: []
+  private_endpoints: []
+  dns_zones: []
+
+compute:
+  app_service_plans:
+    - id: asp_web
+      subsystem: web
+      module: terraform-azurerm-app-service-plan
+      os_type: Windows
+      sku: P1v3
+  web_apps:
+    - id: web_api
+      subsystem: api
+      module: terraform-azurerm-windows-web-app
+      asp_id: asp_web
+      instance_number: '001'
+  function_apps:
+    - id: func_processor
+      subsystem: processor
+      module: terraform-azurerm-windows-function-app
+      asp_id: asp_web
+      runtime: dotnet-isolated
+      instance_number: '001'
+
+data:
+  databases:
+    - id: cosmos
+      subsystem: cosmos
+      type: cosmos_account
+      module: terraform-azurerm-cosmos-account
+      sku: serverless
+
+security:
+  key_vaults:
+    - id: kv
+      subsystem: ob
+      module: terraform-azurerm-key-vault
+      access_model: RBAC
+      consumers: []
+
+observability:
+  log_analytics_workspace:
+    id: law
+    subsystem: ob
+    module: terraform-azurerm-log-analytics-workspace
+    retention_days: 30
+  app_insights:
+    - id: appi
+      subsystem: ob
+      module: terraform-azurerm-application-insights
+      workspace_id: law
+
+dependencies:
+  - name: hub-network-vnet
+    type: vnet_peering
+    direction: bidirectional
+`;
+      const filepath = writeYamlFixture('new-format-full.yaml', yaml);
+      const result = await parseYaml(filepath);
+
+      expect(result).toHaveProperty('subscription');
+      expect(result).toHaveProperty('rows');
+      expect(result.subscription.spoke_name).toBe('order-book-001');
+      expect(result.subscription.owner).toBe('Platform Engineering');
+      expect(result.subscription.product).toBe('ob');
+      expect(result.subscription.environment).toBe('dev');
+      expect(result.subscription.default_location).toBe('australiaeast');
+      expect(result.subscription.vnet_cidr).toBe('10.3.0.0/24');
+      expect(result.subscription.cost_center).toBe('CC-1234');
+      expect(result.subscription.sku_mode).toBe('premium');
+      expect(result.subscription.infra_repo).toBe('order-book-001-infra');
+    });
+
+    it('should reconstruct rows from all compute/data/security/observability sections', async () => {
+      const yaml = `
+spoke:
+  name: multi-001
+  owner: Team
+
+ctm_properties:
+  product: multi
+
+environments:
+  prod:
+    location: eastus
+
+tags:
+  owner: Team
+  cost_center: CC-1
+  project: multi
+  data_classification: internal
+
+network:
+  vnets: []
+  subnets: []
+  nsgs: []
+  private_endpoints: []
+  dns_zones: []
+
+compute:
+  app_service_plans:
+    - id: asp_web
+      subsystem: web
+      module: terraform-azurerm-app-service-plan
+      os_type: Linux
+      sku: P1v3
+  web_apps:
+    - id: web_api
+      subsystem: api
+      module: terraform-azurerm-linux-web-app
+      asp_id: asp_web
+      instance_number: '001'
+  function_apps:
+    - id: func_worker
+      subsystem: worker
+      module: terraform-azurerm-windows-function-app
+      runtime: node
+      instance_number: '001'
+  static_sites:
+    - id: swa_frontend
+      subsystem: frontend
+      module: terraform-azurerm-static-web-app
+      sku: Standard
+      instance_number: '001'
+
+data:
+  databases:
+    - id: pg
+      subsystem: pg
+      type: postgresql_flexible_server
+      module: terraform-azurerm-postgresql-flexible-server
+      sku: GP_Standard_D2s_v3
+    - id: cosmos
+      subsystem: cosmos
+      type: cosmos_account
+      module: terraform-azurerm-cosmos-account
+  caching:
+    - id: redis
+      subsystem: cache
+      module: terraform-azurerm-managed-redis
+      sku: Balanced_B0
+  search:
+    - id: search
+      subsystem: search
+      module: terraform-azurerm-search-service
+      sku: standard
+  factories:
+    - id: adf
+      subsystem: adf
+      module: terraform-azurerm-data-factory
+
+security:
+  key_vaults:
+    - id: kv
+      subsystem: multi
+      module: terraform-azurerm-key-vault
+      access_model: RBAC
+      consumers: []
+  managed_identities:
+    - id: mi_functions
+      subsystem: functions
+      module: terraform-azurerm-user-assigned-identity
+      instance_number: '001'
+
+observability:
+  log_analytics_workspace:
+    id: law
+    subsystem: multi
+    module: terraform-azurerm-log-analytics-workspace
+  app_insights:
+    - id: appi
+      subsystem: multi
+      module: terraform-azurerm-application-insights
+      workspace_id: law
+
+dependencies: []
+`;
+      const filepath = writeYamlFixture('new-format-rows.yaml', yaml);
+      const result = await parseYaml(filepath);
+
+      const types = result.rows.map(r => r.type);
+      expect(types).toContain('app_service_plan');
+      expect(types).toContain('web_app');
+      expect(types).toContain('function_app');
+      expect(types).toContain('static_web_app');
+      expect(types).toContain('pg');
+      expect(types).toContain('cosmos');
+      expect(types).toContain('redis');
+      expect(types).toContain('search');
+      expect(types).toContain('data_factory');
+      expect(types).toContain('key_vault');
+      expect(types).toContain('user_assigned_identity');
+      expect(types).toContain('app_insights');
+      expect(result.rows).toHaveLength(12);
+    });
+
+    it('should map database types back to service_type values', async () => {
+      const yaml = `
+spoke:
+  name: db-test
+  owner: Team
+
+ctm_properties:
+  product: db
+
+environments:
+  dev:
+    location: eastus
+
+tags:
+  owner: Team
+  cost_center: CC-1
+  project: db
+  data_classification: internal
+
+network:
+  vnets: []
+  subnets: []
+  nsgs: []
+  private_endpoints: []
+  dns_zones: []
+
+data:
+  databases:
+    - id: sql1
+      subsystem: sql1
+      type: mssql_server
+      module: terraform-azurerm-mssql-server
+    - id: pg1
+      subsystem: pg1
+      type: postgresql_flexible_server
+      module: terraform-azurerm-postgresql-flexible-server
+    - id: mi1
+      subsystem: mi1
+      type: mssql_managed_instance
+      module: terraform-azurerm-mssql-managed-instance
+    - id: mysql1
+      subsystem: mysql1
+      type: mysql_flexible_server
+      module: terraform-azurerm-mysql-flexible-server
+
+observability:
+  log_analytics_workspace:
+    id: law
+    subsystem: db
+    module: terraform-azurerm-log-analytics-workspace
+
+dependencies: []
+`;
+      const filepath = writeYamlFixture('new-format-dbs.yaml', yaml);
+      const result = await parseYaml(filepath);
+
+      const types = result.rows.map(r => r.type);
+      expect(types).toContain('sql');
+      expect(types).toContain('pg');
+      expect(types).toContain('sqlmi');
+      expect(types).toContain('mysql');
+    });
+
+    it('should handle new format with missing optional sections gracefully', async () => {
+      const yaml = `
+spoke:
+  name: minimal-new
+  owner: Team
+
+ctm_properties:
+  product: min
+
+environments:
+  dev:
+    location: australiaeast
+
+tags:
+  owner: Team
+  cost_center: '[TBD]'
+  project: '[TBD]'
+  data_classification: internal
+
+network:
+  vnets: []
+  subnets: []
+  nsgs: []
+  private_endpoints: []
+  dns_zones: []
+
+observability:
+  log_analytics_workspace:
+    id: law
+    subsystem: min
+    module: terraform-azurerm-log-analytics-workspace
+
+dependencies: []
+`;
+      const filepath = writeYamlFixture('new-format-minimal.yaml', yaml);
+      const result = await parseYaml(filepath);
+
+      expect(result.subscription.spoke_name).toBe('minimal-new');
+      expect(result.rows).toEqual([]);
+    });
+  });
+
   describe('Resources extraction', () => {
     it('should handle resources as non-array gracefully', async () => {
       const yaml = `

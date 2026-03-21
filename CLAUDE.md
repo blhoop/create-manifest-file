@@ -27,15 +27,19 @@ npm run build:client
 Full-stack web app: React/Vite frontend + Node.js/Express backend.
 
 **Frontend** (`client/src/`)
-- `App.jsx` — orchestrates file upload, subscription panel state, loading, preview, and YAML download
-- `components/FileUpload.jsx` — drag-and-drop + click-to-browse, sends multipart POST to `/api/parse`
-- `components/PreviewTable.jsx` — renders parsed resource rows before download
+- `App.jsx` — orchestrates file upload, subscription panel state, loading, preview, and YAML download. Storage key: `manifest_session_v2`.
+- `components/FileUpload.jsx` — drag-and-drop + click-to-browse, sends multipart POST to `/api/parse`. Hidden after upload; returns on detach.
+- `components/PreviewTable.jsx` — renders parsed resource rows before download; includes YAML preview with line numbers and live validator
+- `components/ResourceCommentPopup.jsx` — structured comment editor per resource type; tabs for Properties / NSG Rules / Consumers
+- `config/resourceCommentFields.js` — field definitions per resource type for the comment popup
+- `config/schemaMapping.js` — maps each resource type to its target section in the nested manifest schema; exports `parseCommentFields()` and `resolveModule()`
+- `utils/buildYaml.js` — generates the nested spoke infrastructure manifest YAML from rows + subscription state
 - Vite proxy: `/api/*` → `http://localhost:3001`
 
 **Backend** (`server/`)
 - `index.js` — Express entry point
 - `routes/upload.js` — `POST /api/parse`: receives file via multer, dispatches to correct parser by extension, returns `{ rows }` or `{ rows, subscription }` for YAML files, deletes temp file
-- `config/outputSchema.js` — **single source of truth** for the YAML output structure; imported by parsers, location defaults, and the YAML builder
+- `config/outputSchema.js` — field definitions for the subscription panel; imported by parsers and the UI
 - `parsers/` — one module per format:
   - `spreadsheet.js` — ExcelJS, fuzzy-maps column headers to canonical names
   - `drawio.js` — fast-xml-parser, extracts shape labels + edge source/target to build dependency strings
@@ -43,48 +47,44 @@ Full-stack web app: React/Vite frontend + Node.js/Express backend.
   - `svg.js` — XML parser, collects all text nodes
   - `image.js` — sends base64 image to Claude Vision API (`claude-sonnet-4-6`) with Azure icon visual reference prompt
   - `pdf.js` — sends base64 PDF to Claude API (`claude-sonnet-4-6`) as a `document` content block
-  - `yaml.js` — js-yaml, round-trips an existing `.yaml`/`.yml` manifest back into subscription + resource rows; skips normalize/locationDefaults pipeline
+  - `yaml.js` — js-yaml, round-trips an existing manifest back into subscription + resource rows; auto-detects new format (`spoke:` / `environments:` / `ctm_properties:`) vs legacy (`resources:`)
   - `normalizeName.js` — normalizes `name` values (strips env suffixes, type prefixes, region segments, etc.)
   - `locationDefaults.js` — type-to-location mapping rules (no longer applied in parse pipeline; location column is override-only)
 
 ## Output Format
 
-The app generates a `.yml` manifest file with two sections:
+The app generates a nested spoke infrastructure manifest (schema v1.3.0). See [`output.md`](./output.md) for the full spec and [`schema-template-v1.3.0.md`](./schema-template-v1.3.0.md) for the annotated reference template.
 
-**Subscription block** (top-level fields, filled in via the UI subscription panel):
+**Subscription panel fields** (grouped in the UI):
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `subscription_name` | ✅ | Friendly name for the Azure subscription |
-| `environment` | ✅ | `dev` `test` `uat` `preprod` `prod` `lab` |
-| `default_location` | ✅ | Default Azure region for all resources |
-| `product_code` | | Short code for resource names — auto-derived if omitted |
-| `vnet_cidr` | | VNet CIDR block |
-| `subscription_id` | | Existing Azure subscription UUID |
-| `spn_client_id` | | Existing SPN client ID for OIDC auth |
+| Group | Fields |
+|-------|--------|
+| Identity | `spoke_name`, `owner`, `product`, `environment`, `default_location` |
+| Tagging | `cost_center`, `project`, `data_classification`, `infra_repo` |
+| Infrastructure | `sku_mode`, `vnet_cidr`, `management_group_id`, `new_subscription`, `subscription_id` (conditional), `description` |
 
-**Resources block** (one entry per row in the preview table):
+**Resource row fields:** `name`, `type`, `location`, `repo`, `comments`
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `name` | ✅ | Subsystem/component name (e.g. `web`, `booking-db`) |
-| `type` | ✅ | Resource type — builder or inventory type |
-| `location` | | Azure region override — left empty by parser; omit to use `default_location` |
-| `repo` | | SCM repo (`org/repo-name`) — triggers CI/CD caller workflow generation |
-| `comments` | | Free-text hints (e.g. `needs pgbouncer`, `serverless`) |
-
-See [`output.md`](./output.md) for the full format spec including all valid resource types and location values.
+Extended row data (not table columns, set via popup): `nsg_rules[]`, `consumers[]`
 
 ## Schema-Driven Design
 
-`server/config/outputSchema.js` exports:
-- `SUBSCRIPTION_FIELDS` — field definitions for the subscription block
-- `RESOURCE_FIELDS` — field definitions for the resources block
-- `BUILDER_TYPES` / `INVENTORY_TYPES` / `ALL_RESOURCE_TYPES` — valid type values
-- `LOCATION_DEFAULTS` — type-to-location mapping rules
-- `DEFAULT_LOCATION` — fallback region (`australiaeast`)
+**`client/src/config/schemaMapping.js`** — maps resource types to their target section in the manifest:
+- `section` + `sub_key` route each type into the correct YAML block
+- `unmapped: true` types are emitted as a commented block at the bottom
+- Exports `parseCommentFields(comments)` — parses `"Key:Value, Key2:Value2"` comment strings
+- Exports `resolveModule(type, commentFields)` — derives Windows vs Linux module names from OS comment
 
-**When adding a new field:** update `outputSchema.js` + `output.md`. The rest of the app derives from the schema.
+**`client/src/utils/buildYaml.js`** — main YAML builder:
+- Reads subscription panel state + row array → outputs manifest string
+- `app_service_plan` rows feed `plan_defaults` (not an explicit array); first web ASP = `plan_defaults.web_app`, first func ASP = `plan_defaults.function_app`
+- Secondary ASPs with matching app names generate `plan_override` entries
+- NSG rules collected from compute rows → deduplicated → emitted under `network.nsgs.nsg_appservices`
+- `snet_appservices` + `nsg_appservices` auto-emitted when any compute rows present
+
+**`server/config/outputSchema.js`** — subscription panel field definitions with `group` property (`identity` / `tagging` / `infra`)
+
+**When adding a new resource type:** update `schemaMapping.js` + `resourceCommentFields.js` + `buildYaml.js` + `output.md`.
 
 ## Naming Conventions
 

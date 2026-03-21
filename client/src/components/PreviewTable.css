@@ -170,14 +170,33 @@
 
 .yaml-preview-content {
   flex: 1;
-  overflow-y: auto;
+  overflow: auto;
   margin: 0;
-  padding: 1rem 1.25rem;
+  padding: 0.75rem 0;
   font-family: 'Consolas', 'Menlo', 'Monaco', monospace;
   font-size: 0.8rem;
   line-height: 1.6;
   color: #2d3748;
   background: #f7fafc;
+}
+
+.yaml-preview-line {
+  display: flex;
+  min-width: max-content;
+}
+
+.yaml-line-num {
+  min-width: 3rem;
+  padding: 0 0.75rem 0 1rem;
+  text-align: right;
+  color: #a0aec0;
+  user-select: none;
+  flex-shrink: 0;
+  border-right: 1px solid #e2e8f0;
+}
+
+.yaml-line-text {
+  padding: 0 1.25rem;
   white-space: pre;
 }
 
@@ -350,8 +369,8 @@
 .manifest-table th.col-rownum    { width: 36px; }
 .manifest-table th:nth-child(2)  { width: 20%; } /* name */
 .manifest-table th:nth-child(3)  { width: 12%; } /* type */
-.manifest-table th:nth-child(4)  { width: 10%; } /* location */
-.manifest-table th:nth-child(5)  { width: 28%; } /* repo */
+.manifest-table th:nth-child(4)  { width: 14%; } /* location */
+.manifest-table th:nth-child(5)  { width: 24%; } /* repo */
 .manifest-table th:nth-child(6)  { width: 30%; } /* comments */
 .manifest-table th.col-actions   { width: 36px; }
 
