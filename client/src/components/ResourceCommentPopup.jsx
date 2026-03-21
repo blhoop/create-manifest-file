@@ -151,7 +151,7 @@ function ConsumersTab({ consumers, onChange }) {
   )
 }
 
-export default function ResourceCommentPopup({ row, currentComment, currentNsgRules, currentConsumers, onClose, onCommit }) {
+export default function ResourceCommentPopup({ row, currentComment, currentNsgRules, currentConsumers, aspNames = [], onClose, onCommit }) {
   const typeConfig = getCommentFields(row?.type)
   const hasFields = !!typeConfig
   const showNsgTab = NSG_TYPES.has(row?.type)
@@ -166,7 +166,15 @@ export default function ResourceCommentPopup({ row, currentComment, currentNsgRu
     []
   )
 
-  const [fieldValues, setFieldValues] = useState(initialValues)
+  const [fieldValues, setFieldValues] = useState(() => {
+    const defaults = {}
+    if (typeConfig) {
+      for (const f of typeConfig.fields) {
+        if (f.default !== undefined && !(f.key in initialValues)) defaults[f.key] = f.default
+      }
+    }
+    return { ...defaults, ...initialValues }
+  })
   const [notes, setNotes] = useState(initialNotes)
   const [freeText, setFreeText] = useState(currentComment ?? '')
   const [extractMsg, setExtractMsg] = useState(null)
@@ -250,8 +258,29 @@ export default function ResourceCommentPopup({ row, currentComment, currentNsgRu
                 <div className="rcp-fields">
                   {typeConfig.fields.map((f, i) => (
                     <div key={f.key} className="rcp-field-row">
-                      <label className="rcp-field-label">{f.label}</label>
-                      {f.type === 'select' ? (
+                      <label className="rcp-field-label">{f.label}{f.required && <span className="rcp-required"> *</span>}</label>
+                      {f.type === 'plan_select' ? (
+                        <div className="rcp-plan-select">
+                          <input
+                            type="checkbox"
+                            id={`rcp-plan-cb-${f.key}`}
+                            className="rcp-plan-checkbox"
+                            checked={!!(fieldValues[f.key])}
+                            onChange={e => setField(f.key, e.target.checked ? (aspNames[0] ?? '') : '')}
+                          />
+                          <select
+                            className="rcp-select rcp-plan-dropdown"
+                            disabled={!fieldValues[f.key]}
+                            value={fieldValues[f.key] ?? ''}
+                            onChange={e => setField(f.key, e.target.value)}
+                          >
+                            {aspNames.length === 0
+                              ? <option value="">— no plans in sheet —</option>
+                              : aspNames.map(n => <option key={n} value={n}>{n}</option>)
+                            }
+                          </select>
+                        </div>
+                      ) : f.type === 'select' ? (
                         <select
                           className="rcp-select"
                           autoFocus={i === 0}

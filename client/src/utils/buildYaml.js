@@ -78,8 +78,9 @@ export function buildYamlContent(rows, subscription) {
   out.push(`  project: ${q(sub.project || '[TBD]')}`)
   out.push(`  data_classification: ${q(sub.data_classification || 'internal')}`)
 
-  // ── pre-scan rows for NSG rules and consumers ──────────────────────────
+  // ── pre-scan rows for vnet, NSG rules ──────────────────────────────────
   // Collect before emitting network/security sections
+  const vnetRows = (rows || []).filter(r => r.type === 'vnet')
   const appServicesNsgRules = []
   for (const row of (rows || [])) {
     if (['web_app', 'app_service', 'app_service_plan', 'function_app'].includes(row.type)) {
@@ -105,10 +106,21 @@ export function buildYamlContent(rows, subscription) {
   out.push('network:')
   out.push('  # --- VNets ---')
   out.push('  vnets:')
-  out.push('    - id: vnet')
-  if (sub.vnet_cidr) out.push(`      cidr: ${q(sub.vnet_cidr)}`)
-  out.push('      dns_servers: hub-inherited')
-  out.push('      peering: hub-network-vnet')
+  if (vnetRows.length > 0) {
+    for (const row of vnetRows) {
+      const cf = parseCommentFields(row.comments)
+      const cidr = cf.cidr || sub.vnet_cidr
+      out.push(`    - id: ${q(row.name || 'vnet')}`)
+      if (cidr) out.push(`      cidr: ${q(cidr)}`)
+      out.push(`      dns_servers: ${q(cf.dns_servers || 'hub-inherited')}`)
+      if (cf.peering) out.push(`      peering: ${q(cf.peering)}`)
+    }
+  } else {
+    out.push('    - id: vnet')
+    if (sub.vnet_cidr) out.push(`      cidr: ${q(sub.vnet_cidr)}`)
+    out.push('      dns_servers: hub-inherited')
+    out.push('      peering: hub-network-vnet')
+  }
   out.push('')
   out.push('  # --- Subnets ---')
   out.push('  subnets:')
@@ -158,6 +170,7 @@ export function buildYamlContent(rows, subscription) {
 
   // ── partition rows by schema section ───────────────────────────────────
   const mapped = {
+    network: { vnets: [] },
     compute: {
       app_service_plans: [], web_apps: [], function_apps: [], static_sites: [],
       container_app_environment: [], container_apps: [],
@@ -265,7 +278,7 @@ export function buildYamlContent(rows, subscription) {
       out.push(`    - id: ${q(id)}`)
       out.push(`      subsystem: ${q(row.name || 'app')}`)
       out.push(`      module: ${mod}`)
-      out.push(`      instance_number: '001'`)
+      out.push(`      instance_number: ${q(cf.instance_number || '001')}`)
       if (hasVnet) out.push(`      vnet_integration_subnet_id: snet_appservices`)
       if (cf.share_plan_with) out.push(`      share_plan_with: ${q(cf.share_plan_with)}`)
       // plan_override — explicit popup field takes priority, then fall back to ASP row matching
@@ -310,7 +323,7 @@ export function buildYamlContent(rows, subscription) {
       out.push(`      subsystem: ${q(row.name || 'func')}`)
       out.push(`      module: ${mod}`)
       out.push(`      runtime: ${q(runtime)}`)
-      out.push(`      instance_number: '001'`)
+      out.push(`      instance_number: ${q(cf.instance_number || '001')}`)
       if (hasVnet) out.push(`      vnet_integration_subnet_id: snet_appservices`)
       if (cf.share_plan_with) out.push(`      share_plan_with: ${q(cf.share_plan_with)}`)
       // plan_override — explicit popup field takes priority, then fall back to ASP row matching

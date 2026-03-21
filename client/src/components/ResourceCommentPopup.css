@@ -185,6 +185,34 @@
   white-space: nowrap;
 }
 
+.rcp-plan-select {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.rcp-plan-checkbox {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+.rcp-plan-dropdown {
+  flex: 1;
+}
+
+.rcp-plan-dropdown:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.rcp-required {
+  color: #e53e3e;
+  font-weight: 700;
+}
+
 .rcp-select {
   width: 100%;
   padding: 0.28rem 0.5rem;

@@ -80,7 +80,7 @@ function parseNewFormat(doc) {
     if (doc.tags.data_classification) subscription.data_classification = String(doc.tags.data_classification)
   }
 
-  // network — vnet cidr
+  // network — vnet cidr (subscription panel)
   if (Array.isArray(doc.network?.vnets) && doc.network.vnets[0]?.cidr) {
     subscription.vnet_cidr = String(doc.network.vnets[0].cidr)
   }
@@ -89,6 +89,22 @@ function parseNewFormat(doc) {
   // Reconstruct flat rows from nested sections
   // ---------------------------------------------------------------------------
   const rows = []
+
+  // network.vnets → vnet rows
+  if (Array.isArray(doc.network?.vnets)) {
+    for (const entry of doc.network.vnets) {
+      const parts = []
+      if (entry.cidr)        parts.push(`cidr:${entry.cidr}`)
+      if (entry.dns_servers) parts.push(`dns_servers:${entry.dns_servers}`)
+      if (entry.peering)     parts.push(`peering:${entry.peering}`)
+      rows.push({
+        name:     String(entry.id || 'vnet'),
+        type:     'vnet',
+        location: '',
+        comments: parts.join(', '),
+      })
+    }
+  }
 
   // compute.plan_defaults (v1.0.0+) — synthesise app_service_plan rows to preserve os_type/sku
   const planDefaults = doc.compute?.plan_defaults

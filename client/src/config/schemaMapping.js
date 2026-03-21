@@ -176,8 +176,12 @@ export const SCHEMA_MAPPING = {
     module: 'terraform-azurerm-cdn-frontdoor-profile',
   },
 
-  // ── No schema equivalent ──────────────────────────────────────────────────
-  vnet: { unmapped: true },
+  // ── Network ───────────────────────────────────────────────────────────────
+  vnet: {
+    section: 'network',
+    sub_key: 'vnets',
+    module: 'terraform-azurerm-virtual-network',
+  },
 }
 
 /**

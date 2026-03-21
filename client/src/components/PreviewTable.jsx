@@ -34,6 +34,7 @@ const TOOLTIPS = {
 const DISPLAY_LABELS = {
   repo: 'scm repo',
   location: 'location override',
+  comments: 'comments/settings',
 }
 
 const REQUIRED = new Set(['name', 'type'])
@@ -474,6 +475,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
           currentComment={rows[jsonPopupRow]?.comments ?? ''}
           currentNsgRules={rows[jsonPopupRow]?.nsg_rules ?? []}
           currentConsumers={rows[jsonPopupRow]?.consumers ?? []}
+          aspNames={rows.filter(r => r.type === 'app_service_plan' && r.name).map(r => r.name)}
           onClose={() => setJsonPopupRow(null)}
           onCommit={(data) => handleJsonCommentCommit(jsonPopupRow, data)}
         />
