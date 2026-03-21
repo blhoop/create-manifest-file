@@ -1,0 +1,51 @@
+
+spoke:
+  name: db-test
+  owner: Team
+
+ctm_properties:
+  product: db
+
+environments:
+  dev:
+    location: eastus
+
+tags:
+  owner: Team
+  cost_center: CC-1
+  project: db
+  data_classification: internal
+
+network:
+  vnets: []
+  subnets: []
+  nsgs: []
+  private_endpoints: []
+  dns_zones: []
+
+data:
+  databases:
+    - id: sql1
+      subsystem: sql1
+      type: mssql_server
+      module: terraform-azurerm-mssql-server
+    - id: pg1
+      subsystem: pg1
+      type: postgresql_flexible_server
+      module: terraform-azurerm-postgresql-flexible-server
+    - id: mi1
+      subsystem: mi1
+      type: mssql_managed_instance
+      module: terraform-azurerm-mssql-managed-instance
+    - id: mysql1
+      subsystem: mysql1
+      type: mysql_flexible_server
+      module: terraform-azurerm-mysql-flexible-server
+
+observability:
+  log_analytics_workspace:
+    id: law
+    subsystem: db
+    module: terraform-azurerm-log-analytics-workspace
+
+dependencies: []

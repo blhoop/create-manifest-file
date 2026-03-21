@@ -9,8 +9,11 @@ function validateYaml(yaml) {
     if (/^\s*#/.test(line) || !line.trim()) return
     const match = line.match(/^(\s*[\w_-]+):\s(.+)$/)
     if (!match) return
-    const val = match[2]
+    const val = match[2].trim()
     const quoted = val.startsWith('"') || val.startsWith("'")
+    // Allow valid YAML constructs: empty array [], non-empty inline arrays [a, b],
+    // empty object {}, and flow mappings — these are intentional, not unsafe scalars
+    if (/^\[.*\]$/.test(val) || /^\{.*\}$/.test(val)) return
     if (!quoted && /[:#\{\}\[\]]/.test(val)) {
       issues.push({ lineNum: i + 1, text: line.trim() })
     }
@@ -404,7 +407,12 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
       onAudit({ type: 'JSON_COMMENT_APPEND', row: rowIdx, oldVal: oldComment, newVal: newComment })
     }
 
-    const updatedRow = { ...rows[rowIdx], comments: newComment }
+    const updatedRow = {
+      ...rows[rowIdx],
+      comments: newComment,
+      ...(commitData?.nsgRules !== undefined ? { nsg_rules: commitData.nsgRules } : {}),
+      ...(commitData?.consumers !== undefined ? { consumers: commitData.consumers } : {}),
+    }
 
     changeRows(rows.map((r, i) => i === rowIdx ? updatedRow : r))
     setJsonPopupRow(null)
@@ -464,8 +472,10 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
         <ResourceCommentPopup
           row={rows[jsonPopupRow]}
           currentComment={rows[jsonPopupRow]?.comments ?? ''}
+          currentNsgRules={rows[jsonPopupRow]?.nsg_rules ?? []}
+          currentConsumers={rows[jsonPopupRow]?.consumers ?? []}
           onClose={() => setJsonPopupRow(null)}
-          onCommit={(comment) => handleJsonCommentCommit(jsonPopupRow, comment)}
+          onCommit={(data) => handleJsonCommentCommit(jsonPopupRow, data)}
         />
       )}
       {showYamlPreview && (
@@ -487,7 +497,14 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
                 </ul>
               )}
             </div>
-            <pre className="yaml-preview-content">{getYaml()}</pre>
+            <pre className="yaml-preview-content">
+              {getYaml().split('\n').map((line, i) => (
+                <span key={i} className="yaml-preview-line">
+                  <span className="yaml-line-num">{i + 1}</span>
+                  <span className="yaml-line-text">{line}</span>
+                </span>
+              ))}
+            </pre>
             <div className="yaml-preview-actions">
               <button className="btn-yaml-copy" onClick={handleCopyYaml}>
                 {yamlCopied ? 'Copied!' : 'Copy to Clipboard'}

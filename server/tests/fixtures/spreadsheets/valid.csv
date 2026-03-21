@@ -1,0 +1,3 @@
+name,type,location,comments
+"web-api","service","eastus","main api"
+"db-instance","database","westus","primary"

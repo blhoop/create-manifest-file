@@ -43,7 +43,11 @@
       "Bash(npm show:*)",
       "Bash(npm install:*)",
       "Bash(find C:/main/create-manifest-file -type f -name *.test.js -o -name *.spec.js -o -name *test*.json)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(node:*)",
+      "Bash(grep -n \"VALID_LOCATIONS\\\\|validLocations\\\\|location.*options\\\\|LOCATION_OPTIONS\" /c/main/create-manifest-file/server/config/outputSchema.js /c/main/create-manifest-file/client/src/config/*.js)",
+      "Bash(ls:*)",
+      "Bash(git rm:*)"
     ]
   }
 }

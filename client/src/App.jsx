@@ -186,12 +186,14 @@ export default function App() {
       </header>
 
       <main className="app-main">
-        <FileUpload
-          onParsed={handleParsed}
-          onError={handleError}
-          setLoading={setLoading}
-          loading={loading}
-        />
+        {!rows && !loading && (
+          <FileUpload
+            onParsed={handleParsed}
+            onError={handleError}
+            setLoading={setLoading}
+            loading={loading}
+          />
+        )}
 
         {error && <div className="error-banner">{error}</div>}
 

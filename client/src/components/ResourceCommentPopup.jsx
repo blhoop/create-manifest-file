@@ -1,9 +1,14 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { getCommentFields } from '../config/resourceCommentFields'
 import { extractJsonComment } from '../utils/extractJsonComment'
 import './ResourceCommentPopup.css'
 
 const normalizeType = t => t?.toLowerCase().replace(/[\s_/]+/g, '') ?? ''
+
+// Types that get an NSG Rules tab
+const NSG_TYPES = new Set(['web_app', 'app_service', 'app_service_plan', 'function_app'])
+// Types that get a Consumers tab
+const CONSUMER_TYPES = new Set(['key_vault'])
 
 /** Parse a `key:value, key:value` comment string back into field values + leftover notes. */
 function parseComment(comment) {
@@ -30,9 +35,130 @@ function buildComment(fields, values, notes) {
   return parts.join(', ')
 }
 
-export default function ResourceCommentPopup({ row, currentComment, onClose, onCommit }) {
+const DEFAULT_RULE = {
+  name: '',
+  priority: 100,
+  direction: 'Inbound',
+  access: 'Allow',
+  protocol: '*',
+  source_address_prefix: 'VirtualNetwork',
+  destination_port_range: '*',
+  description: '',
+}
+
+function NsgRulesTab({ rules, onChange }) {
+  const setRule = (i, field, val) => {
+    const updated = rules.map((r, idx) => idx === i ? { ...r, [field]: val } : r)
+    onChange(updated)
+  }
+  const addRule = () => onChange([...rules, { ...DEFAULT_RULE, priority: 100 + rules.length * 100 }])
+  const removeRule = (i) => onChange(rules.filter((_, idx) => idx !== i))
+
+  return (
+    <div className="rcp-nsg-tab">
+      {rules.length === 0 && (
+        <p className="rcp-nsg-empty">No rules defined — default deny-all-inbound applies.</p>
+      )}
+      {rules.map((rule, i) => (
+        <div key={i} className="rcp-nsg-rule">
+          <div className="rcp-nsg-rule-header">
+            <span className="rcp-nsg-rule-num">Rule {i + 1}</span>
+            <button className="btn-rcp-remove-rule" onClick={() => removeRule(i)} title="Remove rule">✕</button>
+          </div>
+          <div className="rcp-nsg-grid">
+            <div className="rcp-nsg-field rcp-nsg-full">
+              <label>Name</label>
+              <input className="rcp-input" value={rule.name}
+                placeholder="e.g. allow-vnet-inbound"
+                onChange={e => setRule(i, 'name', e.target.value)} />
+            </div>
+            <div className="rcp-nsg-field">
+              <label>Priority</label>
+              <input className="rcp-input" type="number" min={100} max={4096} value={rule.priority}
+                onChange={e => setRule(i, 'priority', Number(e.target.value))} />
+            </div>
+            <div className="rcp-nsg-field">
+              <label>Direction</label>
+              <select className="rcp-select" value={rule.direction}
+                onChange={e => setRule(i, 'direction', e.target.value)}>
+                {['Inbound', 'Outbound'].map(v => <option key={v}>{v}</option>)}
+              </select>
+            </div>
+            <div className="rcp-nsg-field">
+              <label>Access</label>
+              <select className="rcp-select" value={rule.access}
+                onChange={e => setRule(i, 'access', e.target.value)}>
+                {['Allow', 'Deny'].map(v => <option key={v}>{v}</option>)}
+              </select>
+            </div>
+            <div className="rcp-nsg-field">
+              <label>Protocol</label>
+              <select className="rcp-select" value={rule.protocol}
+                onChange={e => setRule(i, 'protocol', e.target.value)}>
+                {['*', 'Tcp', 'Udp', 'Icmp'].map(v => <option key={v}>{v}</option>)}
+              </select>
+            </div>
+            <div className="rcp-nsg-field rcp-nsg-full">
+              <label>Source</label>
+              <input className="rcp-input" value={rule.source_address_prefix}
+                placeholder="VirtualNetwork, Internet, CIDR, or *"
+                list={`rcp-source-${i}`}
+                onChange={e => setRule(i, 'source_address_prefix', e.target.value)} />
+              <datalist id={`rcp-source-${i}`}>
+                {['VirtualNetwork', 'Internet', 'AzureLoadBalancer', '*'].map(v => <option key={v} value={v} />)}
+              </datalist>
+            </div>
+            <div className="rcp-nsg-field rcp-nsg-full">
+              <label>Destination Port</label>
+              <input className="rcp-input" value={rule.destination_port_range}
+                placeholder="443, 80-443, or *"
+                onChange={e => setRule(i, 'destination_port_range', e.target.value)} />
+            </div>
+            <div className="rcp-nsg-field rcp-nsg-full">
+              <label>Description</label>
+              <input className="rcp-input" value={rule.description}
+                placeholder="optional"
+                onChange={e => setRule(i, 'description', e.target.value)} />
+            </div>
+          </div>
+        </div>
+      ))}
+      <button className="btn-rcp-add-rule" onClick={addRule}>+ Add Rule</button>
+    </div>
+  )
+}
+
+function ConsumersTab({ consumers, onChange }) {
+  const setConsumer = (i, val) => onChange(consumers.map((c, idx) => idx === i ? val : c))
+  const addConsumer = () => onChange([...consumers, ''])
+  const removeConsumer = (i) => onChange(consumers.filter((_, idx) => idx !== i))
+
+  return (
+    <div className="rcp-consumers-tab">
+      <p className="rcp-consumers-hint">
+        Resource IDs or references that receive RBAC role assignments on this Key Vault.
+      </p>
+      {consumers.map((c, i) => (
+        <div key={i} className="rcp-consumer-row">
+          <input className="rcp-input" value={c}
+            placeholder="e.g. $ref:mi_functions.principal_id"
+            onChange={e => setConsumer(i, e.target.value)} />
+          <button className="btn-rcp-remove-rule" onClick={() => removeConsumer(i)} title="Remove">✕</button>
+        </div>
+      ))}
+      <button className="btn-rcp-add-rule" onClick={addConsumer}>+ Add Consumer</button>
+    </div>
+  )
+}
+
+export default function ResourceCommentPopup({ row, currentComment, currentNsgRules, currentConsumers, onClose, onCommit }) {
   const typeConfig = getCommentFields(row?.type)
   const hasFields = !!typeConfig
+  const showNsgTab = NSG_TYPES.has(row?.type)
+  const showConsumersTab = CONSUMER_TYPES.has(row?.type)
+  const hasTabs = hasFields && (showNsgTab || showConsumersTab)
+
+  const [activeTab, setActiveTab] = useState('properties')
 
   const { values: initialValues, notes: initialNotes } = useMemo(
     () => parseComment(currentComment),
@@ -40,19 +166,21 @@ export default function ResourceCommentPopup({ row, currentComment, onClose, onC
     []
   )
 
-  // Structured mode state
   const [fieldValues, setFieldValues] = useState(initialValues)
   const [notes, setNotes] = useState(initialNotes)
-
-  // Fallback (no fields defined) state
   const [freeText, setFreeText] = useState(currentComment ?? '')
   const [extractMsg, setExtractMsg] = useState(null)
+  const [nsgRules, setNsgRules] = useState(currentNsgRules ?? [])
+  const [consumers, setConsumers] = useState(currentConsumers ?? [])
 
   const preview = hasFields
     ? buildComment(typeConfig.fields, fieldValues, notes)
     : freeText.trim()
 
-  const hasChanges = preview !== (currentComment ?? '').trim()
+  const hasChanges =
+    preview !== (currentComment ?? '').trim() ||
+    JSON.stringify(nsgRules) !== JSON.stringify(currentNsgRules ?? []) ||
+    JSON.stringify(consumers) !== JSON.stringify(currentConsumers ?? [])
 
   const setField = (key, val) => setFieldValues(prev => ({ ...prev, [key]: val }))
 
@@ -67,11 +195,17 @@ export default function ResourceCommentPopup({ row, currentComment, onClose, onC
   }
 
   const handleDone = () => {
-    onCommit(preview)
+    onCommit({ comment: preview, nsgRules, consumers })
     onClose()
   }
 
   const looksLikeJson = freeText.trim().startsWith('{')
+
+  const TABS = [
+    { key: 'properties', label: 'Properties' },
+    ...(showNsgTab ? [{ key: 'nsg', label: 'NSG Rules' }] : []),
+    ...(showConsumersTab ? [{ key: 'consumers', label: 'Consumers' }] : []),
+  ]
 
   return (
     <div className="rcp-overlay" onMouseDown={onClose}>
@@ -81,92 +215,115 @@ export default function ResourceCommentPopup({ row, currentComment, onClose, onC
           <h3 className="rcp-title">
             {hasFields ? typeConfig.label : (row?.type || 'Comment')}
           </h3>
-          <p className="rcp-desc">
-            {hasFields
-              ? 'Select values to build a structured comment.'
-              : 'Type a free-form comment for this resource.'}
-          </p>
+          {hasTabs ? (
+            <div className="rcp-tabs">
+              {TABS.map(tab => (
+                <button
+                  key={tab.key}
+                  className={`rcp-tab ${activeTab === tab.key ? 'active' : ''}`}
+                  onClick={() => setActiveTab(tab.key)}
+                >
+                  {tab.label}
+                  {tab.key === 'nsg' && nsgRules.length > 0 && (
+                    <span className="rcp-tab-badge">{nsgRules.length}</span>
+                  )}
+                  {tab.key === 'consumers' && consumers.length > 0 && (
+                    <span className="rcp-tab-badge">{consumers.length}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="rcp-desc">
+              {hasFields
+                ? 'Select values to build a structured comment.'
+                : 'Type a free-form comment for this resource.'}
+            </p>
+          )}
         </div>
 
         <div className="rcp-body">
 
-          {hasFields ? (
-            <div className="rcp-fields">
-              {typeConfig.fields.map((f, i) => (
-                <div key={f.key} className="rcp-field-row">
-                  <label className="rcp-field-label">{f.label}</label>
-                  {f.type === 'select' ? (
-                    <select
-                      className="rcp-select"
-                      autoFocus={i === 0}
-                      value={fieldValues[f.key] ?? ''}
-                      onChange={e => setField(f.key, e.target.value)}
-                    >
-                      <option value="">—</option>
-                      {f.options.map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                  ) : (
+          {activeTab === 'properties' && (
+            <>
+              {hasFields ? (
+                <div className="rcp-fields">
+                  {typeConfig.fields.map((f, i) => (
+                    <div key={f.key} className="rcp-field-row">
+                      <label className="rcp-field-label">{f.label}</label>
+                      {f.type === 'select' ? (
+                        <select
+                          className="rcp-select"
+                          autoFocus={i === 0}
+                          value={fieldValues[f.key] ?? ''}
+                          onChange={e => setField(f.key, e.target.value)}
+                        >
+                          <option value="">—</option>
+                          {f.options.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      ) : (
+                        <input
+                          className="rcp-input"
+                          type="text"
+                          autoFocus={i === 0}
+                          placeholder={f.placeholder ?? ''}
+                          value={fieldValues[f.key] ?? ''}
+                          onChange={e => setField(f.key, e.target.value)}
+                        />
+                      )}
+                    </div>
+                  ))}
+                  <div className="rcp-field-row rcp-notes-row">
+                    <label className="rcp-field-label">Notes</label>
                     <input
                       className="rcp-input"
                       type="text"
-                      autoFocus={i === 0}
-                      placeholder={f.placeholder ?? ''}
-                      value={fieldValues[f.key] ?? ''}
-                      onChange={e => setField(f.key, e.target.value)}
+                      placeholder="any additional notes"
+                      value={notes}
+                      onChange={e => setNotes(e.target.value)}
                     />
+                  </div>
+                </div>
+              ) : (
+                <div className="rcp-fallback">
+                  <textarea
+                    className="rcp-textarea"
+                    autoFocus
+                    placeholder="Type a comment, or paste Azure portal JSON..."
+                    value={freeText}
+                    onChange={e => { setFreeText(e.target.value); setExtractMsg(null) }}
+                    onKeyDown={e => e.key === 'Escape' && onClose()}
+                    rows={6}
+                    spellCheck={false}
+                  />
+                  {looksLikeJson && (
+                    <button className="btn-rcp-extract" onClick={handleExtract}>
+                      Extract from JSON
+                    </button>
+                  )}
+                  {extractMsg && (
+                    <p className={`rcp-msg rcp-msg-${extractMsg.type}`}>{extractMsg.text}</p>
                   )}
                 </div>
-              ))}
-              <div className="rcp-field-row rcp-notes-row">
-                <label className="rcp-field-label">Notes</label>
-                <input
-                  className="rcp-input"
-                  type="text"
-                  placeholder="any additional notes"
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="rcp-fallback">
-              <textarea
-                className="rcp-textarea"
-                autoFocus
-                placeholder="Type a comment, or paste Azure portal JSON..."
-                value={freeText}
-                onChange={e => { setFreeText(e.target.value); setExtractMsg(null) }}
-                onKeyDown={e => e.key === 'Escape' && onClose()}
-                rows={6}
-                spellCheck={false}
-              />
-              {looksLikeJson && (
-                <button className="btn-rcp-extract" onClick={handleExtract}>
-                  Extract from JSON
-                </button>
               )}
-              {extractMsg && (
-                <p className={`rcp-msg rcp-msg-${extractMsg.type}`}>{extractMsg.text}</p>
-              )}
-            </div>
-          )}
 
-          {(preview || (parentLinkEnabled && selectedParentLink)) && (
-            <div className="rcp-preview">
               {preview && (
-                <>
+                <div className="rcp-preview">
                   <span className="rcp-preview-label">Comment</span>
                   <span className="rcp-preview-value">{preview}</span>
-                </>
+                </div>
               )}
-              {parentRefConfig && parentLinkEnabled && selectedParentLink && (
-                <>
-                  <span className="rcp-preview-label" style={{marginTop: preview ? '0.5rem' : 0}}>Parent Link</span>
-                  <span className="rcp-preview-value">{parentRefConfig.label}: {selectedParentLink}</span>
-                </>
-              )}
-            </div>
+            </>
           )}
+
+          {activeTab === 'nsg' && (
+            <NsgRulesTab rules={nsgRules} onChange={setNsgRules} />
+          )}
+
+          {activeTab === 'consumers' && (
+            <ConsumersTab consumers={consumers} onChange={setConsumers} />
+          )}
+
         </div>
 
         <div className="rcp-footer">

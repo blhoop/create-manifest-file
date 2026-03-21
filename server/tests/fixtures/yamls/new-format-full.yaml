@@ -1,0 +1,87 @@
+
+spoke:
+  name: order-book-001
+  subscription: order-book-001
+  owner: Platform Engineering
+  sku_mode: premium
+  infra_repo: order-book-001-infra
+
+ctm_properties:
+  product: ob
+
+environments:
+  dev:
+    location: australiaeast
+
+tags:
+  owner: Platform Engineering
+  cost_center: CC-1234
+  project: order-book
+  data_classification: internal
+
+network:
+  vnets:
+    - id: vnet
+      cidr: 10.3.0.0/24
+  subnets:
+    - id: snet_privateendpoints
+      vnet_id: vnet
+      cidr: 10.3.0.64/27
+      delegation: null
+  nsgs: []
+  private_endpoints: []
+  dns_zones: []
+
+compute:
+  app_service_plans:
+    - id: asp_web
+      subsystem: web
+      module: terraform-azurerm-app-service-plan
+      os_type: Windows
+      sku: P1v3
+  web_apps:
+    - id: web_api
+      subsystem: api
+      module: terraform-azurerm-windows-web-app
+      asp_id: asp_web
+      instance_number: '001'
+  function_apps:
+    - id: func_processor
+      subsystem: processor
+      module: terraform-azurerm-windows-function-app
+      asp_id: asp_web
+      runtime: dotnet-isolated
+      instance_number: '001'
+
+data:
+  databases:
+    - id: cosmos
+      subsystem: cosmos
+      type: cosmos_account
+      module: terraform-azurerm-cosmos-account
+      sku: serverless
+
+security:
+  key_vaults:
+    - id: kv
+      subsystem: ob
+      module: terraform-azurerm-key-vault
+      access_model: RBAC
+      consumers: []
+
+observability:
+  log_analytics_workspace:
+    id: law
+    subsystem: ob
+    module: terraform-azurerm-log-analytics-workspace
+    retention_days: 30
+  app_insights:
+    - id: appi
+      subsystem: ob
+      module: terraform-azurerm-application-insights
+      workspace_id: law
+
+dependencies:
+  - name: hub-network-vnet
+    type: vnet_peering
+    direction: bidirectional
