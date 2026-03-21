@@ -37,12 +37,36 @@ export const SCHEMA_MAPPING = {
     sub_key: 'static_sites',
     module: 'terraform-azurerm-static-web-app',
   },
-
-  // Types with no equivalent in the schema template — emitted as comments
-  container_app:             { unmapped: true },
-  container_app_environment: { unmapped: true },
-  aks:                       { unmapped: true },
-  vm:                        { unmapped: true },
+  container_app: {
+    section: 'compute',
+    sub_key: 'container_apps',
+    module: 'terraform-azurerm-container-app',
+  },
+  container_app_environment: {
+    section: 'compute',
+    sub_key: 'container_app_environment',
+    module: 'terraform-azurerm-container-app-environment',
+  },
+  aks: {
+    section: 'compute',
+    sub_key: 'aks_clusters',
+    module: 'terraform-azurerm-aks',
+  },
+  vm: {
+    section: 'compute',
+    sub_key: 'virtual_machines',
+    module: 'terraform-azurerm-linux-vm', // refined by OS comment field
+  },
+  signalr: {
+    section: 'compute',
+    sub_key: 'signalr',
+    module: 'terraform-azurerm-signalr-service',
+  },
+  apim: {
+    section: 'compute',
+    sub_key: 'apim',
+    module: 'terraform-azurerm-api-management',
+  },
 
   // ── Data ─────────────────────────────────────────────────────────────────
   cosmos: {
@@ -96,7 +120,16 @@ export const SCHEMA_MAPPING = {
     sub_key: 'storage_accounts',
     module: 'terraform-azurerm-storage-account',
   },
-  servicebus: { unmapped: true },
+  servicebus: {
+    section: 'data',
+    sub_key: 'messaging',
+    module: 'terraform-azurerm-servicebus-namespace',
+  },
+  backup_vault: {
+    section: 'data',
+    sub_key: 'backup_vaults',
+    module: 'terraform-azurerm-backup-vault',
+  },
 
   // ── Security ─────────────────────────────────────────────────────────────
   key_vault: {
@@ -109,7 +142,11 @@ export const SCHEMA_MAPPING = {
     sub_key: 'managed_identities',
     module: 'terraform-azurerm-user-assigned-identity',
   },
-  container_registry: { unmapped: true },
+  container_registry: {
+    section: 'security',
+    sub_key: 'container_registries',
+    module: 'terraform-azurerm-container-registry',
+  },
 
   // ── Observability ─────────────────────────────────────────────────────────
   app_insights: {
@@ -118,11 +155,29 @@ export const SCHEMA_MAPPING = {
     module: 'terraform-azurerm-application-insights',
   },
 
-  // ── Platform / AI — no schema equivalent ──────────────────────────────────
-  openai:            { unmapped: true },
-  app_configuration: { unmapped: true },
-  frontdoor:         { unmapped: true },
-  vnet:              { unmapped: true },
+  // ── App Configuration ─────────────────────────────────────────────────────
+  app_configuration: {
+    section: 'app_configuration',
+    sub_key: 'items',
+    module: 'terraform-azurerm-app-configuration',
+  },
+
+  // ── AI ────────────────────────────────────────────────────────────────────
+  openai: {
+    section: 'ai',
+    sub_key: 'foundry',
+    module: 'terraform-azurerm-ai-foundry',
+  },
+
+  // ── Front Door ────────────────────────────────────────────────────────────
+  frontdoor: {
+    section: 'frontdoor',
+    sub_key: 'items',
+    module: 'terraform-azurerm-cdn-frontdoor-profile',
+  },
+
+  // ── No schema equivalent ──────────────────────────────────────────────────
+  vnet: { unmapped: true },
 }
 
 /**
@@ -148,7 +203,7 @@ export function parseCommentFields(comments) {
  * Falls back to Windows if OS is not specified.
  */
 export function resolveModule(serviceType, commentFields) {
-  const os = (commentFields.OS || '').toLowerCase()
+  const os = (commentFields.OS || commentFields.os || '').toLowerCase()
   const isLinux = os === 'linux'
 
   if (serviceType === 'function_app') {
@@ -160,6 +215,11 @@ export function resolveModule(serviceType, commentFields) {
     return isLinux
       ? 'terraform-azurerm-linux-web-app'
       : 'terraform-azurerm-windows-web-app'
+  }
+  if (serviceType === 'vm') {
+    return isLinux
+      ? 'terraform-azurerm-linux-vm'
+      : 'terraform-azurerm-windows-vm'
   }
   return SCHEMA_MAPPING[serviceType]?.module ?? null
 }

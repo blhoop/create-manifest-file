@@ -44,7 +44,7 @@ export function buildYamlContent(rows, subscription) {
 
   // ── spoke ──────────────────────────────────────────────────────────────
   out.push(...sectionHeader('SPOKE — Identity & metadata'))
-  out.push("schema_version: '1.1.0'")
+  out.push("schema_version: '1.3.0'")
   out.push('spoke:')
   if (sub.spoke_name)           out.push(`  name: ${q(sub.spoke_name)}`)
   if (sub.spoke_name)           out.push(`  subscription: ${q(sub.spoke_name)}`)
@@ -158,10 +158,20 @@ export function buildYamlContent(rows, subscription) {
 
   // ── partition rows by schema section ───────────────────────────────────
   const mapped = {
-    compute:      { app_service_plans: [], web_apps: [], function_apps: [], static_sites: [] },
-    data:         { databases: [], storage_accounts: [], caching: [], search: [], factories: [] },
-    security:     { key_vaults: [], managed_identities: [] },
+    compute: {
+      app_service_plans: [], web_apps: [], function_apps: [], static_sites: [],
+      container_app_environment: [], container_apps: [],
+      aks_clusters: [], virtual_machines: [], signalr: [], apim: [],
+    },
+    data: {
+      databases: [], storage_accounts: [], caching: [], search: [], factories: [],
+      backup_vaults: [], messaging: [],
+    },
+    security:     { key_vaults: [], managed_identities: [], container_registries: [] },
     observability:{ app_insights: [] },
+    app_configuration: { items: [] },
+    ai:           { foundry: [] },
+    frontdoor:    { items: [] },
   }
   const unmappedRows = []
 
@@ -333,6 +343,118 @@ export function buildYamlContent(rows, subscription) {
     }
   }
 
+  // container_app_environment (singleton — use first row)
+  const caeRows = mapped.compute.container_app_environment
+  if (caeRows.length > 0) {
+    computeBlank()
+    const cae = caeRows[0]
+    out.push('  # --- Container App Environment ---')
+    out.push('  container_app_environment:')
+    out.push(`    subsystem: ${q(cae.name || 'compute')}`)
+    out.push(`    infrastructure_subnet_id: snet_containerenvironment`)
+    out.push(`    log_analytics_workspace_id: law`)
+  }
+
+  // container_apps
+  const containerApps = mapped.compute.container_apps
+  if (containerApps.length > 0) {
+    computeBlank()
+    out.push('  # --- Container Apps ---')
+    out.push('  container_apps:')
+    for (const row of containerApps) {
+      const cf = parseCommentFields(row.comments)
+      out.push(`    - subsystem: ${q(row.name || 'app')}`)
+      out.push(`      module: terraform-azurerm-container-app`)
+      out.push(`      instance_number: '001'`)
+      out.push(`      image: "[TBD]"`)
+      out.push(`      cpu: ${cf.CPU || '0.5'}`)
+      out.push(`      memory: ${cf.Memory || '1.0'}`)
+      out.push(`      min_replicas: ${cf.MinReplicas || '0'}`)
+      out.push(`      max_replicas: 3`)
+      out.push(`      target_port: 80`)
+      if (row.repo) out.push(`      # app_repo: ${row.repo}`)
+      if (row.comments) out.push(`      # comments: ${row.comments}`)
+    }
+  }
+
+  // aks_clusters
+  const aksClusters = mapped.compute.aks_clusters
+  if (aksClusters.length > 0) {
+    computeBlank()
+    out.push('  # --- AKS ---')
+    out.push('  aks_clusters:')
+    for (const row of aksClusters) {
+      const cf = parseCommentFields(row.comments)
+      out.push(`    - subsystem: ${q(row.name || 'compute')}`)
+      out.push(`      module: terraform-azurerm-aks`)
+      out.push(`      instance_number: '001'`)
+      if (cf.version) out.push(`      kubernetes_version: '${cf.version}'`)
+      out.push(`      sku_tier: Standard`)
+      out.push(`      default_node_pool:`)
+      out.push(`        vm_size: ${q(cf.node_sku || 'Standard_D2s_v5')}`)
+      out.push(`        node_count: ${cf.node_count || 2}`)
+      out.push(`        vnet_subnet_id: snet_aks_system`)
+      if (row.comments) out.push(`      # comments: ${row.comments}`)
+    }
+  }
+
+  // virtual_machines
+  const vms = mapped.compute.virtual_machines
+  if (vms.length > 0) {
+    computeBlank()
+    out.push('  # --- Virtual Machines ---')
+    out.push('  virtual_machines:')
+    for (const row of vms) {
+      const cf = parseCommentFields(row.comments)
+      const osType = cf.os || cf.OS || 'Linux'
+      const mod = resolveModule('vm', cf)
+      out.push(`    - subsystem: ${q(row.name || 'vm')}`)
+      out.push(`      module: ${mod}`)
+      out.push(`      os_type: ${q(osType)}`)
+      out.push(`      instance_number: '001'`)
+      out.push(`      vm_size: ${q(cf.size || 'Standard_D2s_v5')}`)
+      out.push(`      subnet_id: snet_compute`)
+      out.push(`      os_disk:`)
+      out.push(`        size_gb: 128`)
+      out.push(`        storage_account_type: ${q(cf.disk || 'Premium_LRS')}`)
+      if (row.comments) out.push(`      # comments: ${row.comments}`)
+    }
+  }
+
+  // signalr
+  const signalrRows = mapped.compute.signalr
+  if (signalrRows.length > 0) {
+    computeBlank()
+    out.push('  # --- SignalR ---')
+    out.push('  signalr:')
+    for (const row of signalrRows) {
+      const cf = parseCommentFields(row.comments)
+      out.push(`    - subsystem: ${q(row.name || 'compute')}`)
+      out.push(`      module: terraform-azurerm-signalr-service`)
+      out.push(`      sku: ${q(cf.sku || cf.SKU || 'Standard_S1')}`)
+      out.push(`      instance_number: '001'`)
+      out.push(`      service_mode: ${q(cf.service_mode || 'Default')}`)
+      if (row.comments) out.push(`      # comments: ${row.comments}`)
+    }
+  }
+
+  // apim (singleton — use first row)
+  const apimRows = mapped.compute.apim
+  if (apimRows.length > 0) {
+    computeBlank()
+    const apimRow = apimRows[0]
+    const apimCf = parseCommentFields(apimRow.comments)
+    out.push('  # --- API Management ---')
+    out.push('  apim:')
+    out.push(`    subsystem: ${q(apimRow.name || 'compute')}`)
+    out.push(`    module: terraform-azurerm-api-management`)
+    out.push(`    sku: ${q(apimCf.sku || apimCf.SKU || 'Developer_1')}`)
+    out.push(`    publisher_name: "[TBD]"`)
+    out.push(`    publisher_email: "[TBD]"`)
+    out.push(`    instance_number: '001'`)
+    if (apimRow.comments) out.push(`    # comments: ${apimRow.comments}`)
+  }
+
   // ── data ───────────────────────────────────────────────────────────────
   const hasData = Object.values(mapped.data).some(a => a.length > 0)
   if (hasData) {
@@ -417,6 +539,34 @@ export function buildYamlContent(rows, subscription) {
         out.push(`      module: terraform-azurerm-data-factory`)
       }
     }
+
+    if (mapped.data.backup_vaults.length > 0) {
+      dataBlank()
+      out.push('  # --- Backup Vaults ---')
+      out.push('  backup_vaults:')
+      for (const row of mapped.data.backup_vaults) {
+        const cf = parseCommentFields(row.comments)
+        out.push(`    - subsystem: ${q(row.name || 'compute')}`)
+        out.push(`      module: terraform-azurerm-backup-vault`)
+        out.push(`      instance_number: '001'`)
+        out.push(`      redundancy: ${q(cf.redundancy || 'LocallyRedundant')}`)
+        if (row.comments) out.push(`      # comments: ${row.comments}`)
+      }
+    }
+
+    if (mapped.data.messaging.length > 0) {
+      dataBlank()
+      out.push('  # --- Messaging (Service Bus) ---')
+      out.push('  messaging:')
+      for (const row of mapped.data.messaging) {
+        const cf = parseCommentFields(row.comments)
+        out.push(`    - subsystem: ${q(row.name || 'compute')}`)
+        out.push(`      module: terraform-azurerm-servicebus-namespace`)
+        out.push(`      sku: ${q(cf.sku || cf.SKU || 'Standard')}`)
+        out.push(`      instance_number: '001'`)
+        if (row.comments) out.push(`      # comments: ${row.comments}`)
+      }
+    }
   }
 
   // ── security ───────────────────────────────────────────────────────────
@@ -444,6 +594,21 @@ export function buildYamlContent(rows, subscription) {
         } else {
           out.push(`      consumers: []`)
         }
+        if (row.comments) out.push(`      # comments: ${row.comments}`)
+      }
+    }
+
+    if (mapped.security.container_registries.length > 0) {
+      secBlank()
+      out.push('  # --- Container Registries ---')
+      out.push('  container_registries:')
+      for (const row of mapped.security.container_registries) {
+        const cf = parseCommentFields(row.comments)
+        out.push(`    - subsystem: ${q(row.name || 'compute')}`)
+        out.push(`      module: terraform-azurerm-container-registry`)
+        out.push(`      sku: ${q(cf.sku || cf.SKU || 'Premium')}`)
+        out.push(`      instance_number: '001'`)
+        out.push(`      consumers: []`)
         if (row.comments) out.push(`      # comments: ${row.comments}`)
       }
     }
@@ -486,6 +651,53 @@ export function buildYamlContent(rows, subscription) {
       if (cf.retention) out.push(`      retention_days: ${cf.retention}`)
       if (row.comments) out.push(`      # comments: ${row.comments}`)
     }
+  }
+
+  // ── app_configuration ──────────────────────────────────────────────────
+  const appConfigItems = mapped.app_configuration.items
+  if (appConfigItems.length > 0) {
+    out.push(...sectionHeader('APP CONFIGURATION'))
+    out.push('app_configuration:')
+    for (const row of appConfigItems) {
+      const cf = parseCommentFields(row.comments)
+      out.push(`  - subsystem: ${q(row.name || 'compute')}`)
+      out.push(`    module: terraform-azurerm-app-configuration`)
+      out.push(`    sku: ${q(cf.sku || cf.SKU || 'standard')}`)
+      out.push(`    instance_number: '001'`)
+      if (row.comments) out.push(`    # comments: ${row.comments}`)
+    }
+  }
+
+  // ── ai ─────────────────────────────────────────────────────────────────
+  const aiFoundry = mapped.ai.foundry
+  if (aiFoundry.length > 0) {
+    out.push(...sectionHeader('AI'))
+    out.push('ai:')
+    out.push('  foundry:')
+    for (const row of aiFoundry) {
+      const cf = parseCommentFields(row.comments)
+      out.push(`    - subsystem: ${q(row.name || 'compute')}`)
+      out.push(`      module: terraform-azurerm-ai-foundry`)
+      out.push(`      instance_number: '001'`)
+      out.push(`      sku: S0`)
+      if (cf.models) out.push(`      # models: ${cf.models}`)
+      if (row.comments) out.push(`      # comments: ${row.comments}`)
+    }
+  }
+
+  // ── frontdoor ──────────────────────────────────────────────────────────
+  const frontdoorItems = mapped.frontdoor.items
+  if (frontdoorItems.length > 0) {
+    out.push(...sectionHeader('FRONT DOOR'))
+    out.push('frontdoor:')
+    const fdRow = frontdoorItems[0]
+    const fdCf = parseCommentFields(fdRow.comments)
+    out.push('  profile:')
+    out.push(`    subsystem: ${q(fdRow.name || 'compute')}`)
+    out.push(`    module: terraform-azurerm-cdn-frontdoor-profile`)
+    out.push(`    sku: ${q(fdCf.sku || fdCf.SKU || 'Standard_AzureFrontDoor')}`)
+    out.push('  # endpoints, origin_groups, origins, routes — add manually')
+    if (fdRow.comments) out.push(`  # comments: ${fdRow.comments}`)
   }
 
   // ── dependencies ───────────────────────────────────────────────────────

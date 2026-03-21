@@ -109,6 +109,19 @@ const AZURE = {
       { key: 'branch', label: 'Branch', type: 'text',   placeholder: 'e.g. main' },
     ],
   },
+  signalr: {
+    label: 'SignalR Service',
+    fields: [
+      { key: 'sku',          label: 'SKU',          type: 'select', options: ['Free_F1', 'Standard_S1', 'Premium_P1'] },
+      { key: 'service_mode', label: 'Service Mode',  type: 'select', options: ['Default', 'Serverless', 'Classic'] },
+    ],
+  },
+  apim: {
+    label: 'API Management',
+    fields: [
+      { key: 'sku', label: 'SKU', type: 'select', options: ['Developer_1', 'Basic_1', 'Standard_1', 'Premium_1'] },
+    ],
+  },
 
   // ── Databases ──────────────────────────────────────────────────────────
   pg: {
@@ -173,10 +186,18 @@ const AZURE = {
     ],
   },
   redis: {
-    label: 'Redis Cache',
+    label: 'Managed Redis',
     fields: [
-      { key: 'sku',      label: 'SKU',      type: 'select', options: ['Basic', 'Standard', 'Premium'] },
-      { key: 'capacity', label: 'Capacity', type: 'select', options: ['C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'P1', 'P2', 'P3', 'P4', 'P5'] },
+      { key: 'sku',      label: 'Tier',     type: 'select', options: ['Balanced', 'MemoryOptimized', 'FlashOptimized'] },
+      { key: 'capacity', label: 'Size',     type: 'select', options: ['B0', 'B1', 'B3', 'B5', 'B10', 'B20', 'B50', 'B100', 'B250', 'B500', 'B700', 'B1000'] },
+    ],
+  },
+
+  // ── Data ───────────────────────────────────────────────────────────────
+  backup_vault: {
+    label: 'Backup Vault',
+    fields: [
+      { key: 'redundancy', label: 'Redundancy', type: 'select', options: ['LocallyRedundant', 'GeoRedundant', 'ZoneRedundant'] },
     ],
   },
 

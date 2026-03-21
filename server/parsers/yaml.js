@@ -168,6 +168,89 @@ function parseNewFormat(doc) {
     })
   }
 
+  // compute.container_app_environment (singleton)
+  if (doc.compute?.container_app_environment) {
+    const cae = doc.compute.container_app_environment
+    rows.push({
+      name:     cae.subsystem ?? '',
+      type:     'container_app_environment',
+      location: '',
+      repo:     '',
+      comments: '',
+    })
+  }
+
+  // compute.container_apps
+  for (const entry of (doc.compute?.container_apps ?? [])) {
+    rows.push({
+      name:     entry.subsystem ?? entry.id ?? '',
+      type:     'container_app',
+      location: '',
+      repo:     entry.app_repo ?? '',
+      comments: buildCommentFromEntry(entry, [
+        { commentKey: 'CPU', yamlKey: 'cpu' },
+        { commentKey: 'Memory', yamlKey: 'memory' },
+        { commentKey: 'MinReplicas', yamlKey: 'min_replicas' },
+      ]),
+    })
+  }
+
+  // compute.aks_clusters
+  for (const entry of (doc.compute?.aks_clusters ?? [])) {
+    rows.push({
+      name:     entry.subsystem ?? entry.id ?? '',
+      type:     'aks',
+      location: '',
+      repo:     '',
+      comments: buildCommentFromEntry(entry, [
+        { commentKey: 'version', yamlKey: 'kubernetes_version' },
+        { commentKey: 'node_sku', yamlKey: 'default_node_pool.vm_size' },
+      ]),
+    })
+  }
+
+  // compute.virtual_machines
+  for (const entry of (doc.compute?.virtual_machines ?? [])) {
+    rows.push({
+      name:     entry.subsystem ?? entry.id ?? '',
+      type:     'vm',
+      location: '',
+      repo:     '',
+      comments: buildCommentFromEntry(entry, [
+        { commentKey: 'os', yamlKey: 'os_type' },
+        { commentKey: 'size', yamlKey: 'vm_size' },
+      ]),
+    })
+  }
+
+  // compute.signalr
+  for (const entry of (doc.compute?.signalr ?? [])) {
+    rows.push({
+      name:     entry.subsystem ?? entry.id ?? '',
+      type:     'signalr',
+      location: '',
+      repo:     '',
+      comments: buildCommentFromEntry(entry, [
+        { commentKey: 'sku', yamlKey: 'sku' },
+        { commentKey: 'service_mode', yamlKey: 'service_mode' },
+      ]),
+    })
+  }
+
+  // compute.apim (singleton)
+  if (doc.compute?.apim && typeof doc.compute.apim === 'object' && !Array.isArray(doc.compute.apim)) {
+    const apim = doc.compute.apim
+    rows.push({
+      name:     apim.subsystem ?? apim.id ?? '',
+      type:     'apim',
+      location: '',
+      repo:     '',
+      comments: buildCommentFromEntry(apim, [
+        { commentKey: 'sku', yamlKey: 'sku' },
+      ]),
+    })
+  }
+
   // data.databases
   const DB_TYPE_MAP = {
     cosmos_account:              'cosmos',
@@ -225,11 +308,50 @@ function parseNewFormat(doc) {
     })
   }
 
+  // data.backup_vaults
+  for (const entry of (doc.data?.backup_vaults ?? [])) {
+    rows.push({
+      name:     entry.subsystem ?? entry.id ?? '',
+      type:     'backup_vault',
+      location: '',
+      repo:     '',
+      comments: buildCommentFromEntry(entry, [
+        { commentKey: 'redundancy', yamlKey: 'redundancy' },
+      ]),
+    })
+  }
+
+  // data.messaging (service bus)
+  for (const entry of (doc.data?.messaging ?? [])) {
+    rows.push({
+      name:     entry.subsystem ?? entry.id ?? '',
+      type:     'servicebus',
+      location: '',
+      repo:     '',
+      comments: buildCommentFromEntry(entry, [
+        { commentKey: 'sku', yamlKey: 'sku' },
+      ]),
+    })
+  }
+
   // security.key_vaults
   for (const entry of (doc.security?.key_vaults ?? [])) {
     rows.push({
       name:     entry.subsystem ?? entry.id ?? '',
       type:     'key_vault',
+      location: '',
+      repo:     '',
+      comments: buildCommentFromEntry(entry, [
+        { commentKey: 'sku', yamlKey: 'sku' },
+      ]),
+    })
+  }
+
+  // security.container_registries
+  for (const entry of (doc.security?.container_registries ?? [])) {
+    rows.push({
+      name:     entry.subsystem ?? entry.id ?? '',
+      type:     'container_registry',
       location: '',
       repo:     '',
       comments: buildCommentFromEntry(entry, [
@@ -258,6 +380,44 @@ function parseNewFormat(doc) {
       repo:     '',
       comments: buildCommentFromEntry(entry, [
         { commentKey: 'retention', yamlKey: 'retention_days' },
+      ]),
+    })
+  }
+
+  // app_configuration (top-level array)
+  for (const entry of (Array.isArray(doc.app_configuration) ? doc.app_configuration : [])) {
+    rows.push({
+      name:     entry.subsystem ?? entry.id ?? '',
+      type:     'app_configuration',
+      location: '',
+      repo:     '',
+      comments: buildCommentFromEntry(entry, [
+        { commentKey: 'sku', yamlKey: 'sku' },
+      ]),
+    })
+  }
+
+  // ai.foundry
+  for (const entry of (doc.ai?.foundry ?? [])) {
+    rows.push({
+      name:     entry.subsystem ?? entry.id ?? '',
+      type:     'openai',
+      location: '',
+      repo:     '',
+      comments: '',
+    })
+  }
+
+  // frontdoor.profile (singleton)
+  if (doc.frontdoor?.profile) {
+    const fd = doc.frontdoor.profile
+    rows.push({
+      name:     fd.subsystem ?? fd.id ?? '',
+      type:     'frontdoor',
+      location: '',
+      repo:     '',
+      comments: buildCommentFromEntry(fd, [
+        { commentKey: 'sku', yamlKey: 'sku' },
       ]),
     })
   }
