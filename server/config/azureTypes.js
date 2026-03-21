@@ -67,6 +67,18 @@ const AZURE_TYPES = [
     category: 'Compute',
     aliases: ['swa', 'staticwebapp', 'staticsite'],
   },
+  {
+    service_type: 'signalr',
+    display_name: 'SignalR Service',
+    category: 'Compute',
+    aliases: ['signalrservice', 'azuresignalr'],
+  },
+  {
+    service_type: 'apim',
+    display_name: 'API Management',
+    category: 'Compute',
+    aliases: ['apimanagement', 'apimservice'],
+  },
 
   // ── Data ───────────────────────────────────────────────────────────────────
   {
@@ -122,6 +134,12 @@ const AZURE_TYPES = [
     display_name: 'Service Bus',
     category: 'Data',
     aliases: ['azureservicebus'],
+  },
+  {
+    service_type: 'backup_vault',
+    display_name: 'Backup Vault',
+    category: 'Data',
+    aliases: ['backupvault', 'azurebackup', 'recoveryservicesvault'],
   },
 
   // ── Networking ─────────────────────────────────────────────────────────────
