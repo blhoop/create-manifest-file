@@ -103,7 +103,6 @@ export function buildYamlContent(rows, subscription) {
   // ── network ────────────────────────────────────────────────────────────
   out.push(...sectionHeader('NETWORK'))
   out.push('network:')
-  out.push('')
   out.push('  # --- VNets ---')
   out.push('  vnets:')
   out.push('    - id: vnet')
@@ -467,7 +466,6 @@ export function buildYamlContent(rows, subscription) {
   const product = sub.product || sub.product_code || 'myapp'
   out.push(...sectionHeader('OBSERVABILITY'))
   out.push('observability:')
-  out.push('')
   out.push('  # --- Log Analytics Workspace ---')
   out.push('  log_analytics_workspace:')
   out.push('    id: law')
