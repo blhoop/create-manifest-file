@@ -528,8 +528,7 @@ export function buildYamlContent(rows, subscription) {
       out.push('  # --- Data Factories ---')
       out.push('  factories:')
       for (const row of mapped.data.factories) {
-        out.push(`    - id: ${q(row.name || 'adf')}`)
-        out.push(`      subsystem: ${q(row.name || 'adf')}`)
+        out.push(`    - subsystem: compute`)
         out.push(`      module: terraform-azurerm-data-factory`)
       }
     }
