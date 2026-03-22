@@ -582,7 +582,7 @@ dependencies: []
       expect(types).toContain('search');
       expect(types).toContain('data_factory');
       expect(types).toContain('key_vault');
-      expect(types).toContain('user_assigned_identity');
+      expect(types).toContain('managed_identities');
       expect(types).toContain('app_insights');
       expect(result.rows).toHaveLength(12);
     });

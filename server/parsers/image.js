@@ -17,7 +17,7 @@ Azure diagrams use official Microsoft Azure Architecture Icons. Use these exact 
 COMPUTE: App Service Plan → "app_service_plan", Web App → "web_app", Function App → "function_app", full App Service stack → "app_service", AKS / Kubernetes → "aks", Container App Environment → "container_app_environment", Container App → "container_app", Virtual Machine → "vm", Static Web App → "static_web_app"
 DATA: PostgreSQL → "pg", SQL Server/Database → "sql", SQL Managed Instance → "sqlmi", Cosmos DB → "cosmos", MySQL → "mysql", Redis → "redis", Storage Account → "storage_account", Data Factory → "data_factory"
 MESSAGING: Service Bus → "servicebus"
-SECURITY: Key Vault → "key_vault", Container Registry → "container_registry", User Assigned Identity → "user_assigned_identity"
+SECURITY: Key Vault → "key_vault", Container Registry → "container_registry", Managed Identity / User Assigned Identity → "managed_identities"
 MONITORING: Application Insights → "app_insights"
 AI: Azure OpenAI / AI Foundry → "openai", AI Search → "search"
 PLATFORM: Front Door → "frontdoor", App Configuration → "app_configuration"

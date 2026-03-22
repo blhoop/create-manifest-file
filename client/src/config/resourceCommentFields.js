@@ -295,9 +295,12 @@ const AZURE = {
   },
 
   // security.managed_identities
-  user_assigned_identity: {
-    label: 'User Assigned Identity',
-    fields: [],
+  managed_identities: {
+    label: 'Managed Identity',
+    fields: [
+      { key: 'subsystem',       label: 'Subsystem',       required: true, type: 'select', options: ['api', 'assets', 'compute', 'config', 'frontend', 'functions', 'web', 'webjobs'] },
+      { key: 'instance_number', label: 'Instance Number', type: 'text',   default: '001' },
+    ],
   },
 
   // ── Observability ──────────────────────────────────────────────────────

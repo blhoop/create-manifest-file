@@ -178,10 +178,10 @@ const AZURE_TYPES = [
     aliases: ['containerregistry', 'acr'],
   },
   {
-    service_type: 'user_assigned_identity',
-    display_name: 'User Assigned Identity',
+    service_type: 'managed_identities',
+    display_name: 'Managed Identity',
     category: 'Security',
-    aliases: ['managedidentity', 'useridentity', 'userassignedidentity', 'userassignedidentities', 'identity'],
+    aliases: ['managedidentity', 'useridentity', 'userassignedidentity', 'userassignedidentities', 'identity', 'user_assigned_identity'],
   },
 
   // ── Observability ──────────────────────────────────────────────────────────

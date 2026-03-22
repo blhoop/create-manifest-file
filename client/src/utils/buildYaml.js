@@ -44,7 +44,7 @@ export function buildYamlContent(rows, subscription) {
 
   // ── spoke ──────────────────────────────────────────────────────────────
   out.push(...sectionHeader('SPOKE — Identity & metadata'))
-  out.push("schema_version: '1.3.0'")
+  out.push("schema_version: '1.4.0'")
   out.push('spoke:')
   if (sub.spoke_name)           out.push(`  name: ${q(sub.spoke_name)}`)
   if (sub.spoke_name)           out.push(`  subscription: ${q(sub.spoke_name)}`)
@@ -71,12 +71,15 @@ export function buildYamlContent(rows, subscription) {
   if (loc) out.push(`    location: ${q(loc)}`)
 
   // ── tags ───────────────────────────────────────────────────────────────
+  const tags = sub.tags ?? {}
   out.push(...sectionHeader('TAGS'))
   out.push('tags:')
-  out.push(`  owner: ${q(sub.owner || '[TBD]')}`)
-  out.push(`  cost_center: ${q(sub.cost_center || '[TBD]')}`)
-  out.push(`  project: ${q(sub.project || '[TBD]')}`)
-  out.push(`  data_classification: ${q(sub.data_classification || 'internal')}`)
+  out.push(`  CostRegion: ${q(tags.CostRegion || '[TBD]')}`)
+  out.push(`  CostType: ${q(tags.CostType || '[TBD]')}`)
+  if (tags.owner && tags.owner !== '[TBD]')               out.push(`  owner: ${q(tags.owner)}`)
+  if (tags.cost_center && tags.cost_center !== '[TBD]')   out.push(`  cost_center: ${q(tags.cost_center)}`)
+  if (tags.project)                                       out.push(`  project: ${q(tags.project)}`)
+  if (tags.data_classification)                           out.push(`  data_classification: ${q(tags.data_classification)}`)
 
   // ── pre-scan rows for vnet, NSG rules ──────────────────────────────────
   // Collect before emitting network/security sections
@@ -102,71 +105,32 @@ export function buildYamlContent(rows, subscription) {
   )
 
   // ── network ────────────────────────────────────────────────────────────
+  // v1.4.0 minimal mode: just vnet_cidr + optional peering.
+  // Builder auto-generates subnets, NSGs, delegations, PEs, DNS zones.
   out.push(...sectionHeader('NETWORK'))
   out.push('network:')
-  out.push('  # --- VNets ---')
-  out.push('  vnets:')
-  if (vnetRows.length > 0) {
-    for (const row of vnetRows) {
-      const cf = parseCommentFields(row.comments)
-      const cidr = cf.cidr || sub.vnet_cidr
-      out.push(`    - id: ${q(row.name || 'vnet')}`)
-      if (cidr) out.push(`      cidr: ${q(cidr)}`)
-      out.push(`      dns_servers: ${q(cf.dns_servers || 'hub-inherited')}`)
-      if (cf.peering) out.push(`      peering: ${q(cf.peering)}`)
-    }
-  } else {
-    out.push('    - id: vnet')
-    if (sub.vnet_cidr) out.push(`      cidr: ${q(sub.vnet_cidr)}`)
-    out.push('      dns_servers: hub-inherited')
-    out.push('      peering: hub-network-vnet')
-  }
-  out.push('')
-  out.push('  # --- Subnets ---')
-  out.push('  subnets:')
-  if (hasAppServiceRows) {
-    out.push('    - id: snet_appservices')
-    out.push('      vnet_id: vnet')
-    out.push('      cidr: "[TBD]"')
-    out.push('      delegation: Microsoft.Web/serverFarms')
-    out.push('      purpose: App Service VNet integration')
-  }
-  out.push('    - id: snet_privateendpoints')
-  out.push('      vnet_id: vnet')
-  out.push('      cidr: "[TBD]"')
-  out.push('      delegation: null')
-  out.push('      purpose: Private endpoints')
-  out.push('')
-  out.push('  # --- NSGs ---')
-  out.push('  nsgs:')
-  if (hasAppServiceRows) {
+  const vnetCidr = vnetRows.length > 0
+    ? (parseCommentFields(vnetRows[0].comments).cidr || sub.vnet_cidr || '')
+    : (sub.vnet_cidr || '')
+  if (vnetCidr) out.push(`  vnet_cidr: ${q(vnetCidr)}`)
+  out.push('  peering: hub-network-vnet')
+  // Custom NSG rules — emit as override block only when rules are present
+  if (dedupedNsgRules.length > 0) {
+    out.push('  nsgs:')
     out.push('    - id: nsg_appservices')
     out.push('      subnet_id: snet_appservices')
-    if (dedupedNsgRules.length > 0) {
-      out.push('      rules:')
-      for (const rule of dedupedNsgRules) {
-        out.push(`        - name: ${q(rule.name)}`)
-        out.push(`          priority: ${rule.priority}`)
-        out.push(`          direction: ${q(rule.direction)}`)
-        out.push(`          access: ${q(rule.access)}`)
-        out.push(`          protocol: ${q(rule.protocol)}`)
-        out.push(`          source_address_prefix: ${q(rule.source_address_prefix)}`)
-        out.push(`          destination_port_range: ${q(rule.destination_port_range)}`)
-        if (rule.description) out.push(`          description: ${q(rule.description)}`)
-      }
-    } else {
-      out.push('      rules: []')
+    out.push('      rules:')
+    for (const rule of dedupedNsgRules) {
+      out.push(`        - name: ${q(rule.name)}`)
+      out.push(`          priority: ${rule.priority}`)
+      out.push(`          direction: ${q(rule.direction)}`)
+      out.push(`          access: ${q(rule.access)}`)
+      out.push(`          protocol: ${q(rule.protocol)}`)
+      out.push(`          source_address_prefix: ${q(rule.source_address_prefix)}`)
+      out.push(`          destination_port_range: ${q(rule.destination_port_range)}`)
+      if (rule.description) out.push(`          description: ${q(rule.description)}`)
     }
   }
-  out.push('    - id: nsg_privateendpoints')
-  out.push('      subnet_id: snet_privateendpoints')
-  out.push('      rules: []')
-  out.push('')
-  out.push('  # --- Private Endpoints ---')
-  out.push('  private_endpoints: []')
-  out.push('')
-  out.push('  # --- DNS Zones ---')
-  out.push('  dns_zones: []')
 
   // ── partition rows by schema section ───────────────────────────────────
   const mapped = {
@@ -647,10 +611,12 @@ export function buildYamlContent(rows, subscription) {
       out.push('  # --- Managed Identities ---')
       out.push('  managed_identities:')
       for (const row of mapped.security.managed_identities) {
-        out.push(`    - id: ${q(`mi_${row.name || 'identity'}`)}`)
-        out.push(`      subsystem: ${q(row.name || 'identity')}`)
+        const cf = parseCommentFields(row.comments)
+        const subsystem = cf.subsystem || row.name || 'identity'
+        out.push(`    - id: ${q(`mi_${subsystem}`)}`)
+        out.push(`      subsystem: ${q(subsystem)}`)
         out.push(`      module: terraform-azurerm-user-assigned-identity`)
-        out.push(`      instance_number: '001'`)
+        out.push(`      instance_number: ${q(cf.instance_number || '001')}`)
       }
     }
   }
