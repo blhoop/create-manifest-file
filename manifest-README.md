@@ -151,13 +151,50 @@ Override any default by declaring it explicitly in the manifest. Full explicit m
 
 See `networking-defaults.yml` for the complete rule set.
 
+## Databases
+
+All database types use the same `data.databases` section. The `type` field determines the module and resource group isolation.
+
+| `type` | Azure Resource | Module | RG Short Name | Example SKU |
+|---|---|---|---|---|
+| `mssql_server` | Azure SQL Database (logical server) | terraform-azurerm-mssql-server | `sql` | `GP_Gen5_2` |
+| `postgresql_flexible_server` | PostgreSQL Flexible Server | terraform-azurerm-postgresql-flexible-server | `pg` | `GP_Standard_D2s_v3` |
+| `cosmos_account` | Cosmos DB | terraform-azurerm-cosmos-account | `cosmos` | `serverless` |
+| `mssql_managed_instance` | SQL Managed Instance | terraform-azurerm-mssql-managed-instance | `sqlmi` | `GP_Gen5_4` |
+| `mysql_flexible_server` | MySQL Flexible Server | terraform-azurerm-mysql-flexible-server | `mysql` | `GP_Standard_D2s_v3` |
+
+```yaml
+data:
+  databases:
+    - subsystem: sql
+      type: mssql_server
+      sku: GP_Gen5_2
+      databases:            # Informational — Terraform does NOT create these
+        - app-db
+        - app-db-archive
+
+    - subsystem: pg
+      type: postgresql_flexible_server
+      sku: GP_Standard_D2s_v3
+```
+
+The `databases:` list within each entry is **informational only** — database creation (CREATE DATABASE, migrations) is an application concern. Terraform owns the server, not the databases.
+
 ## Resource Group Isolation
 
 The builder automatically creates separate resource groups:
 - **Compute RG**: `rg-{product}-compute-{env}-{location}` — web apps, function apps, Redis, search, etc.
-- **Database RGs**: `rg-{product}-{db_type}-{env}-{location}` — one per database type (pg, sql, cosmos, sqlmi, mysql)
+- **Database RGs**: `rg-{product}-{db_type}-{env}-{location}` — one per database type
 
-This gives DBA teams isolated RBAC and backup policy scoping per database type.
+| Database Type | RG Example |
+|---|---|
+| `mssql_server` | `rg-lb-sql-dev-aue` |
+| `postgresql_flexible_server` | `rg-lb-pg-dev-aue` |
+| `cosmos_account` | `rg-lb-cosmos-dev-aue` |
+| `mssql_managed_instance` | `rg-lb-sqlmi-dev-aue` |
+| `mysql_flexible_server` | `rg-lb-mysql-dev-aue` |
+
+This gives DBA teams isolated RBAC and backup policy scoping per database type. Redis is the exception — it stays in the compute RG (caching layer, not a primary datastore).
 
 ## Sections Reference
 
