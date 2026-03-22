@@ -459,7 +459,7 @@ dependencies:
       expect(result.subscription.environment).toBe('dev');
       expect(result.subscription.default_location).toBe('australiaeast');
       expect(result.subscription.vnet_cidr).toBe('10.3.0.0/24');
-      expect(result.subscription.cost_center).toBe('CC-1234');
+      expect(result.subscription.tags.cost_center).toBe('CC-1234');
       expect(result.subscription.sku_mode).toBe('premium');
       expect(result.subscription.infra_repo).toBe('order-book-001-infra');
     });
