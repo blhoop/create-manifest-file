@@ -498,7 +498,7 @@ export function buildYamlContent(rows, subscription) {
       for (const row of mapped.data.caching) {
         const cf = parseCommentFields(row.comments)
         out.push(`    - id: ${q(row.name || 'redis')}`)
-        out.push(`      subsystem: ${q(row.name || 'cache')}`)
+        out.push(`      subsystem: compute`)
         out.push(`      module: terraform-azurerm-managed-redis`)
         const sku = cf.sku || cf.SKU || ''
         const cap = cf.capacity || cf.Capacity || ''
@@ -514,7 +514,7 @@ export function buildYamlContent(rows, subscription) {
       out.push('  search:')
       for (const row of mapped.data.search) {
         const cf = parseCommentFields(row.comments)
-        out.push(`    - subsystem: ${q(row.name || 'search')}`)
+        out.push(`    - subsystem: compute`)
         out.push(`      module: terraform-azurerm-search-service`)
         if (cf.sku) out.push(`      sku: ${q(cf.sku)}`)
         if (cf.replica_count) out.push(`      replica_count: ${cf.replica_count}`)
