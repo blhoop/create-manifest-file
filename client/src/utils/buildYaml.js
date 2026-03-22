@@ -331,7 +331,8 @@ export function buildYamlContent(rows, subscription) {
       out.push(`      module: terraform-azurerm-static-web-app`)
       if (cf.sku) out.push(`      sku: ${q(cf.sku)}`)
       out.push(`      instance_number: '001'`)
-      if (cf.location) out.push(`      location: ${q(cf.location)}`)
+      const loc = row.location || cf.location
+      if (loc) out.push(`      location: ${q(loc)}`)
       if (row.repo) out.push(`      # app_repo: ${row.repo}`)
     }
   }
