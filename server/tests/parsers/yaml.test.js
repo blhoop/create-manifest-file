@@ -459,7 +459,7 @@ dependencies:
       expect(result.subscription.environment).toBe('dev');
       expect(result.subscription.default_location).toBe('australiaeast');
       expect(result.subscription.vnet_cidr).toBe('10.3.0.0/24');
-      expect(result.subscription.cost_center).toBe('CC-1234');
+      expect(result.subscription.tags.cost_center).toBe('CC-1234');
       expect(result.subscription.sku_mode).toBe('premium');
       expect(result.subscription.infra_repo).toBe('order-book-001-infra');
     });
@@ -582,7 +582,7 @@ dependencies: []
       expect(types).toContain('search');
       expect(types).toContain('data_factory');
       expect(types).toContain('key_vault');
-      expect(types).toContain('user_assigned_identity');
+      expect(types).toContain('managed_identities');
       expect(types).toContain('app_insights');
       expect(result.rows).toHaveLength(12);
     });

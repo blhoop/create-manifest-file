@@ -75,13 +75,22 @@ function parseNewFormat(doc) {
 
   // tags
   if (doc.tags) {
-    if (doc.tags.cost_center)        subscription.cost_center        = String(doc.tags.cost_center)
-    if (doc.tags.project)            subscription.project            = String(doc.tags.project)
-    if (doc.tags.data_classification) subscription.data_classification = String(doc.tags.data_classification)
+    subscription.tags = {
+      owner:               doc.tags.owner               ? String(doc.tags.owner)               : '[TBD]',
+      cost_center:         doc.tags.cost_center         ? String(doc.tags.cost_center)         : '[TBD]',
+      project:             doc.tags.project             ? String(doc.tags.project)             : 'my-project',
+      data_classification: doc.tags.data_classification ? String(doc.tags.data_classification) : 'internal',
+      // v1.4.0 PascalCase keys; fall back to old snake_case for backward compat
+      CostType:   doc.tags.CostType   ? String(doc.tags.CostType)   : (doc.tags.cost_type   ? String(doc.tags.cost_type)   : ''),
+      CostRegion: doc.tags.CostRegion ? String(doc.tags.CostRegion) : (doc.tags.cost_region ? String(doc.tags.cost_region) : ''),
+    }
   }
 
   // network — vnet cidr (subscription panel)
-  if (Array.isArray(doc.network?.vnets) && doc.network.vnets[0]?.cidr) {
+  // v1.4.0: flat vnet_cidr field; v1.3.0 and earlier: vnets[0].cidr
+  if (doc.network?.vnet_cidr) {
+    subscription.vnet_cidr = String(doc.network.vnet_cidr)
+  } else if (Array.isArray(doc.network?.vnets) && doc.network.vnets[0]?.cidr) {
     subscription.vnet_cidr = String(doc.network.vnets[0].cidr)
   }
 
@@ -421,10 +430,13 @@ function parseNewFormat(doc) {
   for (const entry of (doc.security?.managed_identities ?? [])) {
     rows.push({
       name:     entry.subsystem ?? entry.id ?? '',
-      type:     'user_assigned_identity',
+      type:     'managed_identities',
       location: '',
       repo:     '',
-      comments: '',
+      comments: buildCommentFromEntry(entry, [
+        { commentKey: 'subsystem',       yamlKey: 'subsystem' },
+        { commentKey: 'instance_number', yamlKey: 'instance_number' },
+      ]),
     })
   }
 

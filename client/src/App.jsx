@@ -23,7 +23,7 @@ export default function App() {
   const session = loadSession()
   const defaultSubscription = {
     spoke_name: '', owner: '', product: '', environment: '', default_location: '',
-    cost_center: '', project: '', data_classification: '',
+    tags: { owner: '[TBD]', cost_center: '[TBD]', project: 'my-project', data_classification: 'internal', CostType: '', CostRegion: '' },
     infra_repo: '', sku_mode: '', management_group_id: '', vnet_cidr: '',
     new_subscription: 'true', subscription_id: '', description: '',
   }
@@ -35,7 +35,11 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [auditLog, setAuditLog] = useState(session?.auditLog ?? [])
   const [showAuditDialog, setShowAuditDialog] = useState(false)
-  const [subscription, setSubscription] = useState(session?.subscription ?? defaultSubscription)
+  const [showTagsPopup, setShowTagsPopup] = useState(false)
+  const [subscription, setSubscription] = useState(() => {
+    const saved = session?.subscription ?? {}
+    return { ...defaultSubscription, ...saved, tags: { ...defaultSubscription.tags, ...(saved.tags ?? {}) } }
+  })
 
   const sortByType = (data) =>
     [...data].sort((a, b) => (a.type ?? '').localeCompare(b.type ?? ''))
@@ -224,7 +228,7 @@ export default function App() {
               </div>
               <div className="subscription-fields">
 
-                {/* Identity — required */}
+                {/* Row 1 — Identity + Tags */}
                 <div className="sub-field-group required-group">
                   <div className="sub-field">
                     <label>spoke_name <span className="sub-required">*</span></label>
@@ -260,41 +264,25 @@ export default function App() {
                       {['australiaeast','eastasia','eastus','eastus2','northcentralus','southeastasia','uksouth','westus3','westeurope','canadacentral','centralus','westus2'].map(v => <option key={v} value={v}>{v}</option>)}
                     </select>
                   </div>
+                  <div className="sub-field sub-field--tags-btn">
+                    <label>Tags <span className="sub-required">*</span></label>
+                    <button className="tags-popup-btn" onClick={() => setShowTagsPopup(true)}>
+                      {Object.values(subscription.tags ?? {}).some(v => v && v !== '[TBD]')
+                        ? 'Edit Tags ✓'
+                        : 'Set Tags…'}
+                    </button>
+                  </div>
                 </div>
 
-                {/* Tagging */}
+                {/* Row 2 — Infrastructure */}
                 <div className="sub-field-group optional-group">
-                  <div className="sub-field">
-                    <label>cost_center</label>
-                    <input type="text" value={subscription.cost_center}
-                      onChange={e => setSubscription(s => ({ ...s, cost_center: e.target.value }))}
-                      placeholder="e.g. CC-1234" />
-                  </div>
-                  <div className="sub-field">
-                    <label>project</label>
-                    <input type="text" value={subscription.project}
-                      onChange={e => setSubscription(s => ({ ...s, project: e.target.value }))}
-                      placeholder="e.g. my-project" />
-                  </div>
-                  <div className="sub-field">
-                    <label>data_classification</label>
-                    <select value={subscription.data_classification}
-                      onChange={e => setSubscription(s => ({ ...s, data_classification: e.target.value }))}>
-                      <option value="">— select —</option>
-                      {['internal','confidential','public','restricted'].map(v => <option key={v} value={v}>{v}</option>)}
-                    </select>
-                  </div>
-                  <div className="sub-field">
+                  <div className="sub-field sub-field--narrow">
                     <label>infra_repo</label>
                     <input type="text" value={subscription.infra_repo}
                       onChange={e => setSubscription(s => ({ ...s, infra_repo: e.target.value }))}
                       placeholder="e.g. my-spoke-001-infra" />
                   </div>
-                </div>
-
-                {/* Infrastructure — optional */}
-                <div className="sub-field-group optional-group">
-                  <div className="sub-field">
+                  <div className="sub-field sub-field--narrow">
                     <label>sku_mode</label>
                     <select value={subscription.sku_mode}
                       onChange={e => setSubscription(s => ({ ...s, sku_mode: e.target.value }))}>
@@ -302,19 +290,19 @@ export default function App() {
                       {['premium','standard'].map(v => <option key={v} value={v}>{v}</option>)}
                     </select>
                   </div>
-                  <div className="sub-field">
+                  <div className="sub-field sub-field--narrow">
                     <label>vnet_cidr</label>
                     <input type="text" value={subscription.vnet_cidr}
                       onChange={e => setSubscription(s => ({ ...s, vnet_cidr: e.target.value }))}
                       placeholder="e.g. 10.3.0.0/24" />
                   </div>
-                  <div className="sub-field">
+                  <div className="sub-field sub-field--narrow">
                     <label>management_group_id</label>
                     <input type="text" value={subscription.management_group_id}
                       onChange={e => setSubscription(s => ({ ...s, management_group_id: e.target.value }))}
                       placeholder="e.g. converge" />
                   </div>
-                  <div className="sub-field">
+                  <div className="sub-field sub-field--narrow">
                     <label>new_subscription</label>
                     <select value={subscription.new_subscription}
                       onChange={e => setSubscription(s => ({ ...s, new_subscription: e.target.value }))}>
@@ -322,7 +310,7 @@ export default function App() {
                     </select>
                   </div>
                   {subscription.new_subscription === 'false' && (
-                    <div className="sub-field">
+                    <div className="sub-field sub-field--narrow">
                       <label>subscription_id</label>
                       <input type="text" value={subscription.subscription_id}
                         onChange={e => setSubscription(s => ({ ...s, subscription_id: e.target.value }))}
@@ -360,6 +348,58 @@ export default function App() {
               </div>
             </div>
           </>
+        )}
+
+        {showTagsPopup && (
+          <div className="audit-overlay" onMouseDown={() => setShowTagsPopup(false)}>
+            <div className="tags-popup" onMouseDown={e => e.stopPropagation()}>
+              <div className="tags-popup-header">
+                <span className="tags-popup-title">Spoke Tags <span className="sub-required">*</span></span>
+                <span className="tags-popup-hint">Applied to all resources via the tags module</span>
+              </div>
+              <div className="tags-popup-body">
+                {[
+                  { key: 'owner',              label: 'owner',              required: false, placeholder: 'e.g. Platform Engineering' },
+                  { key: 'cost_center',        label: 'cost_center',        required: false, placeholder: 'e.g. CC-1234' },
+                  { key: 'project',            label: 'project',            required: false, placeholder: 'e.g. my-project' },
+                  { key: 'data_classification',label: 'data_classification',required: false, options: ['internal','confidential','public','restricted'] },
+                  { key: 'CostType',           label: 'CostType',           required: true,  options: ['opex','capex'] },
+                  { key: 'CostRegion',         label: 'CostRegion',         required: true,  options: [
+                    '— US —',        'eastus','eastus2','westus','westus2','westus3','centralus','northcentralus','southcentralus',
+                    '— Australia —', 'australiaeast','australiasoutheast','australiacentral','australiacentral2',
+                    '— Europe —',    'westeurope','northeurope','uksouth','ukwest','francecentral','germanywestcentral','swedencentral','switzerlandnorth',
+                    '— Asia —',      'eastasia','southeastasia','japaneast','japanwest','koreacentral','centralindia','southindia',
+                  ]},
+                ].map(({ key, label, required, options, placeholder }) => (
+                  <div key={key} className="tags-popup-field">
+                    <label>{label}{required && <span className="sub-required"> *</span>}</label>
+                    {options ? (
+                      <select
+                        value={subscription.tags?.[key] ?? ''}
+                        onChange={e => setSubscription(s => ({ ...s, tags: { ...s.tags, [key]: e.target.value } }))}
+                      >
+                        <option value="">— select —</option>
+                        {options.map(o => o.startsWith('—')
+                          ? <option key={o} disabled>{o}</option>
+                          : <option key={o} value={o}>{o}</option>
+                        )}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={subscription.tags?.[key] ?? ''}
+                        placeholder={placeholder}
+                        onChange={e => setSubscription(s => ({ ...s, tags: { ...s.tags, [key]: e.target.value } }))}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="tags-popup-footer">
+                <button className="btn-tags-done" onClick={() => setShowTagsPopup(false)}>Done</button>
+              </div>
+            </div>
+          </div>
         )}
 
         {showAuditDialog && (

@@ -25,7 +25,7 @@ const COLUMNS = ['name', 'type', 'location', 'repo', 'comments']
 
 const TOOLTIPS = {
   name: 'Subsystem/component name (e.g. web, booking-db)',
-  type: 'Service type. Compute: app_service, app_service_plan, web_app, function_app, aks, container_app, container_app_environment, vm, static_web_app. Data: pg, cosmos, sql, mysql, sqlmi, redis, storage_account, data_factory, servicebus. AI: openai, search. Security: key_vault, container_registry, user_assigned_identity. Other: app_insights, app_configuration, frontdoor',
+  type: 'Service type. Compute: app_service, app_service_plan, web_app, function_app, aks, container_app, container_app_environment, vm, static_web_app. Data: pg, cosmos, sql, mysql, sqlmi, redis, storage_account, data_factory, servicebus. AI: openai, search. Security: key_vault, container_registry, managed_identities. Other: app_insights, app_configuration, frontdoor',
   location: 'Azure region override. Omit to use default_location.',
   repo: 'Application source repo (org/repo format). When specified, the pipeline auto-generates CI/CD caller workflows targeting this service from the given repo in a PR.',
   comments: 'Free-text hints that influence the manifest. e.g. "needs pgbouncer", "serverless", "zone redundant ha"',
@@ -58,7 +58,7 @@ const TYPE_OPTIONS_DEFAULT = [
   'aks', 'container_app', 'container_app_environment', 'vm', 'static_web_app',
   'pg', 'cosmos', 'sql', 'mysql', 'sqlmi', 'redis', 'storage_account', 'data_factory', 'servicebus',
   'openai', 'search',
-  'key_vault', 'container_registry', 'user_assigned_identity',
+  'key_vault', 'container_registry', 'managed_identities',
   'app_insights', 'app_configuration', 'frontdoor',
 ]
 

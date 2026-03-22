@@ -137,7 +137,7 @@ export const SCHEMA_MAPPING = {
     sub_key: 'key_vaults',
     module: 'terraform-azurerm-key-vault',
   },
-  user_assigned_identity: {
+  managed_identities: {
     section: 'security',
     sub_key: 'managed_identities',
     module: 'terraform-azurerm-user-assigned-identity',
