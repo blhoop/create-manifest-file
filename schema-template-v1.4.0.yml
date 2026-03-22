@@ -435,7 +435,7 @@ data:
       sku: Balanced_B0                  # REQUIRED — Minimum: Balanced_B0 (supports private endpoints). Never Basic.
 
   # --- Search ---
-  # OPTIONAL section
+  # OPTIONAL section — Search lives in the compute RG (not isolated like databases).
   search:
     - subsystem: compute                # REQUIRED
       sku: standard                     # REQUIRED — standard, basic, free, etc.
