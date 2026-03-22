@@ -242,7 +242,7 @@ export function buildYamlContent(rows, subscription) {
       out.push(`    - id: ${q(id)}`)
       out.push(`      subsystem: ${q(row.name || 'app')}`)
       out.push(`      module: ${mod}`)
-      out.push(`      instance_number: ${q(cf.instance_number || '001')}`)
+      out.push(`      instance_number: '${cf.instance_number || '001'}'`)
       if (hasVnet) out.push(`      vnet_integration_subnet_id: snet_appservices`)
       if (cf.share_plan_with) out.push(`      share_plan_with: ${q(cf.share_plan_with)}`)
       // plan_override — explicit popup field takes priority, then fall back to ASP row matching
@@ -287,7 +287,7 @@ export function buildYamlContent(rows, subscription) {
       out.push(`      subsystem: ${q(row.name || 'func')}`)
       out.push(`      module: ${mod}`)
       out.push(`      runtime: ${q(runtime)}`)
-      out.push(`      instance_number: ${q(cf.instance_number || '001')}`)
+      out.push(`      instance_number: '${cf.instance_number || '001'}'`)
       if (hasVnet) out.push(`      vnet_integration_subnet_id: snet_appservices`)
       if (cf.share_plan_with) out.push(`      share_plan_with: ${q(cf.share_plan_with)}`)
       // plan_override — explicit popup field takes priority, then fall back to ASP row matching
@@ -619,7 +619,7 @@ export function buildYamlContent(rows, subscription) {
         out.push(`    - id: ${q(`mi_${subsystem}`)}`)
         out.push(`      subsystem: ${q(subsystem)}`)
         out.push(`      module: terraform-azurerm-user-assigned-identity`)
-        out.push(`      instance_number: ${q(cf.instance_number || '001')}`)
+        out.push(`      instance_number: '${cf.instance_number || '001'}'`)
       }
     }
   }
