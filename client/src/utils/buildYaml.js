@@ -48,7 +48,8 @@ export function buildYamlContent(rows, subscription) {
   out.push('spoke:')
   if (sub.spoke_name)           out.push(`  name: ${q(sub.spoke_name)}`)
   if (sub.spoke_name)           out.push(`  subscription: ${q(sub.spoke_name)}`)
-  if (sub.owner)                out.push(`  owner: ${q(sub.owner)}`)
+  const ownerVal = (sub.tags?.owner && sub.tags.owner !== '[TBD]') ? sub.tags.owner : sub.owner
+  if (ownerVal)                 out.push(`  owner: ${q(ownerVal)}`)
   if (sub.description)          out.push(`  description: ${q(sub.description)}`)
   if (sub.sku_mode)             out.push(`  sku_mode: ${q(sub.sku_mode)}`)
   if (sub.management_group_id)  out.push(`  management_group_id: ${q(sub.management_group_id)}`)

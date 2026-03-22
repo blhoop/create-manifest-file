@@ -237,12 +237,6 @@ export default function App() {
                       placeholder="e.g. order-book-001" />
                   </div>
                   <div className="sub-field">
-                    <label>owner <span className="sub-required">*</span></label>
-                    <input type="text" value={subscription.owner}
-                      onChange={e => setSubscription(s => ({ ...s, owner: e.target.value }))}
-                      placeholder="e.g. Platform Engineering" />
-                  </div>
-                  <div className="sub-field">
                     <label>product <span className="sub-required">*</span></label>
                     <input type="text" value={subscription.product}
                       onChange={e => setSubscription(s => ({ ...s, product: e.target.value }))}
