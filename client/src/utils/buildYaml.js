@@ -44,7 +44,7 @@ export function buildYamlContent(rows, subscription) {
 
   // ── spoke ──────────────────────────────────────────────────────────────
   out.push(...sectionHeader('SPOKE — Identity & metadata'))
-  out.push("schema_version: '1.4.0'")
+  out.push("schema_version: '1.5.0'")
   out.push('spoke:')
   if (sub.spoke_name)           out.push(`  name: ${q(sub.spoke_name)}`)
   if (sub.spoke_name)           out.push(`  subscription: ${q(sub.spoke_name)}`)
@@ -495,16 +495,19 @@ export function buildYamlContent(rows, subscription) {
     if (mapped.data.caching.length > 0) {
       dataBlank()
       out.push('  # --- Caching ---')
+      out.push('  # Redis lives in the compute RG by default (not isolated like databases).')
+      out.push('  # Use resource_group to isolate if needed.')
       out.push('  caching:')
       for (const row of mapped.data.caching) {
         const cf = parseCommentFields(row.comments)
-        out.push(`    - id: ${q(row.name || 'redis')}`)
-        out.push(`      subsystem: compute`)
+        out.push(`    - subsystem: compute`)
         out.push(`      module: terraform-azurerm-managed-redis`)
         const sku = cf.sku || cf.SKU || ''
         const cap = cf.capacity || cf.Capacity || ''
         const fullSku = sku && cap ? `${sku}_${cap}` : (sku || cap || '')
         if (fullSku) out.push(`      sku: ${q(fullSku)}`)
+        if (cf.resource_group) out.push(`      resource_group: ${q(cf.resource_group)}`)
+        if (cf.location || row.location) out.push(`      location: ${q(cf.location || row.location)}`)
         if (row.comments) out.push(`      # comments: ${row.comments}`)
       }
     }

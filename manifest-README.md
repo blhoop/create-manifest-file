@@ -26,7 +26,7 @@ Each arrow is a validation gate. The manifest is human-reviewable before any inf
 Every manifest must include `schema_version` at the top:
 
 ```yaml
-schema_version: '1.4.0'
+schema_version: '1.5.0'
 ```
 
 The builder validates the version and rejects manifests it doesn't understand. Older manifests continue to work — new versions only make fields optional, never remove them.
@@ -196,6 +196,32 @@ The builder automatically creates separate resource groups:
 
 This gives DBA teams isolated RBAC and backup policy scoping per database type. Redis is the exception — it stays in the compute RG (caching layer, not a primary datastore).
 
+### Resource Group Override
+
+Any resource can override its RG placement with `resource_group`:
+
+```yaml
+data:
+  caching:
+    - subsystem: compute
+      sku: Balanced_B0
+      resource_group: redis             # Creates rg-{product}-redis-{env}-{loc}
+```
+
+If multiple resources use the same `resource_group` value, they share the RG. If omitted, the default rules apply (databases isolate by type, everything else in compute RG).
+
+### Location Override
+
+All resources deploy to the environment's default location. Any resource can override:
+
+```yaml
+data:
+  caching:
+    - subsystem: compute
+      sku: Balanced_B0
+      location: eastus2                 # Deploy this Redis in a different region
+```
+
 ## Sections Reference
 
 | Section | Required | What it defines |
@@ -242,3 +268,4 @@ The builder validates manifests against:
 | 1.2.0 | 2026-03-20 | Full module coverage. Added container apps, AKS, VMs, APIM, container registries, Service Bus, App Configuration, AI Foundry, Front Door. All prior manifests remain valid. |
 | 1.3.0 | 2026-03-20 | Registry sync. Added backup vaults, SignalR, AI Foundry projects. Module registry updated to 99 modules (102 repos minus template, subscription, deprecated linux-app-service). |
 | 1.4.0 | 2026-03-22 | Network auto-carve. Minimal network: just `vnet_cidr` required — builder auto-generates subnets, NSGs, delegations, PEs, DNS zones from `networking-defaults.yml`. Full explicit mode still supported. Tags: only `CostRegion` and `CostType` required. |
+| 1.5.0 | 2026-03-22 | Per-resource `resource_group` and `location` overrides. Any resource can isolate into a custom RG or deploy to a different region. Shared RGs when multiple resources use the same value. |
