@@ -236,13 +236,13 @@ export default function App() {
                       onChange={e => setSubscription(s => ({ ...s, spoke_name: e.target.value }))}
                       placeholder="e.g. order-book-001" />
                   </div>
-                  <div className="sub-field">
+                  <div className="sub-field sub-field--sm">
                     <label>product <span className="sub-required">*</span></label>
                     <input type="text" value={subscription.product}
                       onChange={e => setSubscription(s => ({ ...s, product: e.target.value }))}
                       placeholder="e.g. ob" />
                   </div>
-                  <div className="sub-field">
+                  <div className="sub-field sub-field--sm">
                     <label>environment <span className="sub-required">*</span></label>
                     <select value={subscription.environment}
                       onChange={e => setSubscription(s => ({ ...s, environment: e.target.value }))}>
@@ -250,7 +250,7 @@ export default function App() {
                       {['dev','test','uat','preprod','prod','lab'].map(v => <option key={v} value={v}>{v}</option>)}
                     </select>
                   </div>
-                  <div className="sub-field">
+                  <div className="sub-field sub-field--sm">
                     <label>location <span className="sub-required">*</span></label>
                     <select value={subscription.default_location}
                       onChange={e => setSubscription(s => ({ ...s, default_location: e.target.value }))}>
