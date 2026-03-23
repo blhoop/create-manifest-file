@@ -618,8 +618,7 @@ export function buildYamlContent(rows, subscription) {
       for (const row of mapped.security.managed_identities) {
         const cf = parseCommentFields(row.comments)
         const subsystem = cf.subsystem || row.name || 'identity'
-        out.push(`    - id: ${q(`mi_${subsystem}`)}`)
-        out.push(`      subsystem: ${q(subsystem)}`)
+        out.push(`    - subsystem: ${q(subsystem)}`)
         out.push(`      module: terraform-azurerm-user-assigned-identity`)
         out.push(`      instance_number: '${cf.instance_number || '001'}'`)
       }
