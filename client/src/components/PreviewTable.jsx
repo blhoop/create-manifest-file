@@ -21,6 +21,43 @@ function validateYaml(yaml) {
   return issues
 }
 
+// Detect duplicate id: values within the same YAML section
+function detectDuplicateIds(yaml) {
+  const issues = []
+  const lines = yaml.split('\n')
+  let currentSection = null
+  const seen = {} // section → Map<id, lineNum>
+
+  lines.forEach((line, i) => {
+    if (/^\s*#/.test(line) || !line.trim()) return
+
+    // Section header at 2-space indent: "  web_apps:", "  databases:", etc.
+    const secMatch = line.match(/^  ([a-z_]+):\s*$/)
+    if (secMatch) {
+      currentSection = secMatch[1]
+      return
+    }
+
+    // id: value at any deeper indent (handles both "- id: x" and "  id: x")
+    const idMatch = line.match(/^\s+(?:-\s+)?id:\s+(.+)$/)
+    if (idMatch && currentSection) {
+      const id = idMatch[1].trim().replace(/^['"]|['"]$/g, '')
+      if (!seen[currentSection]) seen[currentSection] = new Map()
+      if (seen[currentSection].has(id)) {
+        issues.push({
+          lineNum: i + 1,
+          text: `Duplicate id '${id}' in ${currentSection} (first at line ${seen[currentSection].get(id)})`,
+          type: 'duplicate',
+        })
+      } else {
+        seen[currentSection].set(id, i + 1)
+      }
+    }
+  })
+
+  return issues
+}
+
 const COLUMNS = ['name', 'type', 'location', 'repo', 'comments']
 
 const TOOLTIPS = {
@@ -456,7 +493,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
 
   const openYamlPreview = () => {
     const yaml = getYaml()
-    setYamlIssues(validateYaml(yaml))
+    setYamlIssues([...validateYaml(yaml), ...detectDuplicateIds(yaml)])
     setShowYamlPreview(true)
   }
 
@@ -494,7 +531,9 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
               {yamlIssues.length > 0 && (
                 <ul className="yaml-issues-list">
                   {yamlIssues.map((iss, i) => (
-                    <li key={i}>Line {iss.lineNum}: <code>{iss.text}</code></li>
+                    <li key={i} className={iss.type === 'duplicate' ? 'yaml-issue-duplicate' : ''}>
+                      {iss.type === 'duplicate' ? '⚠ ' : ''}Line {iss.lineNum}: <code>{iss.text}</code>
+                    </li>
                   ))}
                 </ul>
               )}

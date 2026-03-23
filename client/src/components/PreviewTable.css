@@ -168,6 +168,15 @@
   border-radius: 3px;
 }
 
+.yaml-issue-duplicate {
+  color: #c53030;
+  font-weight: 500;
+}
+
+.yaml-issue-duplicate code {
+  background: #fed7d7;
+}
+
 .yaml-preview-content {
   flex: 1;
   overflow: auto;
