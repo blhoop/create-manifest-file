@@ -363,10 +363,16 @@
   flex: 0.8;
 }
 
+/* Shrink product/environment/location ~25px vs default required-group */
+.required-group .sub-field--sm {
+  min-width: 85px;
+  flex: 0.75;
+}
+
 /* ── Tags button ── */
 .sub-field--tags-btn {
-  flex: 0 0 auto;
-  min-width: 100px;
+  flex: 1.4;
+  min-width: 125px;
 }
 
 .tags-popup-btn {

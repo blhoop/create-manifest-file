@@ -236,19 +236,13 @@ export default function App() {
                       onChange={e => setSubscription(s => ({ ...s, spoke_name: e.target.value }))}
                       placeholder="e.g. order-book-001" />
                   </div>
-                  <div className="sub-field">
-                    <label>owner <span className="sub-required">*</span></label>
-                    <input type="text" value={subscription.owner}
-                      onChange={e => setSubscription(s => ({ ...s, owner: e.target.value }))}
-                      placeholder="e.g. Platform Engineering" />
-                  </div>
-                  <div className="sub-field">
+                  <div className="sub-field sub-field--sm">
                     <label>product <span className="sub-required">*</span></label>
                     <input type="text" value={subscription.product}
                       onChange={e => setSubscription(s => ({ ...s, product: e.target.value }))}
                       placeholder="e.g. ob" />
                   </div>
-                  <div className="sub-field">
+                  <div className="sub-field sub-field--sm">
                     <label>environment <span className="sub-required">*</span></label>
                     <select value={subscription.environment}
                       onChange={e => setSubscription(s => ({ ...s, environment: e.target.value }))}>
@@ -256,7 +250,7 @@ export default function App() {
                       {['dev','test','uat','preprod','prod','lab'].map(v => <option key={v} value={v}>{v}</option>)}
                     </select>
                   </div>
-                  <div className="sub-field">
+                  <div className="sub-field sub-field--sm">
                     <label>location <span className="sub-required">*</span></label>
                     <select value={subscription.default_location}
                       onChange={e => setSubscription(s => ({ ...s, default_location: e.target.value }))}>
@@ -364,12 +358,7 @@ export default function App() {
                   { key: 'project',            label: 'project',            required: false, placeholder: 'e.g. my-project' },
                   { key: 'data_classification',label: 'data_classification',required: false, options: ['internal','confidential','public','restricted'] },
                   { key: 'CostType',           label: 'CostType',           required: true,  options: ['opex','capex'] },
-                  { key: 'CostRegion',         label: 'CostRegion',         required: true,  options: [
-                    '— US —',        'eastus','eastus2','westus','westus2','westus3','centralus','northcentralus','southcentralus',
-                    '— Australia —', 'australiaeast','australiasoutheast','australiacentral','australiacentral2',
-                    '— Europe —',    'westeurope','northeurope','uksouth','ukwest','francecentral','germanywestcentral','swedencentral','switzerlandnorth',
-                    '— Asia —',      'eastasia','southeastasia','japaneast','japanwest','koreacentral','centralindia','southindia',
-                  ]},
+                  { key: 'CostRegion',         label: 'CostRegion',         required: true,  options: ['anz','asia','europe','group','usa'] },
                 ].map(({ key, label, required, options, placeholder }) => (
                   <div key={key} className="tags-popup-field">
                     <label>{label}{required && <span className="sub-required"> *</span>}</label>

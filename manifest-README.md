@@ -26,7 +26,7 @@ Each arrow is a validation gate. The manifest is human-reviewable before any inf
 Every manifest must include `schema_version` at the top:
 
 ```yaml
-schema_version: '1.4.0'
+schema_version: '1.5.0'
 ```
 
 The builder validates the version and rejects manifests it doesn't understand. Older manifests continue to work — new versions only make fields optional, never remove them.
@@ -151,13 +151,76 @@ Override any default by declaring it explicitly in the manifest. Full explicit m
 
 See `networking-defaults.yml` for the complete rule set.
 
+## Databases
+
+All database types use the same `data.databases` section. The `type` field determines the module and resource group isolation.
+
+| `type` | Azure Resource | Module | RG Short Name | Example SKU |
+|---|---|---|---|---|
+| `mssql_server` | Azure SQL Database (logical server) | terraform-azurerm-mssql-server | `sql` | `GP_Gen5_2` |
+| `postgresql_flexible_server` | PostgreSQL Flexible Server | terraform-azurerm-postgresql-flexible-server | `pg` | `GP_Standard_D2s_v3` |
+| `cosmos_account` | Cosmos DB | terraform-azurerm-cosmos-account | `cosmos` | `serverless` |
+| `mssql_managed_instance` | SQL Managed Instance | terraform-azurerm-mssql-managed-instance | `sqlmi` | `GP_Gen5_4` |
+| `mysql_flexible_server` | MySQL Flexible Server | terraform-azurerm-mysql-flexible-server | `mysql` | `GP_Standard_D2s_v3` |
+
+```yaml
+data:
+  databases:
+    - subsystem: sql
+      type: mssql_server
+      sku: GP_Gen5_2
+      databases:            # Informational — Terraform does NOT create these
+        - app-db
+        - app-db-archive
+
+    - subsystem: pg
+      type: postgresql_flexible_server
+      sku: GP_Standard_D2s_v3
+```
+
+The `databases:` list within each entry is **informational only** — database creation (CREATE DATABASE, migrations) is an application concern. Terraform owns the server, not the databases.
+
 ## Resource Group Isolation
 
 The builder automatically creates separate resource groups:
 - **Compute RG**: `rg-{product}-compute-{env}-{location}` — web apps, function apps, Redis, search, etc.
-- **Database RGs**: `rg-{product}-{db_type}-{env}-{location}` — one per database type (pg, sql, cosmos, sqlmi, mysql)
+- **Database RGs**: `rg-{product}-{db_type}-{env}-{location}` — one per database type
 
-This gives DBA teams isolated RBAC and backup policy scoping per database type.
+| Database Type | RG Example |
+|---|---|
+| `mssql_server` | `rg-lb-sql-dev-aue` |
+| `postgresql_flexible_server` | `rg-lb-pg-dev-aue` |
+| `cosmos_account` | `rg-lb-cosmos-dev-aue` |
+| `mssql_managed_instance` | `rg-lb-sqlmi-dev-aue` |
+| `mysql_flexible_server` | `rg-lb-mysql-dev-aue` |
+
+This gives DBA teams isolated RBAC and backup policy scoping per database type. Redis is the exception — it stays in the compute RG (caching layer, not a primary datastore).
+
+### Resource Group Override
+
+Any resource can override its RG placement with `resource_group`:
+
+```yaml
+data:
+  caching:
+    - subsystem: compute
+      sku: Balanced_B0
+      resource_group: redis             # Creates rg-{product}-redis-{env}-{loc}
+```
+
+If multiple resources use the same `resource_group` value, they share the RG. If omitted, the default rules apply (databases isolate by type, everything else in compute RG).
+
+### Location Override
+
+All resources deploy to the environment's default location. Any resource can override:
+
+```yaml
+data:
+  caching:
+    - subsystem: compute
+      sku: Balanced_B0
+      location: eastus2                 # Deploy this Redis in a different region
+```
 
 ## Sections Reference
 
@@ -205,3 +268,4 @@ The builder validates manifests against:
 | 1.2.0 | 2026-03-20 | Full module coverage. Added container apps, AKS, VMs, APIM, container registries, Service Bus, App Configuration, AI Foundry, Front Door. All prior manifests remain valid. |
 | 1.3.0 | 2026-03-20 | Registry sync. Added backup vaults, SignalR, AI Foundry projects. Module registry updated to 99 modules (102 repos minus template, subscription, deprecated linux-app-service). |
 | 1.4.0 | 2026-03-22 | Network auto-carve. Minimal network: just `vnet_cidr` required — builder auto-generates subnets, NSGs, delegations, PEs, DNS zones from `networking-defaults.yml`. Full explicit mode still supported. Tags: only `CostRegion` and `CostType` required. |
+| 1.5.0 | 2026-03-22 | Per-resource `resource_group` and `location` overrides. Any resource can isolate into a custom RG or deploy to a different region. Shared RGs when multiple resources use the same value. |

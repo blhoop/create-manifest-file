@@ -44,11 +44,12 @@ export function buildYamlContent(rows, subscription) {
 
   // ── spoke ──────────────────────────────────────────────────────────────
   out.push(...sectionHeader('SPOKE — Identity & metadata'))
-  out.push("schema_version: '1.4.0'")
+  out.push("schema_version: '1.5.0'")
   out.push('spoke:')
   if (sub.spoke_name)           out.push(`  name: ${q(sub.spoke_name)}`)
   if (sub.spoke_name)           out.push(`  subscription: ${q(sub.spoke_name)}`)
-  if (sub.owner)                out.push(`  owner: ${q(sub.owner)}`)
+  const ownerVal = (sub.tags?.owner && sub.tags.owner !== '[TBD]') ? sub.tags.owner : sub.owner
+  if (ownerVal)                 out.push(`  owner: ${q(ownerVal)}`)
   if (sub.description)          out.push(`  description: ${q(sub.description)}`)
   if (sub.sku_mode)             out.push(`  sku_mode: ${q(sub.sku_mode)}`)
   if (sub.management_group_id)  out.push(`  management_group_id: ${q(sub.management_group_id)}`)
@@ -242,7 +243,7 @@ export function buildYamlContent(rows, subscription) {
       out.push(`    - id: ${q(id)}`)
       out.push(`      subsystem: ${q(row.name || 'app')}`)
       out.push(`      module: ${mod}`)
-      out.push(`      instance_number: ${q(cf.instance_number || '001')}`)
+      out.push(`      instance_number: '${cf.instance_number || '001'}'`)
       if (hasVnet) out.push(`      vnet_integration_subnet_id: snet_appservices`)
       if (cf.share_plan_with) out.push(`      share_plan_with: ${q(cf.share_plan_with)}`)
       // plan_override — explicit popup field takes priority, then fall back to ASP row matching
@@ -287,7 +288,7 @@ export function buildYamlContent(rows, subscription) {
       out.push(`      subsystem: ${q(row.name || 'func')}`)
       out.push(`      module: ${mod}`)
       out.push(`      runtime: ${q(runtime)}`)
-      out.push(`      instance_number: ${q(cf.instance_number || '001')}`)
+      out.push(`      instance_number: '${cf.instance_number || '001'}'`)
       if (hasVnet) out.push(`      vnet_integration_subnet_id: snet_appservices`)
       if (cf.share_plan_with) out.push(`      share_plan_with: ${q(cf.share_plan_with)}`)
       // plan_override — explicit popup field takes priority, then fall back to ASP row matching
@@ -331,7 +332,8 @@ export function buildYamlContent(rows, subscription) {
       out.push(`      module: terraform-azurerm-static-web-app`)
       if (cf.sku) out.push(`      sku: ${q(cf.sku)}`)
       out.push(`      instance_number: '001'`)
-      if (cf.location) out.push(`      location: ${q(cf.location)}`)
+      const loc = row.location || cf.location
+      if (loc) out.push(`      location: ${q(loc)}`)
       if (row.repo) out.push(`      # app_repo: ${row.repo}`)
     }
   }
@@ -494,16 +496,19 @@ export function buildYamlContent(rows, subscription) {
     if (mapped.data.caching.length > 0) {
       dataBlank()
       out.push('  # --- Caching ---')
+      out.push('  # Redis lives in the compute RG by default (not isolated like databases).')
+      out.push('  # Use resource_group to isolate if needed.')
       out.push('  caching:')
       for (const row of mapped.data.caching) {
         const cf = parseCommentFields(row.comments)
-        out.push(`    - id: ${q(row.name || 'redis')}`)
-        out.push(`      subsystem: ${q(row.name || 'cache')}`)
+        out.push(`    - subsystem: compute`)
         out.push(`      module: terraform-azurerm-managed-redis`)
         const sku = cf.sku || cf.SKU || ''
         const cap = cf.capacity || cf.Capacity || ''
         const fullSku = sku && cap ? `${sku}_${cap}` : (sku || cap || '')
         if (fullSku) out.push(`      sku: ${q(fullSku)}`)
+        if (cf.resource_group) out.push(`      resource_group: ${q(cf.resource_group)}`)
+        if (cf.location || row.location) out.push(`      location: ${q(cf.location || row.location)}`)
         if (row.comments) out.push(`      # comments: ${row.comments}`)
       }
     }
@@ -514,7 +519,7 @@ export function buildYamlContent(rows, subscription) {
       out.push('  search:')
       for (const row of mapped.data.search) {
         const cf = parseCommentFields(row.comments)
-        out.push(`    - subsystem: ${q(row.name || 'search')}`)
+        out.push(`    - subsystem: compute`)
         out.push(`      module: terraform-azurerm-search-service`)
         if (cf.sku) out.push(`      sku: ${q(cf.sku)}`)
         if (cf.replica_count) out.push(`      replica_count: ${cf.replica_count}`)
@@ -527,8 +532,7 @@ export function buildYamlContent(rows, subscription) {
       out.push('  # --- Data Factories ---')
       out.push('  factories:')
       for (const row of mapped.data.factories) {
-        out.push(`    - id: ${q(row.name || 'adf')}`)
-        out.push(`      subsystem: ${q(row.name || 'adf')}`)
+        out.push(`    - subsystem: compute`)
         out.push(`      module: terraform-azurerm-data-factory`)
       }
     }
@@ -616,7 +620,7 @@ export function buildYamlContent(rows, subscription) {
         out.push(`    - id: ${q(`mi_${subsystem}`)}`)
         out.push(`      subsystem: ${q(subsystem)}`)
         out.push(`      module: terraform-azurerm-user-assigned-identity`)
-        out.push(`      instance_number: ${q(cf.instance_number || '001')}`)
+        out.push(`      instance_number: '${cf.instance_number || '001'}'`)
       }
     }
   }

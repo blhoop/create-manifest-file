@@ -53,7 +53,7 @@ Full-stack web app: React/Vite frontend + Node.js/Express backend.
 
 ## Output Format
 
-The app generates a nested spoke infrastructure manifest (schema v1.4.0). See [`output.md`](./output.md) for the full spec and [`schema-template-v1.4.0.yml`](./schema-template-v1.4.0.yml) for the annotated reference template.
+The app generates a nested spoke infrastructure manifest (schema v1.5.0). See [`output.md`](./output.md) for the full spec and [`schema-template-v1.5.0.yml`](./schema-template-v1.5.0.yml) for the annotated reference template.
 
 **Subscription panel fields** (grouped in the UI):
 

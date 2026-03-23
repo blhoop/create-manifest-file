@@ -1,5 +1,5 @@
 # =============================================================================
-# Spoke Infrastructure Manifest — Schema Template v1.4.0
+# Spoke Infrastructure Manifest — Schema Template v1.5.0
 # =============================================================================
 #
 # This file documents every field the builder accepts. Copy this template,
@@ -36,10 +36,18 @@
 # Module names: Derived from resource type + OS context if omitted.
 # Explicit module: is an override for edge cases.
 #
-# Version: 1.4.0
+# Resource groups: By default, databases get isolated RGs per type and
+# everything else goes in the compute RG. Any resource can override this
+# with resource_group: {name} to create/use rg-{product}-{name}-{env}-{loc}.
+# If multiple resources use the same resource_group value, they share the RG.
+#
+# Location: All resources deploy to the environment's default location.
+# Any resource can override with location: {region} to deploy elsewhere.
+#
+# Version: 1.5.0
 # =============================================================================
 
-schema_version: '1.4.0'
+schema_version: '1.5.0'
 
 # ---------------------------------------------------------------------------
 # SPOKE — Identity & metadata
@@ -84,8 +92,8 @@ environments:
 # TAGS — Applied to all resources via the tags module
 # ---------------------------------------------------------------------------
 tags:
-  CostRegion: '[TBD]'                   # REQUIRED — cost allocation region
-  CostType: '[TBD]'                     # REQUIRED — cost allocation type
+  CostRegion: '[TBD]'                   # REQUIRED — cost allocation region. Values: anz, asia, europe, group, usa
+  CostType: '[TBD]'                     # REQUIRED — cost allocation type. Values: capex, opex
   # All other tags are optional — add any key-value pairs as needed:
   # owner: someone@travelctm.com
   # cost_center: ENG-001
@@ -232,6 +240,11 @@ compute:
       module: terraform-azurerm-windows-web-app  # DERIVED — inferred from os_type in plan_defaults. Override for edge cases.
       instance_number: '001'            # DERIVED — auto-assigned sequentially if omitted
       vnet_integration_subnet_id: snet_appservices  # OPTIONAL — subnet id for VNet integration. Omit if no VNet integration.
+      # resource_group: custom          # OPTIONAL — override RG placement. Creates rg-{product}-custom-{env}-{loc}.
+                                        #   Default: compute RG. Databases auto-isolate by type.
+                                        #   If multiple resources share the same value, they share the RG.
+      # location: eastus2              # OPTIONAL — override region for this resource only.
+                                        #   Default: environment's location (e.g. australiaeast).
 
     # Minimal — only subsystem required, everything else derived
     - subsystem: config
@@ -427,15 +440,18 @@ data:
       sku: Standard_LRS
 
   # --- Caching ---
-  # OPTIONAL section — Redis lives in the compute RG (not isolated like databases).
+  # OPTIONAL section — Redis lives in the compute RG by default (not isolated like databases).
+  # Use resource_group to isolate if needed.
   caching:
     - id: redis                         # DERIVED
       subsystem: compute                # REQUIRED
       module: terraform-azurerm-managed-redis  # DERIVED
       sku: Balanced_B0                  # REQUIRED — Minimum: Balanced_B0 (supports private endpoints). Never Basic.
+      # resource_group: redis           # OPTIONAL — override to isolate Redis in its own RG
+      # location: eastus2              # OPTIONAL — override region for this resource
 
   # --- Search ---
-  # OPTIONAL section — Search lives in the compute RG (not isolated like databases).
+  # OPTIONAL section
   search:
     - subsystem: compute                # REQUIRED
       sku: standard                     # REQUIRED — standard, basic, free, etc.
