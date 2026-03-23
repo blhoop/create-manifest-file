@@ -48,6 +48,17 @@ export default function App() {
     if (rows) saveSession(rows, fileName, sheets, activeSheetIdx, auditLog, subscription)
   }, [rows, fileName, sheets, activeSheetIdx, auditLog, subscription])
 
+  // Auto-derive infra_repo from spoke_name unless the user has manually overridden it
+  useEffect(() => {
+    setSubscription(s => {
+      const prevAuto = s._prev_spoke_name ? `${s._prev_spoke_name}-infra` : ''
+      if (!s.infra_repo || s.infra_repo === prevAuto) {
+        return { ...s, infra_repo: s.spoke_name ? `${s.spoke_name}-infra` : '', _prev_spoke_name: s.spoke_name }
+      }
+      return { ...s, _prev_spoke_name: s.spoke_name }
+    })
+  }, [subscription.spoke_name])
+
   const addAudit = (entry) => {
     setAuditLog(prev => [...prev, { ...entry, timestamp: new Date().toISOString() }])
   }
