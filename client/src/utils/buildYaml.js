@@ -56,7 +56,8 @@ export function buildYamlContent(rows, subscription) {
   if (sub.new_subscription != null && sub.new_subscription !== '') {
     out.push(`  new_subscription: ${sub.new_subscription === 'false' || sub.new_subscription === false ? 'false' : 'true'}`)
   }
-  if (sub.infra_repo)           out.push(`  infra_repo: ${q(sub.infra_repo)}`)
+  const infraRepo = sub.infra_repo || (sub.spoke_name ? `${sub.spoke_name}-infra` : '')
+  if (infraRepo)                out.push(`  infra_repo: ${q(infraRepo)}`)
 
   // ── ctm_properties ─────────────────────────────────────────────────────
   out.push(...sectionHeader('CTM PROPERTIES — Used for resource naming only'))
@@ -617,8 +618,7 @@ export function buildYamlContent(rows, subscription) {
       for (const row of mapped.security.managed_identities) {
         const cf = parseCommentFields(row.comments)
         const subsystem = cf.subsystem || row.name || 'identity'
-        out.push(`    - id: ${q(`mi_${subsystem}`)}`)
-        out.push(`      subsystem: ${q(subsystem)}`)
+        out.push(`    - subsystem: ${q(subsystem)}`)
         out.push(`      module: terraform-azurerm-user-assigned-identity`)
         out.push(`      instance_number: '${cf.instance_number || '001'}'`)
       }

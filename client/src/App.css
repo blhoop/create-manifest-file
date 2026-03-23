@@ -22,6 +22,27 @@
   font-size: 1rem;
 }
 
+.app-header-links {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+.doc-link-btn {
+  background: none;
+  border: none;
+  color: #63b3ed;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+}
+
+.doc-link-btn:hover {
+  text-decoration: underline;
+}
+
 .app-main {
   flex: 1;
   max-width: 1700px;

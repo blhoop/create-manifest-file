@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
 import FileUpload from './components/FileUpload.jsx'
 import PreviewTable from './components/PreviewTable.jsx'
+import DocModal from './components/DocModal.jsx'
 import { buildYamlContent } from './utils/buildYaml.js'
+import readmeContent from '../../README.md?raw'
+import schemaContent from '../../schema-template-v1.5.0.yml?raw'
 import './App.css'
 
 const STORAGE_KEY = 'manifest_session_v2'
@@ -36,6 +39,7 @@ export default function App() {
   const [auditLog, setAuditLog] = useState(session?.auditLog ?? [])
   const [showAuditDialog, setShowAuditDialog] = useState(false)
   const [showTagsPopup, setShowTagsPopup] = useState(false)
+  const [docModal, setDocModal] = useState(null) // { title, content }
   const [subscription, setSubscription] = useState(() => {
     const saved = session?.subscription ?? {}
     return { ...defaultSubscription, ...saved, tags: { ...defaultSubscription.tags, ...(saved.tags ?? {}) } }
@@ -47,6 +51,17 @@ export default function App() {
   useEffect(() => {
     if (rows) saveSession(rows, fileName, sheets, activeSheetIdx, auditLog, subscription)
   }, [rows, fileName, sheets, activeSheetIdx, auditLog, subscription])
+
+  // Auto-derive infra_repo from spoke_name unless the user has manually overridden it
+  useEffect(() => {
+    setSubscription(s => {
+      const prevAuto = s._prev_spoke_name ? `${s._prev_spoke_name}-infra` : ''
+      if (!s.infra_repo || s.infra_repo === prevAuto) {
+        return { ...s, infra_repo: s.spoke_name ? `${s.spoke_name}-infra` : '', _prev_spoke_name: s.spoke_name }
+      }
+      return { ...s, _prev_spoke_name: s.spoke_name }
+    })
+  }, [subscription.spoke_name])
 
   const addAudit = (entry) => {
     setAuditLog(prev => [...prev, { ...entry, timestamp: new Date().toISOString() }])
@@ -187,6 +202,10 @@ export default function App() {
       <header className="app-header">
         <h1>Manifest File Creator</h1>
         <p>Upload a spreadsheet, architecture diagram, or existing yaml to generate a YAML manifest</p>
+        <div className="app-header-links">
+          <button className="doc-link-btn" onClick={() => setDocModal({ title: 'README.md', content: readmeContent })}>README</button>
+          <button className="doc-link-btn" onClick={() => setDocModal({ title: 'schema-template-v1.5.0.yml', content: schemaContent })}>Schema Template</button>
+        </div>
       </header>
 
       <main className="app-main">
@@ -416,6 +435,10 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {docModal && (
+        <DocModal title={docModal.title} content={docModal.content} onClose={() => setDocModal(null)} />
+      )}
     </div>
   )
 }
