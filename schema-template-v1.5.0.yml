@@ -92,8 +92,8 @@ environments:
 # TAGS — Applied to all resources via the tags module
 # ---------------------------------------------------------------------------
 tags:
-  CostRegion: '[TBD]'                   # REQUIRED — cost allocation region
-  CostType: '[TBD]'                     # REQUIRED — cost allocation type
+  CostRegion: '[TBD]'                   # REQUIRED — cost allocation region. Values: anz, asia, europe, group, usa
+  CostType: '[TBD]'                     # REQUIRED — cost allocation type. Values: capex, opex
   # All other tags are optional — add any key-value pairs as needed:
   # owner: someone@travelctm.com
   # cost_center: ENG-001

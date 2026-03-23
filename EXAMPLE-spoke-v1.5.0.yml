@@ -1,0 +1,246 @@
+# Example Spoke Manifest — exercises all schema v1.5.0 sections
+# This is a reference example, not a real spoke. It demonstrates every
+# section and field available in the schema.
+
+schema_version: '1.5.0'
+
+spoke:
+  name: example-spoke-001
+  subscription: example-spoke-001
+  owner: Platform Engineering
+  description: Example spoke demonstrating all manifest sections.
+  sku_mode: premium
+  management_group_id: converge
+  new_subscription: true
+  infra_repo: example-spoke-001-infra
+
+ctm_properties:
+  product: ex
+
+environments:
+  dev:
+    location: australiaeast
+
+tags:
+  CostRegion: anz
+  CostType: opex
+  owner: Platform Engineering
+  project: example-spoke
+
+# Network — minimal mode. Builder auto-carves subnets, NSGs, PEs, DNS zones
+# based on declared compute/data resources and networking-defaults.yml.
+network:
+  vnet_cidr: 10.99.0.0/22              # /22 because this example has AKS + container apps + app service + VMs
+  peering: hub-network-vnet
+
+compute:
+  plan_defaults:
+    web_app:
+      os_type: Windows
+      sku: P1v3
+    function_app:
+      os_type: Windows
+      sku: EP1
+
+  # Web apps — all 3 plan patterns
+  web_apps:
+    - id: web_api
+      subsystem: api
+    - subsystem: config
+      share_plan_with: web_api
+    - subsystem: heavy-api
+      plan_override:
+        sku: P2v3
+
+  # Function apps — all 3 plan patterns
+  function_apps:
+    - subsystem: processor
+      runtime: dotnet-isolated
+    - subsystem: notifications
+      runtime: dotnet-isolated
+      share_plan_with: func_processor
+    - subsystem: heavy-worker
+      runtime: dotnet-isolated
+      plan_override:
+        sku: EP2
+
+  # Static sites
+  static_sites:
+    - subsystem: portal
+      sku: Standard
+      location: eastasia
+
+  # Container apps
+  container_app_environment:
+    subsystem: compute
+    infrastructure_subnet_id: snet_containerenvironment
+
+  container_apps:
+    - subsystem: my-api
+      image: mcr.microsoft.com/hello-world:latest
+      cpu: 0.5
+      memory: 1.0
+      target_port: 80
+
+  # AKS
+  aks_clusters:
+    - subsystem: compute
+      kubernetes_version: '1.29'
+      sku_tier: Standard
+      default_node_pool:
+        vm_size: Standard_D2s_v5
+        node_count: 2
+        vnet_subnet_id: snet_aks_system
+      node_pools:
+        - name: user
+          vm_size: Standard_D4s_v5
+          min_count: 1
+          max_count: 5
+          vnet_subnet_id: snet_aks_user
+
+  # Virtual machines
+  virtual_machines:
+    - subsystem: jumpbox
+      os_type: Linux
+      vm_size: Standard_D2s_v5
+      subnet_id: snet_compute
+      source_image:
+        publisher: Canonical
+        offer: 0001-com-ubuntu-server-jammy
+        sku: 22_04-lts-gen2
+        version: latest
+
+  # SignalR
+  signalr:
+    - subsystem: compute
+      sku: Standard_S1
+      service_mode: Default
+
+  # API Management
+  apim:
+    subsystem: compute
+    sku: Developer_1
+    publisher_name: Example Org
+    publisher_email: api@example.com
+
+data:
+  databases:
+    - subsystem: cosmos
+      type: cosmos_account
+      sku: serverless
+      databases:
+        - app-db
+
+    - subsystem: sql
+      type: mssql_server
+      sku: GP_Gen5_2
+      databases:
+        - app-db
+        - app-db-archive
+
+  storage_accounts:
+    - subsystem: assets
+      sku: Standard_LRS
+      containers:
+        - uploads
+        - exports
+
+  caching:
+    - subsystem: compute
+      sku: Balanced_B0
+      resource_group: redis             # Override — isolate Redis in rg-{product}-redis-{env}-{loc}
+      location: eastus2                 # Override — deploy Redis in a different region
+
+  search:
+    - subsystem: compute
+      sku: standard
+
+  factories:
+    - subsystem: compute
+
+  backup_vaults:
+    - subsystem: compute
+      redundancy: LocallyRedundant
+
+  messaging:
+    - subsystem: compute
+      sku: Standard
+      queues:
+        - order-processing
+        - notifications
+      topics:
+        - events
+
+security:
+  key_vaults:
+    - subsystem: ex
+      access_model: RBAC
+
+  container_registries:
+    - subsystem: compute
+      sku: Premium
+      consumers:
+        - web_api
+      georeplications:
+        - location: eastus2
+          zone_redundancy_enabled: true
+      managed_identities:
+        system_assigned: true
+
+  managed_identities:
+    - subsystem: functions
+    - subsystem: webjobs
+
+app_configuration:
+  - subsystem: compute
+    sku: standard
+
+ai:
+  foundry:
+    - subsystem: compute
+      sku: S0
+      projects:
+        - name: my-project
+          display_name: My AI Project
+
+frontdoor:
+  profile:
+    subsystem: compute
+    sku: Standard_AzureFrontDoor
+
+  endpoints:
+    - subsystem: web
+
+  origin_groups:
+    - id: og_web
+      subsystem: web
+      health_probe:
+        path: /health
+        protocol: Https
+        interval_in_seconds: 30
+
+  origins:
+    - id: origin_web
+      origin_group_id: og_web
+      host_name: $ref:web_api.default_hostname
+
+  routes:
+    - id: route_web
+      endpoint_id: web
+      origin_group_id: og_web
+      patterns_to_match: ["/*"]
+      https_redirect_enabled: true
+
+observability:
+  log_analytics_workspace:
+    subsystem: ex
+    retention_days: 30
+
+  app_insights:
+    - subsystem: ex
+
+dependencies:
+  - name: hub-network-vnet
+    type: vnet_peering
+    direction: bidirectional
+    notes: DNS resolution, on-prem connectivity via hub VPN

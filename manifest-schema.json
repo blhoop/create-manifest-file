@@ -4,42 +4,100 @@
   "title": "CTM Spoke Infrastructure Manifest",
   "description": "Machine-readable source of truth for a spoke's Azure infrastructure. Consumed by workflow-agentic-infra-builder to generate Terraform HCL and deploy landing zones.",
   "type": "object",
-  "required": ["schema_version", "spoke", "ctm_properties", "environments", "tags", "network"],
+  "required": [
+    "schema_version",
+    "spoke",
+    "ctm_properties",
+    "environments",
+    "tags",
+    "network"
+  ],
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "1",
-      "description": "Manifest schema version. Must be '1' for this schema."
+      "type": "string",
+      "enum": [
+        "1",
+        "1.0.0",
+        "1.1.0",
+        "1.2.0",
+        "1.3.0",
+        "1.4.0",
+        "1.5.0"
+      ],
+      "description": "Manifest schema version."
     },
-
     "spoke": {
       "type": "object",
       "description": "Spoke identity and ownership metadata.",
-      "required": ["name", "subscription", "owner", "description"],
+      "required": [
+        "name",
+        "subscription",
+        "owner",
+        "infra_repo"
+      ],
       "additionalProperties": false,
       "properties": {
-        "name":         { "type": "string", "pattern": "^[a-z][a-z0-9-]+$", "description": "Spoke short name (used in resource naming). e.g. ctm-intelligence" },
-        "subscription": { "type": "string", "description": "Azure subscription name or '[TBD]'" },
-        "owner":        { "type": "string", "description": "Owning team name" },
-        "description":  { "type": "string", "maxLength": 500, "description": "1-2 sentence purpose statement" },
-        "sku_mode":             { "type": "string", "enum": ["premium", "economy"], "default": "premium", "description": "SKU mode: premium (default) = smallest prod-capable SKUs, economy = cheapest viable for dev/lab." },
-        "management_group_id":  { "type": "string", "pattern": "^[a-zA-Z0-9._-]+$", "description": "Management group ID to place the subscription under. If omitted, subscription stays in tenant root." },
-        "new_subscription":     { "type": "boolean", "default": true, "description": "When true, creates a new subscription via the sub repo. When false, adopts an existing subscription." },
-        "sub_repo":             { "type": "string", "pattern": "^[a-z][a-z0-9-]+$", "description": "GitHub repo name for subscription-level resources (SPN, groups, RBAC). Derived as ctm-sub-{name}-{env} if omitted." },
-        "infra_repo":           { "type": "string", "pattern": "^[a-z][a-z0-9-]+-infra$", "description": "GitHub repo name for spoke infrastructure. Derived as {name}-infra if omitted." }
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]+$",
+          "description": "Spoke short name (used in resource naming). e.g. ctm-intelligence"
+        },
+        "repo": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]+-infra$",
+          "description": "Deprecated \u00e2\u20ac\u201d use infra_repo instead."
+        },
+        "infra_repo": {
+          "type": "string",
+          "description": "GitHub repo name for generated Terraform."
+        },
+        "subscription": {
+          "type": "string",
+          "description": "Azure subscription name or '[TBD]'"
+        },
+        "owner": {
+          "type": "string",
+          "description": "Owning team name"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "1-2 sentence purpose statement"
+        },
+        "sku_mode": {
+          "type": "string",
+          "enum": [
+            "premium",
+            "standard"
+          ],
+          "description": "SKU tier strategy. premium = prod-equivalent at smallest size."
+        },
+        "management_group_id": {
+          "type": "string",
+          "description": "Short management group ID for subscription placement."
+        },
+        "new_subscription": {
+          "type": "boolean",
+          "description": "true = LZ creates new subscription."
+        }
       }
     },
-
     "ctm_properties": {
       "type": "object",
       "description": "Shared CTM naming properties applied to all resources in this spoke.",
-      "required": ["product"],
+      "required": [
+        "product"
+      ],
       "additionalProperties": false,
       "properties": {
-        "product": { "type": "string", "pattern": "^[a-z][a-z0-9]+$", "description": "Product code used in CTM naming convention. e.g. ctmi, gprof, lb" }
+        "product": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]+$",
+          "description": "Product code used in CTM naming convention. e.g. ctmi, gprof, lb"
+        }
       }
     },
-
     "environments": {
       "type": "object",
       "description": "Environment definitions. Keys are environment names (dev, uat, prod, etc.).",
@@ -51,101 +109,129 @@
       },
       "additionalProperties": false
     },
-
     "tags": {
       "type": "object",
       "description": "Governance tags applied to all resources via terraform-azurerm-tags. Values may contain '[TBD]' placeholders.",
+      "required": [
+        "CostRegion",
+        "CostType"
+      ],
       "properties": {
-        "owner":        { "type": "string" },
-        "cost_center":  { "type": "string" },
-        "project":      { "type": "string" },
-        "data_classification": { "type": "string", "enum": ["public", "internal", "confidential", "restricted", "[TBD]"] }
+        "CostRegion": {
+          "type": "string",
+          "enum": ["anz", "asia", "europe", "group", "usa", "[TBD]"],
+          "description": "Cost allocation region. Azure policy enforced."
+        },
+        "CostType": {
+          "type": "string",
+          "enum": ["capex", "opex", "[TBD]"],
+          "description": "Cost allocation type. Azure policy enforced."
+        }
       },
-      "additionalProperties": { "type": "string" }
+      "additionalProperties": {
+        "type": "string"
+      }
     },
-
     "network": {
       "$ref": "#/$defs/network_block"
     },
-
     "compute": {
       "$ref": "#/$defs/compute_block"
     },
-
     "data": {
       "$ref": "#/$defs/data_block"
     },
-
     "security": {
       "$ref": "#/$defs/security_block"
     },
-
     "observability": {
       "$ref": "#/$defs/observability_block"
     },
-
     "frontdoor": {
       "$ref": "#/$defs/frontdoor_block"
     },
-
     "ai": {
       "$ref": "#/$defs/ai_block"
     },
-
     "app_configuration": {
       "$ref": "#/$defs/app_configuration_block"
     },
-
     "platform": {
       "$ref": "#/$defs/platform_block"
     },
-
+    "hub": {
+      "$ref": "#/$defs/hub_block"
+    },
     "dependencies": {
       "type": "array",
       "description": "Informational cross-spoke and external dependencies.",
-      "items": { "$ref": "#/$defs/dependency" }
+      "items": {
+        "$ref": "#/$defs/dependency"
+      }
     },
-
     "blockers": {
       "type": "array",
       "description": "Known blockers, red flags, and gaps. Workflow rejects deployment if any severity=HIGH remain OPEN.",
-      "items": { "$ref": "#/$defs/blocker" }
+      "items": {
+        "$ref": "#/$defs/blocker"
+      }
     }
   },
-
   "$defs": {
-
     "tbd_string": {
-      "description": "A string that may be '[TBD]' — workflow validates and blocks deployment if any remain.",
+      "description": "A string that may be '[TBD]' \u00e2\u20ac\u201d workflow validates and blocks deployment if any remain.",
       "type": "string"
     },
-
     "module_ref": {
       "type": "string",
       "pattern": "^terraform-azurerm-[a-z0-9-]+$",
       "description": "CTM module name from the private registry. e.g. terraform-azurerm-linux-web-app"
     },
-
     "resource_ref": {
       "type": "string",
       "pattern": "^\\$ref:[a-z][a-z0-9_-]+\\.[a-z_]+$",
       "description": "Cross-resource reference resolved to module.<id>.<attr> during HCL generation. e.g. $ref:rg.resource_id"
     },
-
     "environment": {
       "type": "object",
       "description": "Per-environment configuration.",
-      "required": ["location"],
+      "required": [
+        "location"
+      ],
       "additionalProperties": false,
       "properties": {
         "location": {
           "type": "string",
-          "enum": ["australiaeast", "eastus", "eastus2", "northcentralus", "southeastasia", "uksouth", "westus3"],
+          "enum": [
+            "australiaeast",
+            "eastus",
+            "eastus2",
+            "northcentralus",
+            "southeastasia",
+            "uksouth",
+            "westus3",
+            "westus2",
+            "centralus",
+            "westeurope",
+            "eastasia"
+          ],
           "description": "Azure region for this environment."
         },
         "location_secondary": {
           "type": "string",
-          "enum": ["australiaeast", "eastus", "eastus2", "northcentralus", "southeastasia", "uksouth", "westus3"],
+          "enum": [
+            "australiaeast",
+            "eastus",
+            "eastus2",
+            "northcentralus",
+            "southeastasia",
+            "uksouth",
+            "westus3",
+            "westus2",
+            "centralus",
+            "westeurope",
+            "eastasia"
+          ],
           "description": "Secondary Azure region for dual-region deployments."
         },
         "overrides": {
@@ -155,31 +241,63 @@
         }
       }
     },
-
     "network_block": {
       "type": "object",
-      "description": "Networking configuration for the spoke.",
+      "description": "Networking configuration. Minimal: just vnet_cidr. Builder auto-carves subnets, NSGs, PEs, DNS zones from networking-defaults.yml.",
       "additionalProperties": false,
       "properties": {
+        "vnet_cidr": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$",
+          "description": "VNet CIDR block. Builder auto-generates subnets from this."
+        },
+        "peering": {
+          "type": "string",
+          "description": "Hub VNet to peer with. e.g. hub-network-vnet"
+        },
+        "dns_servers": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "const": "hub-inherited"
+            }
+          ],
+          "description": "DNS servers. 'hub-inherited' or list of IPs."
+        },
         "vnets": {
           "type": "array",
-          "items": { "$ref": "#/$defs/vnet" }
+          "items": {
+            "$ref": "#/$defs/vnet"
+          }
         },
         "subnets": {
           "type": "array",
-          "items": { "$ref": "#/$defs/subnet" }
+          "items": {
+            "$ref": "#/$defs/subnet"
+          }
         },
         "nsgs": {
           "type": "array",
-          "items": { "$ref": "#/$defs/nsg" }
+          "items": {
+            "$ref": "#/$defs/nsg"
+          }
         },
         "private_endpoints": {
           "type": "array",
-          "items": { "$ref": "#/$defs/private_endpoint" }
+          "items": {
+            "$ref": "#/$defs/private_endpoint"
+          }
         },
         "dns_zones": {
           "type": "array",
-          "items": { "$ref": "#/$defs/dns_zone" }
+          "items": {
+            "$ref": "#/$defs/dns_zone"
+          }
         },
         "nat_gateway": {
           "$ref": "#/$defs/nat_gateway"
@@ -187,699 +305,1870 @@
         "vnet_peerings": {
           "type": "array",
           "description": "Intra-spoke VNet peerings (e.g. cross-region).",
-          "items": { "$ref": "#/$defs/vnet_peering" }
+          "items": {
+            "$ref": "#/$defs/vnet_peering"
+          }
         },
         "cross_spoke_peerings": {
           "type": "array",
           "description": "Cross-spoke VNet peerings using native azurerm resources (conditional on remote VNet vars).",
-          "items": { "$ref": "#/$defs/cross_spoke_peering" }
+          "items": {
+            "$ref": "#/$defs/cross_spoke_peering"
+          }
         },
         "dns_zone_cross_spoke_links": {
           "type": "array",
           "description": "Cross-spoke DNS zone VNet links (conditional on target VNet vars).",
-          "items": { "$ref": "#/$defs/dns_zone_cross_spoke_link" }
+          "items": {
+            "$ref": "#/$defs/dns_zone_cross_spoke_link"
+          }
         }
       }
     },
-
     "vnet": {
       "type": "object",
-      "required": ["id", "cidr", "dns_servers", "peering"],
+      "required": [
+        "id",
+        "cidr"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":          { "type": "string", "description": "Logical ID used in $ref references and HCL module name." },
-        "cidr":        { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$", "description": "VNet CIDR block." },
-        "dns_servers": { "oneOf": [{ "type": "array", "items": { "type": "string" } }, { "const": "hub-inherited" }] },
-        "peering":     { "type": "string", "description": "Hub VNet peering target. e.g. hub-network-vnet" },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" }
+        "id": {
+          "type": "string",
+          "description": "Logical ID used in $ref references and HCL module name."
+        },
+        "cidr": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$",
+          "description": "VNet CIDR block."
+        },
+        "dns_servers": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "const": "hub-inherited"
+            }
+          ]
+        },
+        "peering": {
+          "type": "string",
+          "description": "Hub VNet peering target. e.g. hub-network-vnet"
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        }
       }
     },
-
     "subnet": {
       "type": "object",
-      "required": ["id", "vnet_id", "cidr", "purpose"],
+      "required": [
+        "id",
+        "vnet_id",
+        "cidr",
+        "purpose"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":          { "type": "string" },
-        "vnet_id":     { "type": "string", "description": "Logical ID of parent VNet." },
-        "cidr":        { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$" },
-        "delegation":  { "type": ["string", "null"], "description": "Azure delegation. e.g. Microsoft.Web/serverFarms, Microsoft.App/environments" },
-        "purpose":     { "type": "string" }
+        "id": {
+          "type": "string"
+        },
+        "vnet_id": {
+          "type": "string",
+          "description": "Logical ID of parent VNet."
+        },
+        "name": {
+          "type": "string",
+          "description": "Azure subnet name override. Defaults to the id if omitted. Use for names Azure requires (e.g. GatewaySubnet)."
+        },
+        "cidr": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$"
+        },
+        "delegation": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Azure delegation. e.g. Microsoft.Web/serverFarms, Microsoft.App/environments"
+        },
+        "purpose": {
+          "type": "string"
+        }
       }
     },
-
     "nsg": {
       "type": "object",
-      "required": ["id", "subnet_id", "rules"],
+      "required": [
+        "id",
+        "subnet_id",
+        "rules"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":        { "type": "string" },
-        "subnet_id": { "type": "string", "description": "Logical ID of the subnet this NSG attaches to." },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string",
+          "description": "Subsystem override for NSG naming. If omitted, derived from id by stripping nsg_ prefix."
+        },
+        "subnet_id": {
+          "type": "string",
+          "description": "Logical ID of the subnet this NSG attaches to."
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
         "rules": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["name", "priority", "direction", "access", "protocol", "destination_port_range"],
+            "required": [
+              "name",
+              "priority",
+              "direction",
+              "access",
+              "protocol",
+              "destination_port_range"
+            ],
             "additionalProperties": false,
             "properties": {
-              "name":                    { "type": "string" },
-              "priority":                { "type": "integer", "minimum": 100, "maximum": 4096 },
-              "direction":               { "type": "string", "enum": ["Inbound", "Outbound"] },
-              "access":                  { "type": "string", "enum": ["Allow", "Deny"] },
-              "protocol":                { "type": "string", "enum": ["Tcp", "Udp", "*"] },
-              "source_address_prefix":   { "type": "string" },
-              "source_address_prefixes": { "type": "array", "items": { "type": "string" } },
-              "destination_port_range":  { "type": "string" },
-              "description":             { "type": "string" }
+              "name": {
+                "type": "string"
+              },
+              "priority": {
+                "type": "integer",
+                "minimum": 100,
+                "maximum": 4096
+              },
+              "direction": {
+                "type": "string",
+                "enum": [
+                  "Inbound",
+                  "Outbound"
+                ]
+              },
+              "access": {
+                "type": "string",
+                "enum": [
+                  "Allow",
+                  "Deny"
+                ]
+              },
+              "protocol": {
+                "type": "string",
+                "enum": [
+                  "Tcp",
+                  "Udp",
+                  "*"
+                ]
+              },
+              "source_address_prefix": {
+                "type": "string"
+              },
+              "source_address_prefixes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "destination_port_range": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              }
             }
           }
         }
       }
     },
-
     "private_endpoint": {
       "type": "object",
-      "required": ["id", "target_resource_id", "sub_resource", "subnet_id", "dns_zone"],
+      "required": [
+        "id",
+        "target_resource_id",
+        "sub_resource",
+        "subnet_id",
+        "dns_zone"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":                 { "type": "string" },
-        "target_resource_id": { "type": "string", "description": "$ref to the target resource or literal resource ID." },
-        "sub_resource":       { "type": "string", "description": "Sub-resource type. e.g. postgresqlServer, vault, registry" },
-        "subnet_id":          { "type": "string", "description": "Logical ID of the PE subnet." },
-        "dns_zone":           { "type": "string", "description": "Private DNS zone name." }
+        "id": {
+          "type": "string"
+        },
+        "target_resource_id": {
+          "type": "string",
+          "description": "$ref to the target resource or literal resource ID."
+        },
+        "sub_resource": {
+          "type": "string",
+          "description": "Sub-resource type. e.g. postgresqlServer, vault, registry"
+        },
+        "subnet_id": {
+          "type": "string",
+          "description": "Logical ID of the PE subnet."
+        },
+        "dns_zone": {
+          "type": "string",
+          "description": "Private DNS zone name."
+        }
       }
     },
-
     "dns_zone": {
       "type": "object",
-      "required": ["id", "zone_name"],
+      "required": [
+        "id",
+        "zone_name"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":        { "type": "string" },
-        "zone_name": { "type": "string", "description": "Private DNS zone FQDN. e.g. privatelink.postgres.database.azure.com" },
+        "id": {
+          "type": "string"
+        },
+        "zone_name": {
+          "type": "string",
+          "description": "Private DNS zone FQDN. e.g. privatelink.postgres.database.azure.com"
+        },
         "linked_vnets": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "VNet IDs to link this zone to."
         }
       }
     },
-
     "nat_gateway": {
       "type": "object",
-      "required": ["id", "subnet_ids"],
+      "required": [
+        "id",
+        "subnet_ids"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":         { "type": "string" },
-        "subsystem":  { "type": "string" },
-        "subnet_ids": { "type": "array", "items": { "type": "string" }, "description": "Logical IDs of subnets to associate." },
-        "idle_timeout_minutes": { "type": "integer", "default": 4, "minimum": 4, "maximum": 120 },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" }
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "subnet_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Logical IDs of subnets to associate."
+        },
+        "idle_timeout_minutes": {
+          "type": "integer",
+          "default": 4,
+          "minimum": 4,
+          "maximum": 120
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        }
       }
     },
-
     "vnet_peering": {
       "type": "object",
-      "required": ["id", "name", "vnet_id", "remote_vnet_id"],
+      "required": [
+        "id",
+        "name",
+        "vnet_id",
+        "remote_vnet_id"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":                     { "type": "string" },
-        "name":                   { "type": "string" },
-        "vnet_id":                { "type": "string", "description": "Logical ID of the local VNet." },
-        "remote_vnet_id":         { "type": "string", "description": "Logical ID of the remote VNet." },
-        "allow_forwarded_traffic": { "type": "boolean", "default": false }
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "vnet_id": {
+          "type": "string",
+          "description": "Logical ID of the local VNet."
+        },
+        "remote_vnet_id": {
+          "type": "string",
+          "description": "Logical ID of the remote VNet."
+        },
+        "allow_forwarded_traffic": {
+          "type": "boolean",
+          "default": false
+        }
       }
     },
-
     "cross_spoke_peering": {
       "type": "object",
-      "required": ["id", "name", "vnet_id", "remote_vnet_var"],
+      "required": [
+        "id",
+        "name",
+        "vnet_id",
+        "remote_vnet_var"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":                     { "type": "string" },
-        "name":                   { "type": "string" },
-        "vnet_id":                { "type": "string", "description": "Logical ID of the local VNet." },
-        "remote_vnet_var":        { "type": "string", "description": "Variable name for remote VNet ID." },
-        "allow_forwarded_traffic": { "type": "boolean", "default": false },
-        "conditional":            { "type": "boolean", "default": false }
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "vnet_id": {
+          "type": "string",
+          "description": "Logical ID of the local VNet."
+        },
+        "remote_vnet_var": {
+          "type": "string",
+          "description": "Variable name for remote VNet ID."
+        },
+        "allow_forwarded_traffic": {
+          "type": "boolean",
+          "default": false
+        },
+        "conditional": {
+          "type": "boolean",
+          "default": false
+        }
       }
     },
-
     "dns_zone_cross_spoke_link": {
       "type": "object",
-      "required": ["dns_zone_id", "target_vnet_var", "link_name"],
+      "required": [
+        "dns_zone_id",
+        "target_vnet_var",
+        "link_name"
+      ],
       "additionalProperties": false,
       "properties": {
-        "dns_zone_id":    { "type": "string", "description": "Logical ID of the DNS zone." },
-        "target_vnet_var": { "type": "string", "description": "Variable name for the target VNet ID." },
-        "link_name":      { "type": "string" },
-        "conditional":    { "type": "boolean", "default": false }
+        "dns_zone_id": {
+          "type": "string",
+          "description": "Logical ID of the DNS zone."
+        },
+        "target_vnet_var": {
+          "type": "string",
+          "description": "Variable name for the target VNet ID."
+        },
+        "link_name": {
+          "type": "string"
+        },
+        "conditional": {
+          "type": "boolean",
+          "default": false
+        }
       }
     },
-
     "compute_block": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "app_service_plans": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/app_service_plan" }
-        },
-        "web_apps": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/web_app" }
-        },
-        "function_apps": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/function_app" }
-        },
-        "aks_clusters": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/aks_cluster" }
-        },
-        "container_app_environments": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/container_app_environment" }
-        },
-        "container_apps": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/container_app" }
-        },
-        "virtual_machines": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/virtual_machine" }
-        },
-        "apim": {
-          "$ref": "#/$defs/apim"
-        },
-        "static_sites": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/static_site" }
-        }
-      }
-    },
-
-    "app_service_plan": {
-      "type": "object",
-      "required": ["id", "subsystem", "sku", "os_type", "module"],
-      "additionalProperties": false,
-      "properties": {
-        "id":        { "type": "string" },
-        "subsystem": { "type": "string" },
-        "sku":       { "type": "string", "description": "SKU name. e.g. P1v3, B1, S1, EP1" },
-        "os_type":   { "type": "string", "enum": ["Linux", "Windows"] },
-        "module":    { "$ref": "#/$defs/module_ref" },
-        "zone_balancing_enabled": { "type": "boolean", "default": false },
-        "worker_count": { "type": "integer", "minimum": 1 },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-        "enabled":   { "type": "boolean", "default": true }
-      }
-    },
-
-    "web_app": {
-      "type": "object",
-      "required": ["id", "subsystem", "asp_id", "module"],
-      "additionalProperties": false,
-      "properties": {
-        "id":           { "type": "string" },
-        "subsystem":    { "type": "string" },
-        "asp_id":       { "type": "string", "description": "Logical ID of the App Service Plan." },
-        "module":       { "$ref": "#/$defs/module_ref" },
-        "docker":       { "type": "boolean", "default": false },
-        "slots":        { "type": "array", "items": { "type": "string" }, "description": "Slot names. e.g. [staging, prestaging]" },
-        "port":         { "type": "integer", "description": "Container port. e.g. 8080" },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-        "vnet_integration_subnet_id": { "type": "string", "description": "Logical ID of the subnet for VNet integration." },
-        "app_settings": { "type": "object", "additionalProperties": { "type": "string" } },
-        "enabled":      { "type": "boolean", "default": true }
-      }
-    },
-
-    "function_app": {
-      "type": "object",
-      "required": ["id", "subsystem", "runtime", "module"],
-      "additionalProperties": false,
-      "properties": {
-        "id":           { "type": "string" },
-        "subsystem":    { "type": "string" },
-        "asp_id":       { "type": ["string", "null"], "description": "Logical ID of ASP. null = Consumption plan." },
-        "runtime":      { "type": "string", "enum": ["dotnet-isolated", "python", "node", "java", "powershell", "custom"] },
-        "runtime_version": { "type": "string" },
-        "module":       { "$ref": "#/$defs/module_ref" },
-        "trigger":      { "type": "string", "enum": ["HTTP", "Timer", "ServiceBus", "Queue", "Blob", "CosmosDB", "EventHub", "EventGrid"] },
-        "purpose":      { "type": "string" },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-        "slots":        { "type": "array", "items": { "type": "string" }, "description": "Deployment slot names for blue/green deployments." },
-        "vnet_integration_subnet_id": { "type": "string", "description": "Logical ID of the subnet for VNet integration." },
-        "storage_account_id": { "type": "string", "description": "Logical ID of dedicated storage account for function app backing storage." },
-        "docker":       { "type": "boolean", "default": false },
-        "enabled":      { "type": "boolean", "default": true }
-      }
-    },
-
-    "aks_cluster": {
-      "type": "object",
-      "required": ["id", "subsystem", "kubernetes_version", "module"],
-      "additionalProperties": false,
-      "properties": {
-        "id":                  { "type": "string" },
-        "subsystem":           { "type": "string" },
-        "kubernetes_version":  { "type": "string" },
-        "module":              { "$ref": "#/$defs/module_ref" },
-        "default_node_pool": {
+        "plan_defaults": {
           "type": "object",
-          "required": ["vm_size", "min_count", "max_count"],
+          "description": "Default plan specs. Each web/function app gets its own plan from these defaults unless overridden.",
           "additionalProperties": false,
           "properties": {
-            "vm_size":   { "type": "string" },
-            "min_count": { "type": "integer", "minimum": 1 },
-            "max_count": { "type": "integer", "minimum": 1 },
-            "os_disk_size_gb": { "type": "integer" },
-            "zones":     { "type": "array", "items": { "type": "string" } }
-          }
-        },
-        "additional_node_pools": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["name", "vm_size", "min_count", "max_count"],
-            "additionalProperties": false,
-            "properties": {
-              "name":      { "type": "string" },
-              "vm_size":   { "type": "string" },
-              "min_count": { "type": "integer" },
-              "max_count": { "type": "integer" },
-              "os_type":   { "type": "string", "enum": ["Linux", "Windows"] },
-              "mode":      { "type": "string", "enum": ["System", "User"] }
+            "web_app": {
+              "type": "object",
+              "properties": {
+                "os_type": {
+                  "type": "string",
+                  "enum": [
+                    "Windows",
+                    "Linux"
+                  ]
+                },
+                "sku": {
+                  "type": "string"
+                }
+              }
+            },
+            "function_app": {
+              "type": "object",
+              "properties": {
+                "os_type": {
+                  "type": "string",
+                  "enum": [
+                    "Windows",
+                    "Linux"
+                  ]
+                },
+                "sku": {
+                  "type": "string"
+                }
+              }
             }
           }
         },
-        "subnet_id":        { "type": "string" },
-        "private_cluster":  { "type": "boolean", "default": false },
-        "instance_number":  { "type": "string", "pattern": "^[0-9]{3}$" },
-        "enabled":          { "type": "boolean", "default": true }
+        "app_service_plans": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/app_service_plan"
+          }
+        },
+        "web_apps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/web_app"
+          }
+        },
+        "function_apps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/function_app"
+          }
+        },
+        "static_sites": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/static_site"
+          }
+        },
+        "aks_clusters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/aks_cluster"
+          }
+        },
+        "container_app_environments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/container_app_environment"
+          }
+        },
+        "container_app_environment": {
+          "$ref": "#/$defs/container_app_environment",
+          "description": "Singular form (v1.2.0+). Alias for container_app_environments[0]."
+        },
+        "container_apps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/container_app"
+          }
+        },
+        "virtual_machines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/virtual_machine"
+          }
+        },
+        "signalr": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/signalr"
+          }
+        },
+        "apim": {
+          "$ref": "#/$defs/apim"
+        }
       }
     },
-
-    "container_app_environment": {
+    "app_service_plan": {
       "type": "object",
-      "required": ["id", "subsystem", "subnet_id", "module"],
+      "required": [
+        "id",
+        "subsystem",
+        "sku",
+        "os_type",
+        "module"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":          { "type": "string" },
-        "subsystem":   { "type": "string" },
-        "subnet_id":   { "type": "string" },
-        "module":      { "$ref": "#/$defs/module_ref" },
-        "internal_only": { "type": "boolean", "default": true },
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "sku": {
+          "type": "string",
+          "description": "SKU name. e.g. P1v3, B1, S1, EP1"
+        },
+        "os_type": {
+          "type": "string",
+          "enum": [
+            "Linux",
+            "Windows"
+          ]
+        },
+        "module": {
+          "$ref": "#/$defs/module_ref"
+        },
+        "zone_balancing_enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "worker_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "web_app": {
+      "type": "object",
+      "required": [
+        "subsystem"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "asp_id": {
+          "type": "string",
+          "description": "Logical ID of the App Service Plan. Omit when using plan_defaults."
+        },
+        "module": {
+          "$ref": "#/$defs/module_ref"
+        },
+        "share_plan_with": {
+          "type": "string",
+          "description": "ID of another app to share its plan."
+        },
+        "plan_override": {
+          "type": "object",
+          "description": "Override plan_defaults for this app only.",
+          "properties": {
+            "sku": {
+              "type": "string"
+            },
+            "os_type": {
+              "type": "string",
+              "enum": [
+                "Windows",
+                "Linux"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "docker": {
+          "type": "boolean",
+          "default": false
+        },
+        "slots": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "port": {
+          "type": "integer"
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "vnet_integration_subnet_id": {
+          "type": "string"
+        },
+        "app_settings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
+      }
+    },
+    "function_app": {
+      "type": "object",
+      "required": [
+        "subsystem",
+        "runtime"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "asp_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Logical ID of ASP. Omit when using plan_defaults."
+        },
+        "runtime": {
+          "type": "string",
+          "enum": [
+            "dotnet-isolated",
+            "python",
+            "node",
+            "java",
+            "powershell",
+            "custom"
+          ]
+        },
+        "runtime_version": {
+          "type": "string"
+        },
+        "module": {
+          "$ref": "#/$defs/module_ref"
+        },
+        "share_plan_with": {
+          "type": "string",
+          "description": "ID of another app to share its plan."
+        },
+        "plan_override": {
+          "type": "object",
+          "description": "Override plan_defaults for this app only.",
+          "properties": {
+            "sku": {
+              "type": "string"
+            },
+            "os_type": {
+              "type": "string",
+              "enum": [
+                "Windows",
+                "Linux"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "trigger": {
+          "type": "string",
+          "enum": [
+            "HTTP",
+            "Timer",
+            "ServiceBus",
+            "Queue",
+            "Blob",
+            "CosmosDB",
+            "EventHub",
+            "EventGrid"
+          ]
+        },
+        "purpose": {
+          "type": "string"
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "slots": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "vnet_integration_subnet_id": {
+          "type": "string"
+        },
+        "storage_account_id": {
+          "type": "string"
+        },
+        "docker": {
+          "type": "boolean",
+          "default": false
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
+      }
+    },
+    "aks_cluster": {
+      "type": "object",
+      "required": [
+        "subsystem"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "kubernetes_version": {
+          "type": "string"
+        },
+        "sku_tier": {
+          "type": "string",
+          "enum": [
+            "Free",
+            "Standard"
+          ]
+        },
+        "module": {
+          "$ref": "#/$defs/module_ref"
+        },
+        "default_node_pool": {
+          "type": "object",
+          "required": [
+            "vm_size"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "vm_size": {
+              "type": "string"
+            },
+            "node_count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "min_count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "max_count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "os_disk_size_gb": {
+              "type": "integer"
+            },
+            "vnet_subnet_id": {
+              "type": "string"
+            },
+            "zones": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "node_pools": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "vm_size"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "vm_size": {
+                "type": "string"
+              },
+              "min_count": {
+                "type": "integer"
+              },
+              "max_count": {
+                "type": "integer"
+              },
+              "os_type": {
+                "type": "string",
+                "enum": [
+                  "Linux",
+                  "Windows"
+                ]
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "System",
+                  "User"
+                ]
+              },
+              "vnet_subnet_id": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "flux_configurations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "subnet_id": {
+          "type": "string"
+        },
+        "private_cluster": {
+          "type": "boolean",
+          "default": false
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
+      }
+    },
+    "container_app_environment": {
+      "type": "object",
+      "required": [
+        "subsystem"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "subnet_id": {
+          "type": "string"
+        },
+        "infrastructure_subnet_id": {
+          "type": "string"
+        },
+        "log_analytics_workspace_id": {
+          "type": "string"
+        },
+        "module": {
+          "$ref": "#/$defs/module_ref"
+        },
+        "internal_only": {
+          "type": "boolean",
+          "default": true
+        },
         "storage_registrations": {
           "type": "array",
           "description": "Azure Files shares registered with the CAE for volume mounting by Container Apps.",
           "items": {
             "type": "object",
-            "required": ["name", "storage_account_id", "share_name"],
+            "required": [
+              "name",
+              "storage_account_id",
+              "share_name"
+            ],
             "additionalProperties": false,
             "properties": {
-              "name":               { "type": "string", "description": "Logical name used to reference this storage from Container App volumes." },
-              "storage_account_id": { "type": "string", "description": "Logical ID of the storage account in the manifest." },
-              "share_name":         { "type": "string", "description": "Name of the Azure Files share." },
-              "access_mode":        { "type": "string", "enum": ["ReadOnly", "ReadWrite"], "default": "ReadWrite" }
+              "name": {
+                "type": "string",
+                "description": "Logical name used to reference this storage from Container App volumes."
+              },
+              "storage_account_id": {
+                "type": "string",
+                "description": "Logical ID of the storage account in the manifest."
+              },
+              "share_name": {
+                "type": "string",
+                "description": "Name of the Azure Files share."
+              },
+              "access_mode": {
+                "type": "string",
+                "enum": [
+                  "ReadOnly",
+                  "ReadWrite"
+                ],
+                "default": "ReadWrite"
+              }
             }
           }
         },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-        "enabled":     { "type": "boolean", "default": true }
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
       }
     },
-
     "container_app": {
       "type": "object",
-      "required": ["id", "subsystem", "cae_id", "image", "module"],
+      "required": [
+        "subsystem",
+        "image"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":          { "type": "string" },
-        "subsystem":   { "type": "string" },
-        "cae_id":      { "type": "string", "description": "Logical ID of the Container App Environment." },
-        "image":       { "type": "string" },
-        "module":      { "$ref": "#/$defs/module_ref" },
-        "purpose":     { "type": "string" },
-        "min_replicas": { "type": "integer", "minimum": 0 },
-        "max_replicas": { "type": "integer", "minimum": 1 },
-        "target_port": { "type": "integer" },
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "cae_id": {
+          "type": "string",
+          "description": "Logical ID of the Container App Environment."
+        },
+        "image": {
+          "type": "string"
+        },
+        "module": {
+          "$ref": "#/$defs/module_ref"
+        },
+        "cpu": {
+          "type": "number"
+        },
+        "memory": {
+          "type": "number"
+        },
+        "purpose": {
+          "type": "string"
+        },
+        "min_replicas": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_replicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "target_port": {
+          "type": "integer"
+        },
+        "transport": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "http",
+            "http2",
+            "tcp"
+          ]
+        },
         "persistent_volumes": {
           "type": "array",
           "description": "Persistent volumes mounted from CAE-registered Azure Files shares.",
           "items": {
             "type": "object",
-            "required": ["name", "cae_storage_name", "mount_path"],
+            "required": [
+              "name",
+              "cae_storage_name",
+              "mount_path"
+            ],
             "additionalProperties": false,
             "properties": {
-              "name":             { "type": "string", "description": "Volume name within the Container App template." },
-              "cae_storage_name": { "type": "string", "description": "Name of the CAE storage registration to mount." },
-              "mount_path":       { "type": "string", "description": "Absolute path inside the container where the volume is mounted." }
+              "name": {
+                "type": "string",
+                "description": "Volume name within the Container App template."
+              },
+              "cae_storage_name": {
+                "type": "string",
+                "description": "Name of the CAE storage registration to mount."
+              },
+              "mount_path": {
+                "type": "string",
+                "description": "Absolute path inside the container where the volume is mounted."
+              }
             }
           }
         },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-        "enabled":     { "type": "boolean", "default": true }
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
       }
     },
-
     "virtual_machine": {
       "type": "object",
-      "required": ["id", "subsystem", "role", "vm_size", "os_type", "module"],
+      "required": [
+        "subsystem",
+        "vm_size",
+        "os_type"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":          { "type": "string" },
-        "subsystem":   { "type": "string" },
-        "role":        { "type": "string", "description": "VM role. e.g. web-dmz, web-internal, app-server" },
-        "vm_size":     { "type": "string", "description": "Azure VM size. e.g. Standard_D4s_v5" },
-        "os_type":     { "type": "string", "enum": ["Windows", "Linux"] },
-        "module":      { "$ref": "#/$defs/module_ref" },
-        "subnet_id":   { "type": "string" },
-        "purpose":     { "type": "string" },
-        "count":       { "type": "integer", "minimum": 1, "default": 1 },
-        "zone":        { "type": "string", "enum": ["1", "2", "3"] },
-        "public_ip":   { "type": "boolean", "default": false, "description": "Attach a Standard SKU public IP to the VM NIC" },
-        "load_balanced": { "type": "boolean", "default": false },
-        "enabled":     { "type": "boolean", "default": true }
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "vm_size": {
+          "type": "string"
+        },
+        "os_type": {
+          "type": "string",
+          "enum": [
+            "Windows",
+            "Linux"
+          ]
+        },
+        "module": {
+          "$ref": "#/$defs/module_ref"
+        },
+        "admin_username": {
+          "type": "string"
+        },
+        "subnet_id": {
+          "type": "string"
+        },
+        "purpose": {
+          "type": "string"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        },
+        "zone": {
+          "type": "string",
+          "enum": [
+            "1",
+            "2",
+            "3"
+          ]
+        },
+        "public_ip": {
+          "type": "boolean",
+          "default": false
+        },
+        "load_balanced": {
+          "type": "boolean",
+          "default": false
+        },
+        "os_disk": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "source_image": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
       }
     },
-
     "managed_identities_config": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "system_assigned": { "type": "boolean", "default": false },
+        "system_assigned": {
+          "type": "boolean",
+          "default": false
+        },
         "user_assigned_resource_ids": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
-
     "apim": {
       "type": "object",
-      "required": ["id", "subsystem", "module", "sku_name"],
+      "required": [
+        "subsystem"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":        { "type": "string" },
-        "subsystem": { "type": "string" },
-        "module":    { "const": "terraform-azurerm-api-management" },
-        "sku_name":  { "type": "string" },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-        "virtual_network_type": { "type": "string", "enum": ["None", "External", "Internal"] },
-        "public_network_access_enabled": { "type": "boolean" },
-        "subnet_id": { "type": "string" },
-        "managed_identities": { "$ref": "#/$defs/managed_identities_config" },
-        "enabled":   { "type": "boolean", "default": true }
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "module": {
+          "type": "string"
+        },
+        "sku": {
+          "type": "string"
+        },
+        "sku_name": {
+          "type": "string"
+        },
+        "publisher_name": {
+          "type": "string"
+        },
+        "publisher_email": {
+          "type": "string"
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "virtual_network_type": {
+          "type": "string",
+          "enum": [
+            "None",
+            "External",
+            "Internal"
+          ]
+        },
+        "public_network_access_enabled": {
+          "type": "boolean"
+        },
+        "subnet_id": {
+          "type": "string"
+        },
+        "managed_identities": {
+          "$ref": "#/$defs/managed_identities_config"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
       }
     },
-
     "data_block": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "databases": {
           "type": "array",
-          "items": { "$ref": "#/$defs/database" }
+          "items": {
+            "$ref": "#/$defs/database"
+          }
         },
         "caching": {
           "type": "array",
-          "items": { "$ref": "#/$defs/cache" }
+          "items": {
+            "$ref": "#/$defs/cache"
+          }
         },
         "messaging": {
           "type": "array",
-          "items": { "$ref": "#/$defs/messaging" }
+          "items": {
+            "$ref": "#/$defs/messaging"
+          }
         },
         "storage_accounts": {
           "type": "array",
-          "items": { "$ref": "#/$defs/storage_account" }
+          "items": {
+            "$ref": "#/$defs/storage_account"
+          }
         },
         "factories": {
           "type": "array",
-          "items": { "$ref": "#/$defs/data_factory" }
+          "items": {
+            "$ref": "#/$defs/data_factory"
+          }
         },
         "search": {
           "type": "array",
-          "items": { "$ref": "#/$defs/search_service" }
+          "items": {
+            "$ref": "#/$defs/search_service"
+          }
+        },
+        "backup_vaults": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/backup_vault"
+          }
         }
       }
     },
-
     "database": {
       "type": "object",
-      "required": ["id", "subsystem", "type", "sku", "module"],
+      "required": [
+        "subsystem",
+        "type",
+        "sku"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":          { "type": "string" },
-        "subsystem":   { "type": "string" },
-        "type":        { "type": "string", "enum": ["postgresql_flexible_server", "mssql_server", "mssql_managed_instance", "mysql_flexible_server", "cosmos_account"] },
-        "sku":         { "type": "string" },
-        "module":      { "$ref": "#/$defs/module_ref" },
-        "extensions":  { "type": "array", "items": { "type": "string" }, "description": "Database extensions. e.g. uuid-ossp, pgvector" },
-        "pgbouncer_enabled": { "type": "boolean", "default": false, "description": "Enable PgBouncer connection pooling (PG Flexible Server only)." },
-        "ha":          { "type": "string", "enum": ["none", "zone-redundant", "same-zone"], "default": "none" },
-        "backup":      { "type": "string", "enum": ["local", "geo-redundant"], "default": "local" },
-        "databases":   { "type": "array", "items": { "type": "string" }, "description": "Database names to create within the server." },
-        "version":     { "type": "string", "description": "Database engine version. e.g. 16, 18" },
-        "zone":        { "type": "string", "enum": ["1", "2", "3"], "description": "Availability zone for the database server." },
-        "public_network_access": { "type": "boolean", "default": false, "description": "Enable public network access. Defaults to false (private endpoints only)." },
-        "capacity_mode": { "type": "string", "enum": ["provisioned", "serverless"], "description": "Cosmos DB capacity mode." },
-        "purpose":     { "type": "string" },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-        "enabled":     { "type": "boolean", "default": true }
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "postgresql_flexible_server",
+            "mssql_server",
+            "mssql_managed_instance",
+            "mysql_flexible_server",
+            "cosmos_account"
+          ]
+        },
+        "sku": {
+          "type": "string"
+        },
+        "module": {
+          "$ref": "#/$defs/module_ref"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Database extensions. e.g. uuid-ossp, pgvector"
+        },
+        "pgbouncer_enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable PgBouncer connection pooling (PG Flexible Server only)."
+        },
+        "ha": {
+          "type": "string",
+          "enum": [
+            "none",
+            "zone-redundant",
+            "same-zone"
+          ],
+          "default": "none"
+        },
+        "backup": {
+          "type": "string",
+          "enum": [
+            "local",
+            "geo-redundant"
+          ],
+          "default": "local"
+        },
+        "databases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Database names to create within the server."
+        },
+        "version": {
+          "type": "string",
+          "description": "Database engine version. e.g. 16, 18"
+        },
+        "zone": {
+          "type": "string",
+          "enum": [
+            "1",
+            "2",
+            "3"
+          ],
+          "description": "Availability zone for the database server."
+        },
+        "purpose": {
+          "type": "string"
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
       }
     },
-
     "cache": {
       "type": "object",
-      "required": ["id", "subsystem", "sku", "module"],
+      "required": [
+        "subsystem",
+        "sku"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":        { "type": "string" },
-        "subsystem": { "type": "string" },
-        "sku":       { "type": "string" },
-        "module":    { "$ref": "#/$defs/module_ref" },
-        "purpose":   { "type": "string" },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-        "enabled":   { "type": "boolean", "default": true }
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "sku": {
+          "type": "string"
+        },
+        "module": {
+          "$ref": "#/$defs/module_ref"
+        },
+        "purpose": {
+          "type": "string"
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
       }
     },
-
     "messaging": {
       "type": "object",
-      "required": ["id", "subsystem", "type", "module"],
+      "required": [
+        "subsystem"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":        { "type": "string" },
-        "subsystem": { "type": "string" },
-        "type":      { "type": "string", "enum": ["service_bus", "event_hub", "rabbitmq_container_app", "storage_queue"] },
-        "module":    { "$ref": "#/$defs/module_ref" },
-        "sku":       { "type": "string" },
-        "topics":    { "type": "array", "items": { "type": "string" } },
-        "queues":    { "type": "array", "items": { "type": "string" } },
-        "purpose":   { "type": "string" },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-        "enabled":   { "type": "boolean", "default": true }
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "service_bus",
+            "event_hub",
+            "rabbitmq_container_app",
+            "storage_queue"
+          ]
+        },
+        "module": {
+          "$ref": "#/$defs/module_ref"
+        },
+        "sku": {
+          "type": "string"
+        },
+        "topics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "queues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "purpose": {
+          "type": "string"
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
       }
     },
-
     "storage_account": {
       "type": "object",
-      "required": ["id", "subsystem", "module"],
+      "required": [
+        "subsystem"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":         { "type": "string" },
-        "subsystem":  { "type": "string" },
-        "module":     { "type": "string" },
-        "sku":        { "type": "string", "enum": ["Standard_LRS", "Standard_GRS", "Standard_ZRS", "Standard_GZRS", "Premium_LRS", "Premium_ZRS"] },
-        "containers": { "type": "array", "items": { "type": "string" } },
-        "tables":     { "type": "array", "items": { "type": "string" } },
-        "queues":     { "type": "array", "items": { "type": "string" } },
-        "file_shares": { "type": "array", "items": { "type": "string" } },
-        "shared_access_key_enabled": { "type": "boolean", "default": false, "description": "Enable shared access key on the storage account. Required for CAE storage mounts and function app backing storage." },
-        "purpose":    { "type": "string" },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-        "enabled":    { "type": "boolean", "default": true }
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "module": {
+          "type": "string"
+        },
+        "sku": {
+          "type": "string",
+          "description": "e.g. Standard_LRS, Standard_GRS, Premium_LRS"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "StorageV2",
+            "BlobStorage"
+          ],
+          "description": "Storage account kind."
+        },
+        "containers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tables": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "queues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "file_shares": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "shared_access_key_enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "azure_resource_name": {
+          "type": "string",
+          "description": "Override naming convention with explicit Azure name."
+        },
+        "public_network_access": {
+          "type": "string",
+          "enum": [
+            "Enabled",
+            "Disabled"
+          ]
+        },
+        "purpose": {
+          "type": "string"
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
       }
     },
-
-    "static_site": {
-      "type": "object",
-      "required": ["id", "subsystem", "module"],
-      "additionalProperties": false,
-      "properties": {
-        "id":        { "type": "string" },
-        "subsystem": { "type": "string" },
-        "module":    { "$ref": "#/$defs/module_ref" },
-        "sku":       { "type": "string" },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-        "location_override": { "type": "string", "description": "Override location for region-restricted resources" },
-        "enabled":   { "type": "boolean", "default": true }
-      }
-    },
-
-    "data_factory": {
-      "type": "object",
-      "required": ["id", "subsystem", "module"],
-      "additionalProperties": false,
-      "properties": {
-        "id":        { "type": "string" },
-        "subsystem": { "type": "string" },
-        "module":    { "$ref": "#/$defs/module_ref" },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-        "enabled":   { "type": "boolean", "default": true }
-      }
-    },
-
-    "search_service": {
-      "type": "object",
-      "required": ["id", "subsystem", "module"],
-      "additionalProperties": false,
-      "properties": {
-        "id":        { "type": "string" },
-        "subsystem": { "type": "string" },
-        "module":    { "$ref": "#/$defs/module_ref" },
-        "sku":       { "type": "string" },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-        "enabled":   { "type": "boolean", "default": true }
-      }
-    },
-
     "security_block": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "key_vaults": {
           "type": "array",
-          "items": { "$ref": "#/$defs/key_vault" }
+          "items": {
+            "$ref": "#/$defs/key_vault"
+          }
         },
         "managed_identities": {
           "type": "array",
-          "items": { "$ref": "#/$defs/managed_identity" }
+          "items": {
+            "$ref": "#/$defs/managed_identity"
+          }
         },
         "container_registries": {
           "type": "array",
-          "items": { "$ref": "#/$defs/container_registry" }
+          "items": {
+            "$ref": "#/$defs/container_registry"
+          }
         }
       }
     },
-
     "key_vault": {
       "type": "object",
-      "required": ["id", "subsystem", "module"],
+      "required": [
+        "subsystem"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":           { "type": "string" },
-        "subsystem":    { "type": "string" },
-        "module":       { "type": "string" },
-        "access_model": { "type": "string", "enum": ["RBAC", "access_policy"], "default": "RBAC" },
-        "consumers":    { "type": "array", "items": { "type": "string" }, "description": "Logical IDs of consuming resources." },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-        "purge_protection_enabled": { "type": "boolean", "description": "Irreversible once enabled. Prevents permanent deletion of the Key Vault." },
-        "bypass_naming_convention": { "type": "boolean", "default": false, "description": "Use the name field directly instead of generated naming convention." },
-        "name":         { "type": "string", "description": "Custom resource name (only used when bypass_naming_convention is true)." },
-        "enabled":      { "type": "boolean", "default": true }
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "module": {
+          "type": "string"
+        },
+        "access_model": {
+          "type": "string",
+          "enum": [
+            "RBAC",
+            "access_policy"
+          ],
+          "default": "RBAC"
+        },
+        "consumers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Logical IDs of consuming resources."
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "purge_protection_enabled": {
+          "type": "boolean",
+          "description": "Irreversible once enabled. Prevents permanent deletion of the Key Vault."
+        },
+        "bypass_naming_convention": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use the name field directly instead of generated naming convention."
+        },
+        "name": {
+          "type": "string",
+          "description": "Custom resource name (only used when bypass_naming_convention is true)."
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
       }
     },
-
     "managed_identity": {
       "type": "object",
-      "required": ["id", "subsystem"],
+      "required": [
+        "subsystem"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":          { "type": "string" },
-        "subsystem":   { "type": "string" },
-        "type":        { "type": "string", "enum": ["system_assigned", "user_assigned"] },
-        "module":      { "$ref": "#/$defs/module_ref" },
-        "assigned_to": { "type": "array", "items": { "type": "string" }, "description": "Logical IDs of resources this identity is assigned to." },
-        "access_to":   { "type": "array", "items": { "type": "string" }, "description": "Resources this identity can access. e.g. Key Vault (Secrets Reader)" },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-        "enabled":     { "type": "boolean", "default": true }
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "system_assigned",
+            "user_assigned"
+          ]
+        },
+        "module": {
+          "$ref": "#/$defs/module_ref"
+        },
+        "assigned_to": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "access_to": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
       }
     },
-
     "container_registry": {
       "type": "object",
-      "required": ["id", "subsystem", "sku", "module"],
+      "required": [
+        "subsystem",
+        "sku"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":        { "type": "string" },
-        "subsystem": { "type": "string" },
-        "sku":       { "type": "string", "enum": ["Basic", "Standard", "Premium"] },
-        "module":    { "$ref": "#/$defs/module_ref" },
-        "consumers": { "type": "array", "items": { "type": "string" } },
-        "georeplications": { "type": "array", "items": { "type": "string" }, "description": "Azure regions for geo-replication. e.g. [eastus2]" },
-        "managed_identities": { "$ref": "#/$defs/managed_identities_config" },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-        "enabled":   { "type": "boolean", "default": true }
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "sku": {
+          "type": "string",
+          "enum": [
+            "Basic",
+            "Standard",
+            "Premium"
+          ]
+        },
+        "module": {
+          "$ref": "#/$defs/module_ref"
+        },
+        "consumers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "georeplications": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "location": {
+                "type": "string"
+              },
+              "zone_redundancy_enabled": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "managed_identities": {
+          "$ref": "#/$defs/managed_identities_config"
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
       }
     },
-
     "observability_block": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "log_analytics_workspace": {
           "type": "object",
-          "required": ["id", "subsystem", "module"],
+          "required": [
+            "subsystem"
+          ],
           "additionalProperties": false,
           "properties": {
-            "id":        { "type": "string" },
-            "subsystem": { "type": "string" },
-            "module":    { "type": "string" },
-            "retention_days": { "type": "integer", "default": 30 },
-            "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" }
+            "id": {
+              "type": "string"
+            },
+            "subsystem": {
+              "type": "string"
+            },
+            "module": {
+              "type": "string"
+            },
+            "retention_days": {
+              "type": "integer",
+              "default": 30
+            },
+            "instance_number": {
+              "type": "string",
+              "pattern": "^[0-9]{3}$"
+            }
           }
         },
         "app_insights": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["id", "subsystem", "module"],
+            "required": [
+              "subsystem"
+            ],
             "additionalProperties": false,
             "properties": {
-              "id":           { "type": "string" },
-              "subsystem":    { "type": "string" },
-              "module":       { "$ref": "#/$defs/module_ref" },
-              "workspace_id": { "type": "string", "description": "Logical ID of the Log Analytics Workspace." },
-              "linked_to":    { "type": "array", "items": { "type": "string" }, "description": "Logical IDs of resources linked to this App Insights." },
-              "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" }
+              "id": {
+                "type": "string"
+              },
+              "subsystem": {
+                "type": "string"
+              },
+              "module": {
+                "$ref": "#/$defs/module_ref"
+              },
+              "workspace_id": {
+                "type": "string"
+              },
+              "linked_to": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "instance_number": {
+                "type": "string",
+                "pattern": "^[0-9]{3}$"
+              }
             }
           }
         }
       }
     },
-
     "frontdoor_block": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "profile": {
           "type": "object",
-          "required": ["id", "subsystem", "sku", "module"],
+          "required": [
+            "subsystem",
+            "sku"
+          ],
           "additionalProperties": false,
           "properties": {
-            "id":        { "type": "string" },
-            "subsystem": { "type": "string" },
-            "sku":       { "type": "string", "enum": ["Standard_AzureFrontDoor", "Premium_AzureFrontDoor"] },
-            "module":    { "$ref": "#/$defs/module_ref" },
-            "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-            "enabled":   { "type": "boolean", "default": true }
+            "id": {
+              "type": "string"
+            },
+            "subsystem": {
+              "type": "string"
+            },
+            "sku": {
+              "type": "string",
+              "enum": [
+                "Standard_AzureFrontDoor",
+                "Premium_AzureFrontDoor"
+              ]
+            },
+            "module": {
+              "$ref": "#/$defs/module_ref"
+            },
+            "instance_number": {
+              "type": "string",
+              "pattern": "^[0-9]{3}$"
+            },
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            }
           }
         },
         "endpoints": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["id", "subsystem", "module"],
+            "required": [
+              "subsystem"
+            ],
             "additionalProperties": false,
             "properties": {
-              "id":        { "type": "string" },
-              "subsystem": { "type": "string" },
-              "module":    { "$ref": "#/$defs/module_ref" },
-              "enabled":   { "type": "boolean", "default": true }
+              "id": {
+                "type": "string"
+              },
+              "subsystem": {
+                "type": "string"
+              },
+              "module": {
+                "$ref": "#/$defs/module_ref"
+              },
+              "instance_number": {
+                "type": "string",
+                "pattern": "^[0-9]{3}$"
+              },
+              "enabled": {
+                "type": "boolean",
+                "default": true
+              }
             }
           }
         },
@@ -887,14 +2176,32 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["id", "subsystem", "module"],
+            "required": [
+              "id",
+              "subsystem"
+            ],
             "additionalProperties": false,
             "properties": {
-              "id":        { "type": "string" },
-              "subsystem": { "type": "string" },
-              "module":    { "$ref": "#/$defs/module_ref" },
-              "health_probe_path": { "type": "string" },
-              "enabled":   { "type": "boolean", "default": true }
+              "id": {
+                "type": "string"
+              },
+              "subsystem": {
+                "type": "string"
+              },
+              "module": {
+                "$ref": "#/$defs/module_ref"
+              },
+              "health_probe_path": {
+                "type": "string"
+              },
+              "health_probe": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "enabled": {
+                "type": "boolean",
+                "default": true
+              }
             }
           }
         },
@@ -902,15 +2209,38 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["id", "subsystem", "origin_group_id", "host_name", "module"],
+            "required": [
+              "id",
+              "origin_group_id",
+              "host_name"
+            ],
             "additionalProperties": false,
             "properties": {
-              "id":              { "type": "string" },
-              "subsystem":       { "type": "string" },
-              "origin_group_id": { "type": "string" },
-              "host_name":       { "type": "string", "description": "$ref or literal hostname." },
-              "module":          { "$ref": "#/$defs/module_ref" },
-              "enabled":         { "type": "boolean", "default": true }
+              "id": {
+                "type": "string"
+              },
+              "subsystem": {
+                "type": "string"
+              },
+              "origin_group_id": {
+                "type": "string"
+              },
+              "host_name": {
+                "type": "string"
+              },
+              "http_port": {
+                "type": "integer"
+              },
+              "https_port": {
+                "type": "integer"
+              },
+              "module": {
+                "$ref": "#/$defs/module_ref"
+              },
+              "enabled": {
+                "type": "boolean",
+                "default": true
+              }
             }
           }
         },
@@ -918,60 +2248,56 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["id", "subsystem", "endpoint_id", "origin_group_id", "patterns_to_match", "module"],
+            "required": [
+              "id",
+              "endpoint_id",
+              "origin_group_id"
+            ],
             "additionalProperties": false,
             "properties": {
-              "id":               { "type": "string" },
-              "subsystem":        { "type": "string" },
-              "endpoint_id":      { "type": "string" },
-              "origin_group_id":  { "type": "string" },
-              "patterns_to_match": { "type": "array", "items": { "type": "string" } },
-              "supported_protocols": { "type": "array", "items": { "type": "string", "enum": ["Http", "Https"] } },
-              "module":           { "$ref": "#/$defs/module_ref" },
-              "enabled":          { "type": "boolean", "default": true }
+              "id": {
+                "type": "string"
+              },
+              "subsystem": {
+                "type": "string"
+              },
+              "endpoint_id": {
+                "type": "string"
+              },
+              "origin_group_id": {
+                "type": "string"
+              },
+              "patterns_to_match": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "supported_protocols": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "https_redirect_enabled": {
+                "type": "boolean"
+              },
+              "module": {
+                "$ref": "#/$defs/module_ref"
+              },
+              "enabled": {
+                "type": "boolean",
+                "default": true
+              }
             }
           }
         },
-        "firewall_policy": {
+        "waf_policy": {
           "type": "object",
-          "required": ["id", "subsystem", "module", "sku", "mode"],
-          "additionalProperties": false,
-          "properties": {
-            "id":        { "type": "string" },
-            "subsystem": { "type": "string" },
-            "module":    { "$ref": "#/$defs/module_ref" },
-            "sku":       { "type": "string", "enum": ["Standard_AzureFrontDoor", "Premium_AzureFrontDoor"] },
-            "mode":      { "type": "string", "enum": ["Detection", "Prevention"] },
-            "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" }
-          }
-        },
-        "security_policy": {
-          "type": "object",
-          "required": ["id", "module", "firewall_policy_id", "endpoint_ids"],
-          "additionalProperties": false,
-          "properties": {
-            "id":                  { "type": "string" },
-            "module":              { "$ref": "#/$defs/module_ref" },
-            "firewall_policy_id":  { "type": "string" },
-            "endpoint_ids":        { "type": "array", "items": { "type": "string" } }
-          }
-        },
-        "custom_domains": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["id", "module", "host_name"],
-            "additionalProperties": false,
-            "properties": {
-              "id":        { "type": "string" },
-              "module":    { "$ref": "#/$defs/module_ref" },
-              "host_name": { "type": "string" }
-            }
-          }
+          "additionalProperties": true
         }
       }
     },
-
     "ai_block": {
       "type": "object",
       "additionalProperties": false,
@@ -980,28 +2306,63 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["id", "subsystem", "module", "models"],
+            "required": [
+              "subsystem"
+            ],
             "additionalProperties": false,
             "properties": {
-              "id":        { "type": "string" },
-              "subsystem": { "type": "string" },
-              "module":    { "$ref": "#/$defs/module_ref" },
-              "purpose":   { "type": "string" },
-              "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-              "storage_account_id": { "type": "string" },
+              "id": {
+                "type": "string"
+              },
+              "subsystem": {
+                "type": "string"
+              },
+              "module": {
+                "$ref": "#/$defs/module_ref"
+              },
+              "sku": {
+                "type": "string"
+              },
+              "purpose": {
+                "type": "string"
+              },
+              "instance_number": {
+                "type": "string",
+                "pattern": "^[0-9]{3}$"
+              },
+              "storage_account_id": {
+                "type": "string"
+              },
+              "projects": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
               "models": {
                 "type": "array",
                 "items": {
                   "type": "object",
-                  "required": ["name", "version"],
+                  "required": [
+                    "name",
+                    "version"
+                  ],
                   "additionalProperties": false,
                   "properties": {
-                    "name":    { "type": "string" },
-                    "version": { "type": "string" }
+                    "name": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "string"
+                    }
                   }
                 }
               },
-              "enabled": { "type": "boolean", "default": true }
+              "enabled": {
+                "type": "boolean",
+                "default": true
+              }
             }
           }
         },
@@ -1009,104 +2370,502 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["provider", "endpoint", "auth_method", "purpose"],
+            "required": [
+              "provider",
+              "endpoint",
+              "auth_method",
+              "purpose"
+            ],
             "additionalProperties": false,
             "properties": {
-              "provider":    { "type": "string" },
-              "endpoint":    { "type": "string" },
-              "auth_method": { "type": "string" },
-              "purpose":     { "type": "string" }
+              "provider": {
+                "type": "string"
+              },
+              "endpoint": {
+                "type": "string"
+              },
+              "auth_method": {
+                "type": "string"
+              },
+              "purpose": {
+                "type": "string"
+              }
             }
           }
         }
       }
     },
-
     "app_configuration_block": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "subsystem", "module"],
+        "required": [
+          "subsystem"
+        ],
         "additionalProperties": false,
         "properties": {
-          "id":        { "type": "string" },
-          "subsystem": { "type": "string" },
-          "module":    { "type": "string" },
-          "purpose":   { "type": "string" },
-          "consumers": { "type": "array", "items": { "type": "string" } },
-          "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-          "enabled":   { "type": "boolean", "default": true }
+          "id": {
+            "type": "string"
+          },
+          "subsystem": {
+            "type": "string"
+          },
+          "module": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string",
+            "enum": [
+              "free",
+              "standard"
+            ]
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "consumers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "instance_number": {
+            "type": "string",
+            "pattern": "^[0-9]{3}$"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          }
         }
       }
     },
-
     "platform_block": {
       "type": "object",
-      "description": "Platform-level resources including azapi provider resources and service bus namespaces.",
+      "description": "Platform-level resources that require the azapi provider (non-standard Azure resource types).",
       "additionalProperties": false,
       "properties": {
         "azapi_resources": {
           "type": "array",
-          "items": { "$ref": "#/$defs/azapi_resource" }
-        },
-        "servicebus": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/servicebus_namespace" }
+          "items": {
+            "$ref": "#/$defs/azapi_resource"
+          }
         }
       }
     },
-
-    "servicebus_namespace": {
-      "type": "object",
-      "required": ["id", "subsystem", "module"],
-      "additionalProperties": false,
-      "properties": {
-        "id":        { "type": "string" },
-        "subsystem": { "type": "string" },
-        "module":    { "type": "string" },
-        "sku":       { "type": "string", "enum": ["Basic", "Standard", "Premium"] },
-        "instance_number": { "type": "string", "pattern": "^[0-9]{3}$" },
-        "enabled":   { "type": "boolean", "default": true }
-      }
-    },
-
     "azapi_resource": {
       "type": "object",
       "description": "An Azure resource managed via the azapi provider for resource types not covered by azurerm.",
-      "required": ["id", "type", "api_version", "properties"],
+      "required": [
+        "id",
+        "type",
+        "api_version",
+        "properties"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":          { "type": "string", "description": "Logical ID used in HCL resource name." },
-        "type":        { "type": "string", "description": "Azure resource type. e.g. GitHub.Network/networkSettings" },
-        "api_version": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(-preview)?$", "description": "ARM API version. e.g. 2024-04-02" },
-        "name":        { "type": "string", "description": "Azure resource name. If omitted, uses the id." },
-        "parent_id":   { "type": "string", "description": "$ref to parent resource ID (typically resource group). Defaults to module.rg.resource_id" },
-        "properties":  { "type": "object", "additionalProperties": true, "description": "Resource-specific properties. $ref values are resolved to module references." }
+        "id": {
+          "type": "string",
+          "description": "Logical ID used in HCL resource name."
+        },
+        "type": {
+          "type": "string",
+          "description": "Azure resource type. e.g. GitHub.Network/networkSettings"
+        },
+        "api_version": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(-preview)?$",
+          "description": "ARM API version. e.g. 2024-04-02"
+        },
+        "name": {
+          "type": "string",
+          "description": "Azure resource name. If omitted, uses the id."
+        },
+        "parent_id": {
+          "type": "string",
+          "description": "$ref to parent resource ID (typically resource group). Defaults to module.rg.resource_id"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Resource-specific properties. $ref values are resolved to module references."
+        }
       }
     },
-
+    "hub_block": {
+      "type": "object",
+      "description": "Hub-specific configuration. When present, triggers hub-mode generation with provider aliases, VPN gateway, peerings, and spoke DNS links.",
+      "additionalProperties": false,
+      "properties": {
+        "vpn_gateway": {
+          "type": "object",
+          "required": [
+            "id",
+            "subsystem",
+            "module",
+            "sku",
+            "generation",
+            "p2s_address_pool"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "subsystem": {
+              "type": "string"
+            },
+            "module": {
+              "type": "string",
+              "const": "terraform-azurerm-p2s-vpn"
+            },
+            "sku": {
+              "type": "string"
+            },
+            "generation": {
+              "type": "string",
+              "enum": [
+                "Generation1",
+                "Generation2"
+              ]
+            },
+            "p2s_address_pool": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "gateway_subnet_id": {
+              "type": "string"
+            },
+            "dns_resolver_subnet_id": {
+              "type": "string"
+            }
+          }
+        },
+        "spoke_connections": {
+          "type": "array",
+          "description": "Spoke subscriptions this hub peers to. Generates provider aliases + variables.",
+          "items": {
+            "type": "object",
+            "required": [
+              "alias"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "alias": {
+                "type": "string",
+                "description": "Short name matching spoke_subscriptions/spoke_vnets keys"
+              }
+            }
+          }
+        },
+        "peerings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "spoke",
+              "hub_side_name",
+              "spoke_side_name"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "spoke": {
+                "type": "string",
+                "description": "Spoke alias from spoke_connections"
+              },
+              "hub_side_name": {
+                "type": "string"
+              },
+              "spoke_side_name": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "spoke_dns_links": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, link ALL spoke VNets to ALL central DNS zones."
+        }
+      }
+    },
+    "static_site": {
+      "type": "object",
+      "required": [
+        "subsystem"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "module": {
+          "$ref": "#/$defs/module_ref"
+        },
+        "sku": {
+          "type": "string",
+          "enum": [
+            "Free",
+            "Standard"
+          ]
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location (Static Sites have limited region availability)."
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        }
+      }
+    },
+    "data_factory": {
+      "type": "object",
+      "required": [
+        "subsystem"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "module": {
+          "$ref": "#/$defs/module_ref"
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
+      }
+    },
+    "search_service": {
+      "type": "object",
+      "required": [
+        "subsystem",
+        "sku"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "module": {
+          "$ref": "#/$defs/module_ref"
+        },
+        "sku": {
+          "type": "string"
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
+      }
+    },
+    "backup_vault": {
+      "type": "object",
+      "required": [
+        "subsystem"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "module": {
+          "$ref": "#/$defs/module_ref"
+        },
+        "redundancy": {
+          "type": "string",
+          "enum": [
+            "LocallyRedundant",
+            "GeoRedundant",
+            "ZoneRedundant"
+          ]
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
+      }
+    },
+    "signalr": {
+      "type": "object",
+      "required": [
+        "subsystem",
+        "sku"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "subsystem": {
+          "type": "string"
+        },
+        "module": {
+          "$ref": "#/$defs/module_ref"
+        },
+        "sku": {
+          "type": "string"
+        },
+        "service_mode": {
+          "type": "string",
+          "enum": [
+            "Default",
+            "Serverless",
+            "Classic"
+          ]
+        },
+        "instance_number": {
+          "type": "string",
+          "pattern": "^[0-9]{3}$"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource_group": {
+          "type": "string",
+          "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Override default location for this resource."
+        }
+      }
+    },
     "dependency": {
       "type": "object",
-      "required": ["name", "type", "direction"],
+      "required": [
+        "name",
+        "type",
+        "direction"
+      ],
       "additionalProperties": false,
       "properties": {
-        "name":      { "type": "string" },
-        "type":      { "type": "string", "enum": ["vnet_peering", "cross_spoke", "https_egress", "vpn", "service_bus", "database"] },
-        "direction": { "type": "string", "enum": ["inbound", "outbound", "bidirectional"] },
-        "notes":     { "type": "string" }
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "vnet_peering",
+            "cross_spoke",
+            "https_egress",
+            "vpn",
+            "service_bus",
+            "database"
+          ]
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "inbound",
+            "outbound",
+            "bidirectional"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
       }
     },
-
     "blocker": {
       "type": "object",
-      "required": ["id", "issue", "severity", "status"],
+      "required": [
+        "id",
+        "issue",
+        "severity",
+        "status"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id":         { "type": "integer" },
-        "issue":      { "type": "string" },
-        "severity":   { "type": "string", "enum": ["HIGH", "MED", "LOW"] },
-        "status":     { "type": "string", "enum": ["OPEN", "RESOLVED"] },
-        "resolution": { "type": "string" }
+        "id": {
+          "type": "integer"
+        },
+        "issue": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "HIGH",
+            "MED",
+            "LOW"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "OPEN",
+            "RESOLVED"
+          ]
+        },
+        "resolution": {
+          "type": "string"
+        }
       }
     }
   }
