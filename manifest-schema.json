@@ -23,7 +23,8 @@
         "1.2.0",
         "1.3.0",
         "1.4.0",
-        "1.5.0"
+        "1.5.0",
+        "1.6.0"
       ],
       "description": "Manifest schema version."
     },
@@ -2709,6 +2710,10 @@
         "resource_group": {
           "type": "string",
           "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location_override": {
+          "type": "string",
+          "description": "Applied by the builder when the default location is not supported for this resource type (e.g. SWA eastasia fallback)."
         }
       }
     },

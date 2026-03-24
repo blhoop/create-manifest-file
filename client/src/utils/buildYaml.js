@@ -44,7 +44,7 @@ export function buildYamlContent(rows, subscription) {
 
   // ── spoke ──────────────────────────────────────────────────────────────
   out.push(...sectionHeader('SPOKE — Identity & metadata'))
-  out.push("schema_version: '1.5.0'")
+  out.push("schema_version: '1.6.0'")
   out.push('spoke:')
   if (sub.spoke_name)           out.push(`  name: ${q(sub.spoke_name)}`)
   if (sub.spoke_name)           out.push(`  subscription: ${q(sub.spoke_name)}`)

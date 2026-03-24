@@ -4,7 +4,7 @@ import PreviewTable from './components/PreviewTable.jsx'
 import DocModal from './components/DocModal.jsx'
 import { buildYamlContent } from './utils/buildYaml.js'
 import readmeContent from '../../README.md?raw'
-import schemaContent from '../../schema-template-v1.5.0.yml?raw'
+import schemaContent from '../../schema-template-v1.6.0.yml?raw'
 import './App.css'
 
 const STORAGE_KEY = 'manifest_session_v2'
@@ -204,7 +204,7 @@ export default function App() {
         <p>Upload a spreadsheet, architecture diagram, or existing yaml to generate a YAML manifest</p>
         <div className="app-header-links">
           <button className="doc-link-btn" onClick={() => setDocModal({ title: 'README.md', content: readmeContent })}>README</button>
-          <button className="doc-link-btn" onClick={() => setDocModal({ title: 'schema-template-v1.5.0.yml', content: schemaContent })}>Schema Template</button>
+          <button className="doc-link-btn" onClick={() => setDocModal({ title: 'schema-template-v1.6.0.yml', content: schemaContent })}>Schema Template</button>
         </div>
       </header>
 

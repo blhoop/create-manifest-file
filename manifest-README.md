@@ -26,7 +26,7 @@ Each arrow is a validation gate. The manifest is human-reviewable before any inf
 Every manifest must include `schema_version` at the top:
 
 ```yaml
-schema_version: '1.5.0'
+schema_version: '1.6.0'
 ```
 
 The builder validates the version and rejects manifests it doesn't understand. Older manifests continue to work — new versions only make fields optional, never remove them.
@@ -269,3 +269,4 @@ The builder validates manifests against:
 | 1.3.0 | 2026-03-20 | Registry sync. Added backup vaults, SignalR, AI Foundry projects. Module registry updated to 99 modules (102 repos minus template, subscription, deprecated linux-app-service). |
 | 1.4.0 | 2026-03-22 | Network auto-carve. Minimal network: just `vnet_cidr` required — builder auto-generates subnets, NSGs, delegations, PEs, DNS zones from `networking-defaults.yml`. Full explicit mode still supported. Tags: only `CostRegion` and `CostType` required. |
 | 1.5.0 | 2026-03-22 | Per-resource `resource_group` and `location` overrides. Any resource can isolate into a custom RG or deploy to a different region. Shared RGs when multiple resources use the same value. |
+| 1.6.0 | 2026-03-24 | Plan strategy modes: `dedicated` (1 ASP per app, default), `shared` (auto-group N apps per plan), explicit `plan_id`. Managed identity attachment (`managed_identities.user_assigned` on web/func apps). Database `capacity_mode` (serverless/provisioned). SWA `location_override`. Inventory type aliases (StaticWebApp, ManagedRedis, ManagedIdentity, KeyVault, StorageAccount). Windows OS detection for shared plans. ASP naming collision fix (web-group1 vs func-group1). |
