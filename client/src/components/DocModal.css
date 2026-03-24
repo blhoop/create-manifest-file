@@ -9,11 +9,11 @@
 }
 
 .doc-modal {
-  background: #1a202c;
-  border: 1px solid #2d3748;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  width: 90vw;
-  max-width: 860px;
+  width: 95vw;
+  max-width: 1400px;
   height: 80vh;
   display: flex;
   flex-direction: column;
@@ -25,13 +25,13 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1.25rem;
-  background: #16213e;
-  border-bottom: 1px solid #2d3748;
+  background: #f3f4f6;
+  border-bottom: 1px solid #d1d5db;
   flex-shrink: 0;
 }
 
 .doc-modal-title {
-  color: #e2e8f0;
+  color: #111827;
   font-weight: 600;
   font-size: 0.95rem;
 }
@@ -39,7 +39,7 @@
 .doc-modal-close {
   background: none;
   border: none;
-  color: #a0aec0;
+  color: #374151;
   font-size: 1rem;
   cursor: pointer;
   padding: 0.25rem 0.5rem;
@@ -48,8 +48,8 @@
 }
 
 .doc-modal-close:hover {
-  background: #2d3748;
-  color: #e2e8f0;
+  background: #e5e7eb;
+  color: #111827;
 }
 
 .doc-modal-body {
@@ -60,7 +60,7 @@
   font-family: 'Consolas', 'Menlo', monospace;
   font-size: 0.8rem;
   line-height: 1.6;
-  color: #cbd5e0;
+  color: #111827;
   white-space: pre-wrap;
   word-break: break-word;
 }

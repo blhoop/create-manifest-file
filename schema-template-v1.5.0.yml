@@ -226,10 +226,15 @@ compute:
       sku: P1v3                         # REQUIRED — SKU name. Minimums:
                                         #   P1v3 (Premium required for VNet integration, slots)
                                         #   Dev environments use same tier, smallest size.
+      plan_strategy: dedicated          # OPTIONAL — "dedicated" (default, 1 ASP per app) or
+                                        #   "shared" (auto-group apps_per_plan apps onto each ASP).
+      apps_per_plan: 4                  # OPTIONAL — number of apps per shared ASP (only when plan_strategy = shared)
     function_app:
       os_type: Windows                  # REQUIRED — Windows or Linux
       sku: EP1                          # REQUIRED — SKU name. Minimums:
                                         #   EP1 (Elastic Premium required for VNet integration, always-ready)
+      plan_strategy: dedicated          # OPTIONAL — "dedicated" (default) or "shared"
+      apps_per_plan: 4                  # OPTIONAL — only used when plan_strategy = shared
 
   # --- Web Apps ---
   # Each app gets its own dedicated plan from plan_defaults.web_app unless overridden.
@@ -240,6 +245,12 @@ compute:
       module: terraform-azurerm-windows-web-app  # DERIVED — inferred from os_type in plan_defaults. Override for edge cases.
       instance_number: '001'            # DERIVED — auto-assigned sequentially if omitted
       vnet_integration_subnet_id: snet_appservices  # OPTIONAL — subnet id for VNet integration. Omit if no VNet integration.
+      # plan_id: asp_custom             # OPTIONAL — explicit ASP id from compute.app_service_plans.
+                                        #   Overrides plan_defaults and share_plan_with.
+      # managed_identities:            # OPTIONAL — managed identity attachments
+      #   system_assigned: true         #   true (default) or false
+      #   user_assigned:                #   list of MI module IDs from security.managed_identities
+      #     - mi_azure-functions
       # resource_group: custom          # OPTIONAL — override RG placement. Creates rg-{product}-custom-{env}-{loc}.
                                         #   Default: compute RG. Databases auto-isolate by type.
                                         #   If multiple resources share the same value, they share the RG.
@@ -270,6 +281,12 @@ compute:
                                         #   dotnet-isolated, node, python, java, powershell, custom
       instance_number: '001'            # DERIVED — auto-assigned sequentially if omitted
       vnet_integration_subnet_id: snet_appservices  # OPTIONAL — subnet id for VNet integration
+      # plan_id: asp_custom             # OPTIONAL — explicit ASP id from compute.app_service_plans.
+                                        #   Overrides plan_defaults and share_plan_with.
+      # managed_identities:            # OPTIONAL — managed identity attachments
+      #   system_assigned: true
+      #   user_assigned:
+      #     - mi_azure-functions
 
     # Minimal — subsystem + runtime required, everything else derived
     - subsystem: notifications
@@ -403,6 +420,7 @@ data:
                                         #   cosmos: serverless, provisioned
                                         #   mssql_server: GP_Gen5_2, GP_Gen5_4
                                         #   postgresql_flexible_server: GP_Standard_D2s_v3 (minimum, never Burstable)
+      capacity_mode: serverless         # OPTIONAL — "provisioned" (default) or "serverless". Cosmos only.
       databases:                        # OPTIONAL — informational only. Terraform does NOT create these.
         - my-db                         #   Database creation is an app team concern (CREATE DATABASE / migrations).
         - my-db-archive                 #   Listed here for documentation / schooling purposes.
