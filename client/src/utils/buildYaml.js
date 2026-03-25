@@ -280,8 +280,9 @@ export function buildYamlContent(rows, subscription) {
           }
         }
       }
+      out.push(`      managed_identities:`)
+      out.push(`        system_assigned: true`)
       if (cf.mi_user_assigned) {
-        out.push(`      managed_identities:`)
         out.push(`        user_assigned:`)
         for (const mi of cf.mi_user_assigned.split(',').map(s => s.trim()).filter(Boolean)) {
           out.push(`          - ${q(mi)}`)
@@ -332,8 +333,9 @@ export function buildYamlContent(rows, subscription) {
           }
         }
       }
+      out.push(`      managed_identities:`)
+      out.push(`        system_assigned: true`)
       if (cf.mi_user_assigned) {
-        out.push(`      managed_identities:`)
         out.push(`        user_assigned:`)
         for (const mi of cf.mi_user_assigned.split(',').map(s => s.trim()).filter(Boolean)) {
           out.push(`          - ${q(mi)}`)
@@ -645,7 +647,8 @@ export function buildYamlContent(rows, subscription) {
       for (const row of mapped.security.managed_identities) {
         const cf = parseCommentFields(row.comments)
         const subsystem = cf.subsystem || row.name || 'identity'
-        out.push(`    - subsystem: ${q(subsystem)}`)
+        out.push(`    - id: mi_${row.name || subsystem}`)
+        out.push(`      subsystem: ${q(subsystem)}`)
         out.push(`      module: terraform-azurerm-user-assigned-identity`)
         out.push(`      instance_number: '${cf.instance_number || '001'}'`)
       }
@@ -673,8 +676,6 @@ export function buildYamlContent(rows, subscription) {
       out.push(`    - subsystem: ${q(row.name || product)}`)
       out.push(`      module: terraform-azurerm-application-insights`)
       out.push(`      workspace_id: law`)
-      const retDays = cf.retention_days || cf.retention
-      if (retDays) out.push(`      retention_days: ${retDays}`)
     }
   }
 

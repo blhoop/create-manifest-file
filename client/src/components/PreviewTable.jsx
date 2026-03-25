@@ -513,6 +513,7 @@ export default function PreviewTable({ rows, onRowsChange, onDetach, onAudit, ge
           currentNsgRules={rows[jsonPopupRow]?.nsg_rules ?? []}
           currentConsumers={rows[jsonPopupRow]?.consumers ?? []}
           aspNames={rows.filter(r => r.type === 'app_service_plan' && r.name).map(r => r.name)}
+          miNames={rows.filter(r => (r.type === 'managed_identities' || r.type === 'ManagedIdentity') && r.name).map(r => `mi_${r.name}`)}
           onClose={() => setJsonPopupRow(null)}
           onCommit={(data) => handleJsonCommentCommit(jsonPopupRow, data)}
         />

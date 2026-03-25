@@ -51,7 +51,7 @@ const AZURE = {
         'P0v4', 'P1v4', 'P2v4', 'P3v4',
         'I1v2', 'I2v2', 'I3v2',
       ]},
-      { key: 'mi_user_assigned',  label: 'User-Assigned MIs', type: 'text', placeholder: 'e.g. mi_azure-functions, mi_api' },
+      { key: 'mi_user_assigned',  label: 'User-Assigned MIs', type: 'mi_multiselect' },
     ],
   },
   web_app: {
@@ -66,7 +66,7 @@ const AZURE = {
         'P0v4', 'P1v4', 'P2v4', 'P3v4',
         'I1v2', 'I2v2', 'I3v2',
       ]},
-      { key: 'mi_user_assigned',  label: 'User-Assigned MIs', type: 'text', placeholder: 'e.g. mi_azure-functions, mi_api' },
+      { key: 'mi_user_assigned',  label: 'User-Assigned MIs', type: 'mi_multiselect' },
     ],
   },
 
@@ -79,7 +79,7 @@ const AZURE = {
       { key: 'plan_id',           label: 'Plan ID',         type: 'text',   placeholder: 'explicit ASP id, e.g. asp_custom' },
       { key: 'share_plan_with',   label: 'Share Plan With', type: 'text',   placeholder: 'app id, e.g. func_booking-expiry' },
       { key: 'plan_override_sku', label: 'Plan Override SKU', type: 'select', options: ['EP1', 'EP2', 'EP3'] },
-      { key: 'mi_user_assigned',  label: 'User-Assigned MIs', type: 'text', placeholder: 'e.g. mi_azure-functions, mi_api' },
+      { key: 'mi_user_assigned',  label: 'User-Assigned MIs', type: 'mi_multiselect' },
     ],
   },
 
@@ -317,9 +317,7 @@ const AZURE = {
   // observability.app_insights
   app_insights: {
     label: 'App Insights',
-    fields: [
-      { key: 'retention_days', label: 'Retention (days)', type: 'select', options: ['30', '60', '90', '120', '180', '270', '365', '550', '730'] },
-    ],
+    fields: [],
   },
 
   // ── App Configuration ──────────────────────────────────────────────────
