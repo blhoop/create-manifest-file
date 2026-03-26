@@ -1,4 +1,4 @@
-# Example Spoke Manifest — exercises all schema v1.5.0 sections
+# Example Spoke Manifest — exercises all schema v1.6.0 sections
 # This is a reference example, not a real spoke. It demonstrates every
 # section and field available in the schema.
 
@@ -34,10 +34,16 @@ network:
   peering: hub-network-vnet
 
 compute:
+  # Plan defaults — controls how ASPs are assigned to apps.
+  # plan_strategy: dedicated (default, 1 ASP per app) or shared (auto-group N per plan).
+  # apps_per_plan: how many apps per shared ASP (default 4).
+  # For explicit control, use plan_id on individual apps to reference compute.app_service_plans.
   plan_defaults:
     web_app:
       os_type: Windows
       sku: P1v3
+      # plan_strategy: shared       # uncomment to auto-group web apps (4 per plan)
+      # apps_per_plan: 4
     function_app:
       os_type: Windows
       sku: EP1
@@ -46,6 +52,10 @@ compute:
   web_apps:
     - id: web_api
       subsystem: api
+      managed_identities:                # attach user-assigned MIs from security.managed_identities
+        system_assigned: true
+        user_assigned:
+          - mi_shared_identity
     - subsystem: config
       share_plan_with: web_api
     - subsystem: heavy-api
@@ -173,7 +183,7 @@ data:
 
 security:
   key_vaults:
-    - subsystem: ex
+    - subsystem: shared
       access_model: RBAC
 
   container_registries:
@@ -233,11 +243,11 @@ frontdoor:
 
 observability:
   log_analytics_workspace:
-    subsystem: ex
+    subsystem: compute
     retention_days: 30
 
   app_insights:
-    - subsystem: ex
+    - subsystem: compute
 
 dependencies:
   - name: hub-network-vnet

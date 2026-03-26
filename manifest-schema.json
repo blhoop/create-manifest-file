@@ -676,7 +676,7 @@
       "properties": {
         "plan_defaults": {
           "type": "object",
-          "description": "Default plan specs. plan_strategy controls ASP assignment: 'dedicated' (default, 1 per app), 'shared' (auto-group N apps per plan), or omit for dedicated.",
+          "description": "Default plan specs. plan_strategy controls ASP assignment: 'shared' (default, auto-group N apps per plan) or 'dedicated' (1 per app).",
           "additionalProperties": false,
           "properties": {
             "web_app": {
