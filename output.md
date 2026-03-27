@@ -18,7 +18,7 @@ Schema reference lives in `schema-template-v1.3.0.md`.
 ```
 # <spoke-name> -- Spoke Infrastructure Manifest
 # Schema: manifest-schema.json v1
-schema_version: '1.3.0'
+schema_version: '1.6.0'
 
 spoke:             — identity & metadata (from subscription panel)
 ctm_properties:    — resource naming product code

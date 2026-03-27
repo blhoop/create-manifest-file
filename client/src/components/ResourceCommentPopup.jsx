@@ -5,6 +5,31 @@ import './ResourceCommentPopup.css'
 
 const normalizeType = t => t?.toLowerCase().replace(/[\s_/]+/g, '') ?? ''
 
+function MiMultiSelect({ value, miNames, onChange }) {
+  const selected = (value ?? '').split(',').map(s => s.trim()).filter(Boolean)
+  const available = miNames.filter(mi => !selected.includes(mi))
+  const add = (mi) => { if (mi) onChange([...selected, mi].join(', ')) }
+  const remove = (mi) => onChange(selected.filter(s => s !== mi).join(', '))
+  return (
+    <div className="rcp-mi-multiselect">
+      <select className="rcp-select" value="" onChange={e => add(e.target.value)}>
+        <option value="">{miNames.length === 0 ? '— no managed identities in sheet —' : '— add identity —'}</option>
+        {available.map(mi => <option key={mi} value={mi}>{mi}</option>)}
+      </select>
+      {selected.length > 0 && (
+        <div className="rcp-mi-tags">
+          {selected.map(mi => (
+            <span key={mi} className="rcp-mi-tag">
+              {mi}
+              <button className="rcp-mi-tag-remove" onClick={() => remove(mi)} title="Remove">✕</button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Types that get an NSG Rules tab
 const NSG_TYPES = new Set(['web_app', 'app_service', 'app_service_plan', 'function_app'])
 // Types that get a Consumers tab
@@ -151,7 +176,7 @@ function ConsumersTab({ consumers, onChange }) {
   )
 }
 
-export default function ResourceCommentPopup({ row, currentComment, currentNsgRules, currentConsumers, aspNames = [], onClose, onCommit }) {
+export default function ResourceCommentPopup({ row, currentComment, currentNsgRules, currentConsumers, aspNames = [], miNames = [], onClose, onCommit }) {
   const typeConfig = getCommentFields(row?.type)
   const hasFields = !!typeConfig
   const showNsgTab = NSG_TYPES.has(row?.type)
@@ -280,6 +305,13 @@ export default function ResourceCommentPopup({ row, currentComment, currentNsgRu
                             }
                           </select>
                         </div>
+                      ) : f.type === 'mi_multiselect' ? (
+                        <MiMultiSelect
+                          value={fieldValues[f.key] ?? ''}
+                          miNames={miNames}
+                          onChange={val => setField(f.key, val)}
+                        />
+
                       ) : f.type === 'select' ? (
                         <select
                           className="rcp-select"

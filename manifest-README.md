@@ -26,7 +26,7 @@ Each arrow is a validation gate. The manifest is human-reviewable before any inf
 Every manifest must include `schema_version` at the top:
 
 ```yaml
-schema_version: '1.5.0'
+schema_version: '1.6.0'
 ```
 
 The builder validates the version and rejects manifests it doesn't understand. Older manifests continue to work — new versions only make fields optional, never remove them.
@@ -259,6 +259,25 @@ The builder validates manifests against:
 | `scripts/validate-manifest.py` | Schema validator |
 | `scripts/lint-manifest.py` | Semantic linter |
 
+## Naming Pitfalls
+
+The naming convention is `{type}-{product}-{subsystem}-{env}-{location}-{instance}`. The product code from `ctm_properties.product` is always included automatically. Two common mistakes:
+
+### Product code in subsystem
+
+If `product: lb` and you write `subsystem: lbassets`, the generated name doubles the product code: `stlblbassetsdevaue001`. Use `subsystem: assets` instead.
+
+The builder auto-strips the product prefix when there is a clear boundary (separator or case change):
+- `lb-assets` → stripped to `assets` (separator boundary)
+- `gprofData` → stripped to `data` (uppercase boundary, 3+ char product)
+- `lbassets` → **not** stripped (no clear boundary, 2-char product) — lint warns instead
+
+### Resource type prefix as subsystem
+
+If you set `subsystem: kv` on a Key Vault, the resource type prefix `kv` appears twice in the name: `kv-lb-kv-dev-aue` — once as the type, once as the subsystem. Use a descriptive subsystem like `shared` or `compute` instead.
+
+The linter checks W006 and W007 flag both patterns.
+
 ## Version History
 
 | Version | Date | Changes |
@@ -269,3 +288,5 @@ The builder validates manifests against:
 | 1.3.0 | 2026-03-20 | Registry sync. Added backup vaults, SignalR, AI Foundry projects. Module registry updated to 99 modules (102 repos minus template, subscription, deprecated linux-app-service). |
 | 1.4.0 | 2026-03-22 | Network auto-carve. Minimal network: just `vnet_cidr` required — builder auto-generates subnets, NSGs, delegations, PEs, DNS zones from `networking-defaults.yml`. Full explicit mode still supported. Tags: only `CostRegion` and `CostType` required. |
 | 1.5.0 | 2026-03-22 | Per-resource `resource_group` and `location` overrides. Any resource can isolate into a custom RG or deploy to a different region. Shared RGs when multiple resources use the same value. |
+| 1.6.0 | 2026-03-24 | Plan strategy modes: `dedicated` (1 ASP per app, default), `shared` (auto-group N apps per plan), explicit `plan_id`. Managed identity attachment (`managed_identities.user_assigned` on web/func apps). Database `capacity_mode` (serverless/provisioned). SWA `location_override`. Inventory type aliases (StaticWebApp, ManagedRedis, ManagedIdentity, KeyVault, StorageAccount). Per-name resource collection (multiple MIs, storage accounts, key vaults from spoke YAML). Windows OS detection for shared plans. ASP naming collision fix (web-group1 vs func-group1). Storage PE ref compatibility for multi-storage spokes. NLI marked as BETA feature. Auto-import resilience in deploy template. |
+| 1.7.0 | 2026-03-26 | Entra ID groups opt-in (`security.entra_groups`, default false). Subsystem dedup: builder strips product-code prefixes, linter checks W006/W007/W008/W009 and errors E012/E013. Bootstrap passes `spoke_name`, `spoke_workspace`, `create_entra_groups` to LZ TFC workspace. |

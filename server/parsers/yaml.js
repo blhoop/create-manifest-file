@@ -158,31 +158,49 @@ function parseNewFormat(doc) {
 
   // compute.web_apps
   for (const entry of (doc.compute?.web_apps ?? [])) {
+    const waParts = []
+    const waBase = buildCommentFromEntry(entry, [
+      { commentKey: 'os_type',           yamlKey: 'os_type' },
+      { commentKey: 'instance_number',   yamlKey: 'instance_number' },
+      { commentKey: 'plan_id',           yamlKey: 'plan_id' },
+      { commentKey: 'share_plan_with',   yamlKey: 'share_plan_with' },
+      { commentKey: 'plan_override_sku', yamlKey: 'plan_override.sku' },
+    ])
+    if (waBase) waParts.push(waBase)
+    const waMiList = entry.managed_identities?.user_assigned
+    if (Array.isArray(waMiList) && waMiList.length > 0) {
+      waParts.push(`mi_user_assigned:${waMiList.join(',')}`)
+    }
     rows.push({
       name:     entry.subsystem ?? entry.id ?? '',
       type:     'web_app',
       location: '',
       repo:     entry.app_repo ?? '',
-      comments: buildCommentFromEntry(entry, [
-        { commentKey: 'os_type',          yamlKey: 'os_type' },
-        { commentKey: 'share_plan_with',  yamlKey: 'share_plan_with' },
-        { commentKey: 'plan_override_sku', yamlKey: 'plan_override.sku' },
-      ]),
+      comments: waParts.join(', '),
     })
   }
 
   // compute.function_apps
   for (const entry of (doc.compute?.function_apps ?? [])) {
+    const faParts = []
+    const faBase = buildCommentFromEntry(entry, [
+      { commentKey: 'runtime',           yamlKey: 'runtime' },
+      { commentKey: 'instance_number',   yamlKey: 'instance_number' },
+      { commentKey: 'plan_id',           yamlKey: 'plan_id' },
+      { commentKey: 'share_plan_with',   yamlKey: 'share_plan_with' },
+      { commentKey: 'plan_override_sku', yamlKey: 'plan_override.sku' },
+    ])
+    if (faBase) faParts.push(faBase)
+    const faMiList = entry.managed_identities?.user_assigned
+    if (Array.isArray(faMiList) && faMiList.length > 0) {
+      faParts.push(`mi_user_assigned:${faMiList.join(',')}`)
+    }
     rows.push({
       name:     entry.subsystem ?? entry.id ?? '',
       type:     'function_app',
       location: '',
       repo:     entry.app_repo ?? '',
-      comments: buildCommentFromEntry(entry, [
-        { commentKey: 'runtime',          yamlKey: 'runtime' },
-        { commentKey: 'share_plan_with',  yamlKey: 'share_plan_with' },
-        { commentKey: 'plan_override_sku', yamlKey: 'plan_override.sku' },
-      ]),
+      comments: faParts.join(', '),
     })
   }
 
@@ -310,7 +328,9 @@ function parseNewFormat(doc) {
       location: '',
       repo:     '',
       comments: buildCommentFromEntry(entry, [
-        { commentKey: 'sku', yamlKey: 'sku' },
+        { commentKey: 'sku',           yamlKey: 'sku' },
+        { commentKey: 'capacity_mode', yamlKey: 'capacity_mode' },
+        { commentKey: 'type',          yamlKey: 'type' },
       ]),
     })
   }
@@ -408,7 +428,8 @@ function parseNewFormat(doc) {
       location: '',
       repo:     '',
       comments: buildCommentFromEntry(entry, [
-        { commentKey: 'sku', yamlKey: 'sku' },
+        { commentKey: 'sku',          yamlKey: 'sku' },
+        { commentKey: 'access_model', yamlKey: 'access_model' },
       ]),
     })
   }

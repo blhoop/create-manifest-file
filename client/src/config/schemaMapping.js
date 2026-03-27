@@ -182,6 +182,33 @@ export const SCHEMA_MAPPING = {
     sub_key: 'vnets',
     module: 'terraform-azurerm-virtual-network',
   },
+
+  // ── v1.6.0 inventory type aliases ─────────────────────────────────────────
+  StaticWebApp: {
+    section: 'compute',
+    sub_key: 'static_sites',
+    module: 'terraform-azurerm-static-web-app',
+  },
+  ManagedRedis: {
+    section: 'data',
+    sub_key: 'caching',
+    module: 'terraform-azurerm-managed-redis',
+  },
+  ManagedIdentity: {
+    section: 'security',
+    sub_key: 'managed_identities',
+    module: 'terraform-azurerm-user-assigned-identity',
+  },
+  KeyVault: {
+    section: 'security',
+    sub_key: 'key_vaults',
+    module: 'terraform-azurerm-key-vault',
+  },
+  StorageAccount: {
+    section: 'data',
+    sub_key: 'storage_accounts',
+    module: 'terraform-azurerm-storage-account',
+  },
 }
 
 /**
@@ -215,7 +242,7 @@ export function resolveModule(serviceType, commentFields) {
       ? 'terraform-azurerm-linux-function-app'
       : 'terraform-azurerm-windows-function-app'
   }
-  if (serviceType === 'app_service' || serviceType === 'web_app') {
+  if (serviceType === 'app_service' || serviceType === 'web_app' || serviceType === 'WebApp') {
     return isLinux
       ? 'terraform-azurerm-linux-web-app'
       : 'terraform-azurerm-windows-web-app'

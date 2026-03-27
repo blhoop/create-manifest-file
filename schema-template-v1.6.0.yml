@@ -1,5 +1,5 @@
 # =============================================================================
-# Spoke Infrastructure Manifest — Schema Template v1.5.0
+# Spoke Infrastructure Manifest — Schema Template v1.6.0
 # =============================================================================
 #
 # This file documents every field the builder accepts. Copy this template,
@@ -47,7 +47,7 @@
 # Version: 1.5.0
 # =============================================================================
 
-schema_version: '1.5.0'
+schema_version: '1.6.0'
 
 # ---------------------------------------------------------------------------
 # SPOKE — Identity & metadata
@@ -74,6 +74,10 @@ spoke:
 ctm_properties:
   product: myapp                        # REQUIRED — short product code used in all resource names (e.g. "lb", "gprof", "mega")
                                         #   Keep it short (2-5 chars). This appears in every resource name.
+                                        #   IMPORTANT: Do NOT repeat the product code in subsystem values.
+                                        #   If product is "lb", use subsystem "assets" not "lbassets".
+                                        #   The builder auto-strips product prefixes with clear boundaries
+                                        #   (e.g. lb-assets -> assets) but warns on ambiguous cases.
 
 # ---------------------------------------------------------------------------
 # ENVIRONMENTS — At least one required
@@ -226,15 +230,21 @@ compute:
       sku: P1v3                         # REQUIRED — SKU name. Minimums:
                                         #   P1v3 (Premium required for VNet integration, slots)
                                         #   Dev environments use same tier, smallest size.
-      plan_strategy: dedicated          # OPTIONAL — "dedicated" (default, 1 ASP per app) or
-                                        #   "shared" (auto-group apps_per_plan apps onto each ASP).
-      apps_per_plan: 4                  # OPTIONAL — number of apps per shared ASP (only when plan_strategy = shared)
+      plan_strategy: shared             # OPTIONAL — shared (default, auto-group N apps per plan) or dedicated (1 ASP per app)
+      apps_per_plan: 4                  # OPTIONAL — apps per shared ASP (only used when plan_strategy=shared, default 4)
     function_app:
       os_type: Windows                  # REQUIRED — Windows or Linux
       sku: EP1                          # REQUIRED — SKU name. Minimums:
                                         #   EP1 (Elastic Premium required for VNet integration, always-ready)
-      plan_strategy: dedicated          # OPTIONAL — "dedicated" (default) or "shared"
-      apps_per_plan: 4                  # OPTIONAL — only used when plan_strategy = shared
+      plan_strategy: shared             # OPTIONAL — shared (default) or dedicated
+      apps_per_plan: 4                  # OPTIONAL — apps per shared ASP (default 4)
+
+  # --- Plan assignment modes ---
+  # 1. Omit plan_strategy (or set to 'shared') → auto-group 4 apps per plan (default)
+  # 2. plan_strategy: shared → auto-group N apps per plan (set apps_per_plan, default 4)
+  # 3. Explicit plan_id on each app → full manual control (reference compute.app_service_plans by id)
+  # Modes can be mixed: some apps with plan_id, others falling back to plan_defaults.
+  # Microsoft.Web throttles ASP creates at ~10 per sub per region — use shared or plan_id for large spokes.
 
   # --- Web Apps ---
   # Each app gets its own dedicated plan from plan_defaults.web_app unless overridden.
@@ -245,12 +255,6 @@ compute:
       module: terraform-azurerm-windows-web-app  # DERIVED — inferred from os_type in plan_defaults. Override for edge cases.
       instance_number: '001'            # DERIVED — auto-assigned sequentially if omitted
       vnet_integration_subnet_id: snet_appservices  # OPTIONAL — subnet id for VNet integration. Omit if no VNet integration.
-      # plan_id: asp_custom             # OPTIONAL — explicit ASP id from compute.app_service_plans.
-                                        #   Overrides plan_defaults and share_plan_with.
-      # managed_identities:            # OPTIONAL — managed identity attachments
-      #   system_assigned: true         #   true (default) or false
-      #   user_assigned:                #   list of MI module IDs from security.managed_identities
-      #     - mi_azure-functions
       # resource_group: custom          # OPTIONAL — override RG placement. Creates rg-{product}-custom-{env}-{loc}.
                                         #   Default: compute RG. Databases auto-isolate by type.
                                         #   If multiple resources share the same value, they share the RG.
@@ -263,6 +267,10 @@ compute:
     # Example: share a plan with another app instead of getting a dedicated one
     - subsystem: website
       share_plan_with: web_api          # OPTIONAL — use the same plan as this app's id. Omit = dedicated plan.
+
+    # Example: explicit plan_id — reference an ASP from compute.app_service_plans
+    - subsystem: portal
+      plan_id: asp-web-heavy            # OPTIONAL — reference a specific ASP by id. Overrides plan_defaults and share_plan_with.
 
     # Example: custom plan spec for a single app that needs more horsepower
     - subsystem: heavy-api
@@ -281,12 +289,6 @@ compute:
                                         #   dotnet-isolated, node, python, java, powershell, custom
       instance_number: '001'            # DERIVED — auto-assigned sequentially if omitted
       vnet_integration_subnet_id: snet_appservices  # OPTIONAL — subnet id for VNet integration
-      # plan_id: asp_custom             # OPTIONAL — explicit ASP id from compute.app_service_plans.
-                                        #   Overrides plan_defaults and share_plan_with.
-      # managed_identities:            # OPTIONAL — managed identity attachments
-      #   system_assigned: true
-      #   user_assigned:
-      #     - mi_azure-functions
 
     # Minimal — subsystem + runtime required, everything else derived
     - subsystem: notifications
@@ -420,7 +422,6 @@ data:
                                         #   cosmos: serverless, provisioned
                                         #   mssql_server: GP_Gen5_2, GP_Gen5_4
                                         #   postgresql_flexible_server: GP_Standard_D2s_v3 (minimum, never Burstable)
-      capacity_mode: serverless         # OPTIONAL — "provisioned" (default) or "serverless". Cosmos only.
       databases:                        # OPTIONAL — informational only. Terraform does NOT create these.
         - my-db                         #   Database creation is an app team concern (CREATE DATABASE / migrations).
         - my-db-archive                 #   Listed here for documentation / schooling purposes.

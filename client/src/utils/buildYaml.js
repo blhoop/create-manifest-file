@@ -44,7 +44,7 @@ export function buildYamlContent(rows, subscription) {
 
   // ── spoke ──────────────────────────────────────────────────────────────
   out.push(...sectionHeader('SPOKE — Identity & metadata'))
-  out.push("schema_version: '1.5.0'")
+  out.push("schema_version: '1.7.0'")
   out.push('spoke:')
   if (sub.spoke_name)           out.push(`  name: ${q(sub.spoke_name)}`)
   if (sub.spoke_name)           out.push(`  subscription: ${q(sub.spoke_name)}`)
@@ -194,10 +194,14 @@ export function buildYamlContent(rows, subscription) {
   // Also pull os_type from first app's comments as fallback (web_app popup has an os_type field)
   const firstWebCf  = parseCommentFields(webApps[0]?.comments)
 
-  const webOs  = webPlanCf.os_type || webPlanCf.OS  || firstWebCf.os_type || firstWebCf.OS  || 'Windows'
-  const webSku = webPlanCf.sku     || webPlanCf.SKU  || 'P1v3'
-  const funcOs  = funcPlanCf.os_type || funcPlanCf.OS  || 'Windows'
-  const funcSku = funcPlanCf.sku     || funcPlanCf.SKU  || 'EP1'
+  const webOs          = webPlanCf.os_type       || webPlanCf.OS  || firstWebCf.os_type || firstWebCf.OS  || 'Windows'
+  const webSku         = webPlanCf.sku           || webPlanCf.SKU  || 'P1v3'
+  const webStrategy    = webPlanCf.plan_strategy  || ''
+  const webAppsPerPlan = webPlanCf.apps_per_plan  || ''
+  const funcOs          = funcPlanCf.os_type      || funcPlanCf.OS  || 'Windows'
+  const funcSku         = funcPlanCf.sku          || funcPlanCf.SKU  || 'EP1'
+  const funcStrategy    = funcPlanCf.plan_strategy || ''
+  const funcAppsPerPlan = funcPlanCf.apps_per_plan || ''
 
   const hasWebApps  = webApps.length > 0
   const hasFuncApps = funcApps.length > 0
@@ -223,12 +227,16 @@ export function buildYamlContent(rows, subscription) {
       out.push('    web_app:')
       out.push(`      os_type: ${q(webOs)}`)
       out.push(`      sku: ${q(webSku)}`)
+      if (webStrategy) out.push(`      plan_strategy: ${q(webStrategy)}`)
+      if (webAppsPerPlan) out.push(`      apps_per_plan: ${webAppsPerPlan}`)
     }
     if (hasFuncApps || funcPlanRows.length > 0 || planRows.length > 0) {
       if (funcPlanRow && funcPlanRow !== webPlanRow) out.push(`    # source: ${funcPlanRow.name} — set PlanFor, os_type, sku via row popup`)
       out.push('    function_app:')
       out.push(`      os_type: ${q(funcOs)}`)
       out.push(`      sku: ${q(funcSku)}`)
+      if (funcStrategy) out.push(`      plan_strategy: ${q(funcStrategy)}`)
+      if (funcAppsPerPlan) out.push(`      apps_per_plan: ${funcAppsPerPlan}`)
     }
   }
 
@@ -246,6 +254,7 @@ export function buildYamlContent(rows, subscription) {
       out.push(`      module: ${mod}`)
       out.push(`      instance_number: '${cf.instance_number || '001'}'`)
       if (hasVnet) out.push(`      vnet_integration_subnet_id: snet_appservices`)
+      if (cf.plan_id) out.push(`      plan_id: ${q(cf.plan_id)}`)
       if (cf.share_plan_with) out.push(`      share_plan_with: ${q(cf.share_plan_with)}`)
       // plan_override — explicit popup field takes priority, then fall back to ASP row matching
       const planOverrideSku = cf.plan_override_sku
@@ -271,6 +280,14 @@ export function buildYamlContent(rows, subscription) {
           }
         }
       }
+      out.push(`      managed_identities:`)
+      out.push(`        system_assigned: true`)
+      if (cf.mi_user_assigned) {
+        out.push(`        user_assigned:`)
+        for (const mi of cf.mi_user_assigned.split(',').map(s => s.trim()).filter(Boolean)) {
+          out.push(`          - ${q(mi)}`)
+        }
+      }
       if (row.repo) out.push(`      # app_repo: ${row.repo}`)
     }
   }
@@ -291,6 +308,7 @@ export function buildYamlContent(rows, subscription) {
       out.push(`      runtime: ${q(runtime)}`)
       out.push(`      instance_number: '${cf.instance_number || '001'}'`)
       if (hasVnet) out.push(`      vnet_integration_subnet_id: snet_appservices`)
+      if (cf.plan_id) out.push(`      plan_id: ${q(cf.plan_id)}`)
       if (cf.share_plan_with) out.push(`      share_plan_with: ${q(cf.share_plan_with)}`)
       // plan_override — explicit popup field takes priority, then fall back to ASP row matching
       const planOverrideSku = cf.plan_override_sku
@@ -313,6 +331,14 @@ export function buildYamlContent(rows, subscription) {
             out.push(`        os_type: ${q(oOs)}`)
             out.push(`        sku: ${q(oSku)}`)
           }
+        }
+      }
+      out.push(`      managed_identities:`)
+      out.push(`        system_assigned: true`)
+      if (cf.mi_user_assigned) {
+        out.push(`        user_assigned:`)
+        for (const mi of cf.mi_user_assigned.split(',').map(s => s.trim()).filter(Boolean)) {
+          out.push(`          - ${q(mi)}`)
         }
       }
       if (row.repo) out.push(`      # app_repo: ${row.repo}`)
@@ -476,6 +502,9 @@ export function buildYamlContent(rows, subscription) {
         // SKU — prefer comment field, fall back to tier
         const sku = cf.sku || cf.SKU || cf.tier || cf.Tier || ''
         if (sku) out.push(`      sku: ${q(sku)}`)
+        if (mapping.db_type === 'cosmos_account' && cf.capacity_mode) {
+          out.push(`      capacity_mode: ${q(cf.capacity_mode)}`)
+        }
         if (row.comments) out.push(`      # comments: ${row.comments}`)
       }
     }
@@ -572,6 +601,7 @@ export function buildYamlContent(rows, subscription) {
   if (hasSecurity) {
     out.push(...sectionHeader('SECURITY'))
     out.push('security:')
+    out.push('  entra_groups: false')
 
     let firstSecSub = true
     const secBlank = () => { if (!firstSecSub) out.push(''); firstSecSub = false }
@@ -618,7 +648,8 @@ export function buildYamlContent(rows, subscription) {
       for (const row of mapped.security.managed_identities) {
         const cf = parseCommentFields(row.comments)
         const subsystem = cf.subsystem || row.name || 'identity'
-        out.push(`    - subsystem: ${q(subsystem)}`)
+        out.push(`    - id: mi_${row.name || subsystem}`)
+        out.push(`      subsystem: ${q(subsystem)}`)
         out.push(`      module: terraform-azurerm-user-assigned-identity`)
         out.push(`      instance_number: '${cf.instance_number || '001'}'`)
       }
@@ -646,8 +677,6 @@ export function buildYamlContent(rows, subscription) {
       out.push(`    - subsystem: ${q(row.name || product)}`)
       out.push(`      module: terraform-azurerm-application-insights`)
       out.push(`      workspace_id: law`)
-      const retDays = cf.retention_days || cf.retention
-      if (retDays) out.push(`      retention_days: ${retDays}`)
     }
   }
 

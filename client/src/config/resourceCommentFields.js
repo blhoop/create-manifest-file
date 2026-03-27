@@ -23,9 +23,9 @@ const AZURE = {
   app_service_plan: {
     label: 'App Service Plan',
     fields: [
-      { key: 'PlanFor',  label: 'Plan For', required: true, type: 'select', options: ['Web App', 'Function App'] },
-      { key: 'os_type',  label: 'OS',       required: true, type: 'select', options: ['Windows', 'Linux'] },
-      { key: 'sku',      label: 'SKU',      required: true, type: 'select', options: [
+      { key: 'PlanFor',       label: 'Plan For',      required: true, type: 'select', options: ['Web App', 'Function App'] },
+      { key: 'os_type',       label: 'OS',            required: true, type: 'select', options: ['Windows', 'Linux'] },
+      { key: 'sku',           label: 'SKU',           required: true, type: 'select', options: [
         'B1', 'B2', 'B3',
         'S1', 'S2', 'S3',
         'P0v3', 'P1v3', 'P2v3', 'P3v3',
@@ -33,6 +33,8 @@ const AZURE = {
         'EP1', 'EP2', 'EP3',
         'Y1',
       ]},
+      { key: 'plan_strategy', label: 'Plan Strategy', type: 'select', options: ['dedicated', 'shared'] },
+      { key: 'apps_per_plan', label: 'Apps Per Plan', type: 'text',   placeholder: 'e.g. 4 (only when strategy = shared)' },
     ],
   },
 
@@ -40,27 +42,31 @@ const AZURE = {
   app_service: {
     label: 'App Service',
     fields: [
-      { key: 'os_type',          label: 'OS',              type: 'select', options: ['Windows', 'Linux'] },
-      { key: 'instance_number',  label: 'Instance Number', type: 'text',   default: '001' },
-      { key: 'share_plan_with',  label: 'Share Plan With', type: 'text',   placeholder: 'app id, e.g. web_api' },
+      { key: 'os_type',           label: 'OS',              type: 'select', options: ['Windows', 'Linux'] },
+      { key: 'instance_number',   label: 'Instance Number', type: 'text',   default: '001' },
+      { key: 'plan_id',           label: 'Plan ID',         type: 'text',   placeholder: 'explicit ASP id, e.g. asp_custom' },
+      { key: 'share_plan_with',   label: 'Share Plan With', type: 'text',   placeholder: 'app id, e.g. web_api' },
       { key: 'plan_override_sku', label: 'Plan Override SKU', type: 'select', options: [
         'P0v3', 'P1v3', 'P2v3', 'P3v3',
         'P0v4', 'P1v4', 'P2v4', 'P3v4',
         'I1v2', 'I2v2', 'I3v2',
       ]},
+      { key: 'mi_user_assigned',  label: 'User-Assigned MIs', type: 'mi_multiselect' },
     ],
   },
   web_app: {
     label: 'Web App',
     fields: [
-      { key: 'os_type',          label: 'OS',              type: 'select', options: ['Windows', 'Linux'] },
-      { key: 'instance_number',  label: 'Instance Number', type: 'text',   default: '001' },
-      { key: 'share_plan_with',  label: 'Share Plan With', type: 'text',   placeholder: 'app id, e.g. web_api' },
+      { key: 'os_type',           label: 'OS',              type: 'select', options: ['Windows', 'Linux'] },
+      { key: 'instance_number',   label: 'Instance Number', type: 'text',   default: '001' },
+      { key: 'plan_id',           label: 'Plan ID',         type: 'text',   placeholder: 'explicit ASP id, e.g. asp_custom' },
+      { key: 'share_plan_with',   label: 'Share Plan With', type: 'text',   placeholder: 'app id, e.g. web_api' },
       { key: 'plan_override_sku', label: 'Plan Override SKU', type: 'select', options: [
         'P0v3', 'P1v3', 'P2v3', 'P3v3',
         'P0v4', 'P1v4', 'P2v4', 'P3v4',
         'I1v2', 'I2v2', 'I3v2',
       ]},
+      { key: 'mi_user_assigned',  label: 'User-Assigned MIs', type: 'mi_multiselect' },
     ],
   },
 
@@ -68,10 +74,12 @@ const AZURE = {
   function_app: {
     label: 'Function App',
     fields: [
-      { key: 'runtime',          label: 'Runtime',         required: true, type: 'select', options: ['dotnet-isolated', 'node', 'python', 'java', 'powershell', 'custom'] },
-      { key: 'instance_number',  label: 'Instance Number', type: 'text',   default: '001' },
-      { key: 'share_plan_with',  label: 'Share Plan With', type: 'text',   placeholder: 'app id, e.g. func_booking-expiry' },
+      { key: 'runtime',           label: 'Runtime',         required: true, type: 'select', options: ['dotnet-isolated', 'node', 'python', 'java', 'powershell', 'custom'] },
+      { key: 'instance_number',   label: 'Instance Number', type: 'text',   default: '001' },
+      { key: 'plan_id',           label: 'Plan ID',         type: 'text',   placeholder: 'explicit ASP id, e.g. asp_custom' },
+      { key: 'share_plan_with',   label: 'Share Plan With', type: 'text',   placeholder: 'app id, e.g. func_booking-expiry' },
       { key: 'plan_override_sku', label: 'Plan Override SKU', type: 'select', options: ['EP1', 'EP2', 'EP3'] },
+      { key: 'mi_user_assigned',  label: 'User-Assigned MIs', type: 'mi_multiselect' },
     ],
   },
 
@@ -156,9 +164,10 @@ const AZURE = {
   cosmos: {
     label: 'Cosmos DB',
     fields: [
-      { key: 'sku',         label: 'Tier', required: true, type: 'select', options: ['serverless', 'provisioned'] },
-      { key: 'type',        label: 'Type',        required: true, type: 'select', options: ['cosmos_account', 'mssql_server', 'postgresql_flexible_server', 'mssql_managed_instance', 'mysql_flexible_server'] },
-      { key: 'consistency', label: 'Consistency', type: 'select', options: ['Eventual', 'Session', 'ConsistentPrefix', 'BoundedStaleness', 'Strong'] },
+      { key: 'sku',           label: 'Tier',          required: true, type: 'select', options: ['serverless', 'provisioned'] },
+      { key: 'capacity_mode', label: 'Capacity Mode', type: 'select', options: ['provisioned', 'serverless'] },
+      { key: 'type',          label: 'Type',          required: true, type: 'select', options: ['cosmos_account', 'mssql_server', 'postgresql_flexible_server', 'mssql_managed_instance', 'mysql_flexible_server'] },
+      { key: 'consistency',   label: 'Consistency',   type: 'select', options: ['Eventual', 'Session', 'ConsistentPrefix', 'BoundedStaleness', 'Strong'] },
     ],
   },
 
@@ -308,9 +317,7 @@ const AZURE = {
   // observability.app_insights
   app_insights: {
     label: 'App Insights',
-    fields: [
-      { key: 'retention_days', label: 'Retention (days)', type: 'select', options: ['30', '60', '90', '120', '180', '270', '365', '550', '730'] },
-    ],
+    fields: [],
   },
 
   // ── App Configuration ──────────────────────────────────────────────────

@@ -23,7 +23,9 @@
         "1.2.0",
         "1.3.0",
         "1.4.0",
-        "1.5.0"
+        "1.5.0",
+        "1.6.0",
+        "1.7.0"
       ],
       "description": "Manifest schema version."
     },
@@ -675,7 +677,7 @@
       "properties": {
         "plan_defaults": {
           "type": "object",
-          "description": "Default plan specs. Each web/function app gets its own plan from these defaults unless overridden.",
+          "description": "Default plan specs. plan_strategy controls ASP assignment: 'shared' (default, auto-group N apps per plan) or 'dedicated' (1 per app).",
           "additionalProperties": false,
           "properties": {
             "web_app": {
@@ -690,6 +692,19 @@
                 },
                 "sku": {
                   "type": "string"
+                },
+                "plan_strategy": {
+                  "type": "string",
+                  "enum": ["dedicated", "shared"],
+                  "default": "shared",
+                  "description": "dedicated = 1 ASP per app (default). shared = auto-group apps_per_plan apps onto each ASP."
+                },
+                "apps_per_plan": {
+                  "type": "integer",
+                  "default": 4,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "Number of apps per shared ASP (only used when plan_strategy = shared)."
                 }
               }
             },
@@ -705,6 +720,19 @@
                 },
                 "sku": {
                   "type": "string"
+                },
+                "plan_strategy": {
+                  "type": "string",
+                  "enum": ["dedicated", "shared"],
+                  "default": "shared",
+                  "description": "dedicated = 1 ASP per app (default). shared = auto-group apps_per_plan apps onto each ASP."
+                },
+                "apps_per_plan": {
+                  "type": "integer",
+                  "default": 4,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "Number of apps per shared ASP (only used when plan_strategy = shared)."
                 }
               }
             }
@@ -839,6 +867,10 @@
           "type": "string",
           "description": "Logical ID of the App Service Plan. Omit when using plan_defaults."
         },
+        "plan_id": {
+          "type": "string",
+          "description": "Explicit ASP to place this app on (from compute.app_service_plans). Overrides plan_defaults and share_plan_with."
+        },
         "module": {
           "$ref": "#/$defs/module_ref"
         },
@@ -900,6 +932,24 @@
         "location": {
           "type": "string",
           "description": "Override default location for this resource."
+        },
+        "managed_identities": {
+          "type": "object",
+          "description": "Managed identity configuration. system_assigned defaults to true. user_assigned lists MI module IDs from security.managed_identities.",
+          "properties": {
+            "system_assigned": {
+              "type": "boolean",
+              "default": true
+            },
+            "user_assigned": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "List of managed identity module IDs (e.g. mi_azure-functions) to attach."
+            }
+          },
+          "additionalProperties": false
         }
       }
     },
@@ -923,6 +973,10 @@
             "null"
           ],
           "description": "Logical ID of ASP. Omit when using plan_defaults."
+        },
+        "plan_id": {
+          "type": "string",
+          "description": "Explicit ASP to place this app on (from compute.app_service_plans). Overrides plan_defaults and share_plan_with."
         },
         "runtime": {
           "type": "string",
@@ -1009,6 +1063,24 @@
         "location": {
           "type": "string",
           "description": "Override default location for this resource."
+        },
+        "managed_identities": {
+          "type": "object",
+          "description": "Managed identity configuration. system_assigned defaults to true. user_assigned lists MI module IDs from security.managed_identities.",
+          "properties": {
+            "system_assigned": {
+              "type": "boolean",
+              "default": true
+            },
+            "user_assigned": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "List of managed identity module IDs (e.g. mi_azure-functions) to attach."
+            }
+          },
+          "additionalProperties": false
         }
       }
     },
@@ -1640,6 +1712,12 @@
         "location": {
           "type": "string",
           "description": "Override default location for this resource."
+        },
+        "capacity_mode": {
+          "type": "string",
+          "enum": ["provisioned", "serverless"],
+          "default": "provisioned",
+          "description": "Database capacity mode. Cosmos supports serverless."
         }
       }
     },
@@ -1854,6 +1932,11 @@
           "items": {
             "$ref": "#/$defs/container_registry"
           }
+        },
+        "entra_groups": {
+          "type": "boolean",
+          "default": false,
+          "description": "Create Entra ID security groups (dba, app-team, sre) for the spoke. Default false."
         }
       }
     },
@@ -2633,6 +2716,10 @@
         "resource_group": {
           "type": "string",
           "description": "Override RG placement. Creates rg-{product}-{value}-{env}-{loc}. Default: compute RG (databases auto-isolate by type)."
+        },
+        "location_override": {
+          "type": "string",
+          "description": "Applied by the builder when the default location is not supported for this resource type (e.g. SWA eastasia fallback)."
         }
       }
     },
