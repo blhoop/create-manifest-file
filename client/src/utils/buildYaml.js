@@ -44,7 +44,7 @@ export function buildYamlContent(rows, subscription) {
 
   // ── spoke ──────────────────────────────────────────────────────────────
   out.push(...sectionHeader('SPOKE — Identity & metadata'))
-  out.push("schema_version: '1.6.0'")
+  out.push("schema_version: '1.7.0'")
   out.push('spoke:')
   if (sub.spoke_name)           out.push(`  name: ${q(sub.spoke_name)}`)
   if (sub.spoke_name)           out.push(`  subscription: ${q(sub.spoke_name)}`)
@@ -601,6 +601,7 @@ export function buildYamlContent(rows, subscription) {
   if (hasSecurity) {
     out.push(...sectionHeader('SECURITY'))
     out.push('security:')
+    out.push('  entra_groups: false')
 
     let firstSecSub = true
     const secBlank = () => { if (!firstSecSub) out.push(''); firstSecSub = false }
