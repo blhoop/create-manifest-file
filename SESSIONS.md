@@ -4,6 +4,28 @@ A running log of work completed each session.
 
 ---
 
+## 2026-03-27 – 2026-03-28
+
+### Schema v1.7.0 Update
+- Added `schema-template-v1.7.0.yml` and `EXAMPLE-spoke-v1.7.0.yml`
+- Bumped `schema_version` output to `'1.7.0'` in `buildYaml.js`
+- Added `entra_groups: false` to every generated `security:` block (new v1.7.0 opt-in field)
+- Updated `App.jsx` to import `schema-template-v1.7.0.yml`; updated `manifest-schema.json` and `manifest-README.md`
+
+### Security / CI Fixes
+- Fixed high-severity `picomatch` CVE in both server and client npm dependencies (`npm audit fix`)
+- CI `npm audit --audit-level=high` now passes clean for both packages
+
+### Schema v1.8.0 Update
+- Added `schema-template-v1.8.0.yml`, `EXAMPLE-spoke-v1.8.0.yml`, and `networking-defaults.yml` (subnet sizing, PE DNS zone mappings, NSG defaults)
+- Bumped `schema_version` output to `'1.8.0'` in `buildYaml.js`
+- Added `spoke_id` field to subscription panel (Identity group) — optional 2–5 char discriminator for global uniqueness when multiple spokes share the same product code; fused with product in resource names
+- Emit `spoke_id` in `ctm_properties` YAML block when set; parse it back from YAML in `yaml.js` for round-trip fidelity
+- Updated `vnet_cidr` hint with sizing guide from `networking-defaults.yml` (`/24` app service, `/23` container apps, `/22` AKS)
+- Updated `manifest-schema.json` and `manifest-README.md` to v1.8.0
+
+---
+
 ## 2026-03-17 (continued)
 
 ### Static Web App Popup

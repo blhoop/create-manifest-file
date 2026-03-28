@@ -55,29 +55,38 @@ npm run stop-dev
 
 ## YAML Output
 
-Every parsed file produces a `.yml` manifest with two sections. See [`output.md`](./output.md) for the full format specification.
+Every parsed file produces a spoke infrastructure manifest (schema v1.8.0). See [`output.md`](./output.md) for the full format specification and [`schema-template-v1.8.0.yml`](./schema-template-v1.8.0.yml) for the annotated reference template.
 
-### Subscription Block (once per file)
+### Subscription Panel (spoke identity + config)
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `subscription_name` | ✅ | Friendly name for the Azure subscription |
-| `environment` | ✅ | Target environment (`dev` `test` `uat` `preprod` `prod` `lab`) |
-| `default_location` | ✅ | Default Azure region for all resources |
-| `product_code` | | Short code for Azure resource names — auto-derived if omitted |
-| `vnet_cidr` | | VNet CIDR block — auto-allocated if omitted |
-| `subscription_id` | | Existing Azure subscription UUID |
-| `spn_client_id` | | Existing SPN client ID for OIDC auth |
+| Group | Field | Required | Description |
+|-------|-------|----------|-------------|
+| Identity | `spoke_name` | ✅ | Spoke/subscription friendly name |
+| Identity | `owner` | ✅ | Owning team or individual |
+| Identity | `product` | ✅ | 2–5 char product code used in all resource names |
+| Identity | `spoke_id` | | Optional 2–5 char discriminator when multiple spokes share the same product code |
+| Identity | `environment` | ✅ | Target environment (`dev` `test` `uat` `preprod` `prod` `lab`) |
+| Identity | `default_location` | ✅ | Default Azure region for all resources |
+| Tagging | `cost_center` | | Billing cost center code |
+| Tagging | `project` | | Project or initiative name |
+| Tagging | `data_classification` | | Data sensitivity classification |
+| Tagging | `infra_repo` | | Infrastructure SCM repo (`org/repo-name`) |
+| Infrastructure | `sku_mode` | | `Standard` or `Premium` — sets default SKU tier across resource types |
+| Infrastructure | `vnet_cidr` | | VNet address space (size guide: `/24` app service, `/23` container apps, `/22` AKS) |
+| Infrastructure | `management_group_id` | | Target management group for new subscriptions |
+| Infrastructure | `new_subscription` | | `true` to provision a new subscription |
+| Infrastructure | `subscription_id` | | Existing subscription UUID (shown when `new_subscription` is false) |
+| Infrastructure | `description` | | Free-text description of the spoke's purpose |
 
-### Resources Block (one entry per resource)
+### Resource Rows (one entry per resource)
 
 | Field | Required | Description |
 |-------|----------|-------------|
 | `name` | ✅ | Subsystem/component name (e.g. `web`, `booking-db`) |
-| `type` | ✅ | Resource type — builder or inventory (see `output.md`) |
+| `type` | ✅ | Resource type (see `output.md` for full list) |
 | `location` | | Azure region override — omit to use `default_location` |
 | `repo` | | SCM repo (`org/repo-name`) — triggers CI/CD caller workflow generation |
-| `comments` | | Free-text hints that influence the manifest (e.g. `needs pgbouncer`, `serverless`) |
+| `comments` | | Structured properties set via the popup editor (OS, SKU, consumers, NSG rules, etc.) |
 
 ## Preview & Editing
 
@@ -137,6 +146,9 @@ create-manifest-file/
 │       └── locationDefaults.js
 ├── output.md                # YAML output format documentation
 ├── naming.md                # Naming conventions reference
+├── networking-defaults.yml  # Canonical subnet sizes, PE DNS zones, NSG defaults
+├── schema-template-v1.8.0.yml  # Annotated manifest schema reference
+├── manifest-schema.json     # Machine-readable JSON schema (used by linter/validator)
 └── .github/
     ├── workflows/
     │   ├── ci.yml           # CI on push/PR

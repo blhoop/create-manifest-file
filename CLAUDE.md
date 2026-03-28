@@ -59,7 +59,7 @@ The app generates a nested spoke infrastructure manifest (schema v1.8.0). See [`
 
 | Group | Fields |
 |-------|--------|
-| Identity | `spoke_name`, `owner`, `product`, `environment`, `default_location` |
+| Identity | `spoke_name`, `owner`, `product`, `spoke_id` (optional), `environment`, `default_location` |
 | Tagging | `cost_center`, `project`, `data_classification`, `infra_repo` |
 | Infrastructure | `sku_mode`, `vnet_cidr`, `management_group_id`, `new_subscription`, `subscription_id` (conditional), `description` |
 
@@ -85,6 +85,10 @@ Extended row data (not table columns, set via popup): `nsg_rules[]`, `consumers[
 **`server/config/outputSchema.js`** — subscription panel field definitions with `group` property (`identity` / `tagging` / `infra`)
 
 **When adding a new resource type:** update `schemaMapping.js` + `resourceCommentFields.js` + `buildYaml.js` + `output.md`.
+
+## Reference Files
+
+- [`networking-defaults.yml`](./networking-defaults.yml) — canonical subnet sizes by resource type, private endpoint DNS zone mappings, and NSG default rules for the PE subnet. Used to drive the `vnet_cidr` sizing hint in the subscription panel.
 
 ## Naming Conventions
 
