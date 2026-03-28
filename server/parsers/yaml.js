@@ -60,7 +60,8 @@ function parseNewFormat(doc) {
   }
 
   // ctm_properties
-  if (doc.ctm_properties?.product) subscription.product = String(doc.ctm_properties.product)
+  if (doc.ctm_properties?.product)  subscription.product  = String(doc.ctm_properties.product)
+  if (doc.ctm_properties?.spoke_id) subscription.spoke_id = String(doc.ctm_properties.spoke_id)
 
   // environments — take first key
   if (doc.environments && typeof doc.environments === 'object') {

@@ -1,0 +1,204 @@
+# =============================================================================
+# Networking Defaults — Auto-Carve Rules
+# =============================================================================
+#
+# The builder uses these defaults to auto-generate subnets, NSGs, delegations,
+# private endpoints, and DNS zones from a single VNet CIDR.
+#
+# Users only need to provide:
+#   network:
+#     vnet_cidr: 10.3.0.0/24
+#
+# Everything else is derived from what compute/data resources are declared.
+# Any default can be overridden in the manifest's network section.
+#
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Subnet Sizing by Compute Type
+# ---------------------------------------------------------------------------
+# Each compute type triggers creation of specific subnets with these sizes.
+# snet_privateendpoints is ALWAYS created regardless of compute type.
+subnet_defaults:
+
+  # Always created
+  private_endpoints:
+    id: snet_privateendpoints
+    size: /27                           # 32 IPs — shared across all PE targets
+    delegation: null
+    purpose: Private endpoints
+    nsg_rules:
+      - name: allow-vnet-inbound
+        priority: 100
+        direction: Inbound
+        access: Allow
+        protocol: '*'
+        source_address_prefix: VirtualNetwork
+        destination_port_range: '*'
+        description: Allow inbound from VNet only
+      - name: deny-internet-inbound
+        priority: 4096
+        direction: Inbound
+        access: Deny
+        protocol: '*'
+        source_address_prefix: Internet
+        destination_port_range: '*'
+        description: Deny internet inbound
+
+  # Triggered by: web_apps, function_apps
+  app_service:
+    id: snet_appservices
+    size: /26                           # 64 IPs
+    delegation: Microsoft.Web/serverFarms
+    purpose: App Service VNet integration
+    nsg_rules: []                       # Default: no custom rules
+
+  # Triggered by: container_apps or container_app_environment
+  container_app:
+    id: snet_containerenvironment
+    size: /23                           # 512 IPs — Azure minimum for CAE
+    delegation: Microsoft.App/environments
+    purpose: Container App Environment
+    nsg_rules: []
+
+  # Triggered by: aks_clusters
+  aks_system:
+    id: snet_aks_system
+    size: /24                           # 256 IPs — system node pool
+    delegation: null
+    purpose: AKS system node pool
+    nsg_rules: []
+
+  aks_user:
+    id: snet_aks_user
+    size: /24                           # 256 IPs — user workload node pool
+    delegation: null
+    purpose: AKS user node pool
+    nsg_rules: []
+
+  # Triggered by: virtual_machines
+  compute:
+    id: snet_compute
+    size: /26                           # 64 IPs
+    delegation: null
+    purpose: Virtual machine compute
+    nsg_rules: []
+
+  # Triggered by: databases with type mssql_managed_instance
+  sqlmi:
+    id: snet_sqlmi
+    size: /27                           # 32 IPs — dedicated, delegation required
+    delegation: Microsoft.Sql/managedInstances
+    purpose: SQL Managed Instance
+    nsg_rules: []
+
+# ---------------------------------------------------------------------------
+# Private Endpoint Mapping
+# ---------------------------------------------------------------------------
+# When a resource of this type is declared, the builder auto-creates a PE
+# and DNS zone. All PEs go to snet_privateendpoints unless overridden.
+private_endpoint_defaults:
+
+  key_vault:
+    sub_resource: vault
+    dns_zone: privatelink.vaultcore.azure.net
+
+  cosmos_account:
+    sub_resource: Sql
+    dns_zone: privatelink.documents.azure.com
+
+  mssql_server:
+    sub_resource: sqlServer
+    dns_zone: privatelink.database.windows.net
+
+  postgresql_flexible_server:
+    sub_resource: postgresqlServer
+    dns_zone: privatelink.postgres.database.azure.com
+
+  mysql_flexible_server:
+    sub_resource: mysqlServer
+    dns_zone: privatelink.mysql.database.azure.com
+
+  managed_redis:
+    sub_resource: redisEnterprise
+    dns_zone: privatelink.redisenterprise.cache.azure.net
+
+  search_service:
+    sub_resource: searchService
+    dns_zone: privatelink.search.windows.net
+
+  storage_account:
+    sub_resource: blob
+    dns_zone: privatelink.blob.core.windows.net
+
+  container_registry:
+    sub_resource: registry
+    dns_zone: privatelink.azurecr.io
+
+  app_configuration:
+    sub_resource: configurationStores
+    dns_zone: privatelink.azconfig.io
+
+  servicebus_namespace:
+    sub_resource: namespace
+    dns_zone: privatelink.servicebus.windows.net
+
+  signalr_service:
+    sub_resource: signalr
+    dns_zone: privatelink.service.signalr.net
+
+# ---------------------------------------------------------------------------
+# VNet Auto-Sizing
+# ---------------------------------------------------------------------------
+# If vnet_cidr is not provided, the builder calculates the minimum VNet size
+# by summing all required subnets and finding the smallest prefix that fits.
+#
+# Minimum: /24 (256 IPs) — even for simple spokes
+# Maximum: /16 (65536 IPs) — sanity cap
+#
+# Algorithm:
+#   1. Collect all triggered subnet sizes based on declared resources
+#   2. Always include snet_privateendpoints (/27)
+#   3. Sum total IPs needed
+#   4. Find smallest power-of-2 prefix >= total
+#   5. Auto-assign sequential CIDRs within the VNet block
+
+# ---------------------------------------------------------------------------
+# NSG Defaults
+# ---------------------------------------------------------------------------
+# One NSG per subnet, auto-created. Default rules per subnet type above.
+# Additional rules can be added in the manifest network.nsgs section.
+
+# ---------------------------------------------------------------------------
+# Override Behavior
+# ---------------------------------------------------------------------------
+# Any default can be overridden in the manifest:
+#
+# Override subnet size:
+#   network:
+#     subnets:
+#       - id: snet_appservices
+#         cidr: 10.3.0.0/25            # Override /26 default to /25
+#
+# Override PE subnet:
+#   network:
+#     private_endpoints:
+#       - id: pe_kv
+#         subnet_id: snet_custom       # Use a different subnet instead of snet_privateendpoints
+#
+# Add custom subnets not in defaults:
+#   network:
+#     subnets:
+#       - id: snet_bastion
+#         vnet_id: vnet
+#         cidr: 10.3.0.128/27
+#         delegation: null
+#         purpose: Azure Bastion
+#
+# Skip auto-PE for a specific resource:
+#   data:
+#     databases:
+#       - subsystem: pg
+#         type: postgresql_flexible_server
+#         sku: GP_Standard_D2s_v3
+#         private_endpoint: false       # Opt out of auto-PE

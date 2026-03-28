@@ -25,7 +25,8 @@
         "1.4.0",
         "1.5.0",
         "1.6.0",
-        "1.7.0"
+        "1.7.0",
+        "1.8.0"
       ],
       "description": "Manifest schema version."
     },
@@ -97,6 +98,11 @@
           "type": "string",
           "pattern": "^[a-z][a-z0-9]+$",
           "description": "Product code used in CTM naming convention. e.g. ctmi, gprof, lb"
+        },
+        "spoke_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]{2,5}$",
+          "description": "Optional spoke discriminator for global uniqueness. Appended to product in resource names. e.g. 03, dev01"
         }
       }
     },
