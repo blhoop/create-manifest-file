@@ -40,6 +40,14 @@ const SUBSCRIPTION_FIELDS = [
     group: 'identity',
   },
   {
+    key: 'spoke_id',
+    label: 'Spoke ID',
+    required: false,
+    placeholder: 'e.g. 01',
+    hint: 'Optional 2–5 char discriminator for global uniqueness when multiple spokes share the same product code. Fused with product in names (e.g. lb + 01 → lb01). Omit for single-spoke products.',
+    group: 'identity',
+  },
+  {
     key: 'environment',
     label: 'Environment',
     required: true,
@@ -116,7 +124,7 @@ const SUBSCRIPTION_FIELDS = [
     label: 'VNet CIDR',
     required: false,
     placeholder: 'e.g. 10.3.0.0/24',
-    hint: 'VNet address space — coordinate with hub team to avoid overlap',
+    hint: 'VNet address space — coordinate with hub team to avoid overlap. Size guide: /24 for app service spokes, /23 for container apps, /22 for AKS.',
     group: 'infra',
   },
   {

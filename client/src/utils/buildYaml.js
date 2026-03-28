@@ -44,7 +44,7 @@ export function buildYamlContent(rows, subscription) {
 
   // ── spoke ──────────────────────────────────────────────────────────────
   out.push(...sectionHeader('SPOKE — Identity & metadata'))
-  out.push("schema_version: '1.7.0'")
+  out.push("schema_version: '1.8.0'")
   out.push('spoke:')
   if (sub.spoke_name)           out.push(`  name: ${q(sub.spoke_name)}`)
   if (sub.spoke_name)           out.push(`  subscription: ${q(sub.spoke_name)}`)
@@ -63,6 +63,7 @@ export function buildYamlContent(rows, subscription) {
   out.push(...sectionHeader('CTM PROPERTIES — Used for resource naming only'))
   out.push('ctm_properties:')
   out.push(`  product: ${q(sub.product || sub.product_code || '')}`)
+  if (sub.spoke_id) out.push(`  spoke_id: '${sub.spoke_id}'`)
 
   // ── environments ───────────────────────────────────────────────────────
   out.push(...sectionHeader('ENVIRONMENTS'))
